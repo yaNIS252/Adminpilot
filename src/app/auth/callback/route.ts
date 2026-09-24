@@ -15,11 +15,16 @@ export const runtime = "nodejs";
  * N'accepte qu'un chemin relatif. Une redirection ouverte permettrait d'envoyer
  * un utilisateur fraîchement authentifié vers un site tiers depuis un lien qui
  * porte le domaine légitime — hameçonnage idéal.
+ *
+ * L'antislash doit être rejeté explicitement : la spécification URL du WHATWG
+ * le normalise en slash pour les schémas spéciaux, si bien que `/\exemple.fr`
+ * franchit les deux premiers tests puis devient `https://exemple.fr` une fois
+ * passé dans `new URL()`. Le `%5c` encodé est déjà décodé par
+ * `searchParams.get`, il est donc couvert par le même test.
  */
 function safeNext(value: string | null): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/dashboard";
-  }
+  if (!value || !value.startsWith("/")) return "/dashboard";
+  if (value.startsWith("//") || value.includes("\\")) return "/dashboard";
   return value;
 }
 

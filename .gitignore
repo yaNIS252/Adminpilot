@@ -39,4 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Le modèle de configuration, lui, reste suivi. Cette négation vient APRÈS la
+# règle `.env*` plus haut : dans un .gitignore, c'est le dernier motif qui
+# correspond qui l'emporte, si bien que placée avant elle serait sans effet.
 !.env.example

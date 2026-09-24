@@ -48,7 +48,9 @@ export default function LandingPage() {
           <div className="flex flex-wrap justify-center gap-3">
             <Link
               href="/login"
-              className="flex items-center gap-2 rounded-[var(--radius-md)] bg-gradient-to-b from-[#9888f7] to-[#5b4bd6] px-[26px] py-[15px] text-base font-semibold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,.14),0_10px_40px_-10px_rgba(139,124,240,.9)] transition-all hover:-translate-y-0.5 hover:text-white hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,.22),0_0_60px_-6px_rgba(139,124,240,1)]"
+
+              // bouton doit accrocher l'œil avant tout le reste du bloc.
+              className="flex items-center gap-2 rounded-[var(--radius-md)] bg-gradient-to-b from-[#b7adfb] via-[#8b7cf0] to-[#5b4bd6] px-[26px] py-[15px] text-base font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.5),inset_0_0_0_1px_rgba(255,255,255,.22),0_10px_40px_-10px_rgba(139,124,240,.9)] transition-all hover:-translate-y-0.5 hover:text-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,.6),inset_0_0_0_1px_rgba(255,255,255,.32),0_0_60px_-6px_rgba(139,124,240,1)]"
             >
               Commencer gratuitement
               <ArrowRight className="size-4" />
@@ -229,7 +231,7 @@ export default function LandingPage() {
           </h2>
           <Link
             href="/login"
-            className="mt-[26px] inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-gradient-to-b from-[#9888f7] to-[#5b4bd6] px-6 py-3.5 font-semibold text-white shadow-[0_10px_40px_-10px_rgba(139,124,240,.9)] transition-all hover:-translate-y-0.5 hover:text-white hover:shadow-[0_0_60px_-6px_rgba(139,124,240,1)]"
+            className="mt-[26px] inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-gradient-to-b from-[#b7adfb] via-[#8b7cf0] to-[#5b4bd6] px-6 py-3.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.5),inset_0_0_0_1px_rgba(255,255,255,.22),0_10px_40px_-10px_rgba(139,124,240,.9)] transition-all hover:-translate-y-0.5 hover:text-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,.6),inset_0_0_0_1px_rgba(255,255,255,.32),0_0_60px_-6px_rgba(139,124,240,1)]"
           >
             Commencer gratuitement
             <ArrowRight className="size-4" />
