@@ -1,0 +1,227 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Bell,
+  FolderClosed,
+  LayoutDashboard,
+  LogOut,
+  Plus,
+  Repeat,
+  Send,
+  Settings,
+} from "lucide-react";
+
+import { createClient } from "@/lib/supabase/client";
+
+/**
+ * Navigation de l'espace client.
+ *
+ * Panneau en verre dépoli sur écran large, barre inférieure sur mobile — c'est
+ * là que se fait le scan de documents par photo, donc la navigation doit rester
+ * à portée de pouce.
+ *
+ * Le quota et la carte utilisateur sont masqués sur mobile : ils voleraient la
+ * place des cinq entrées de navigation.
+ */
+
+const LINKS = [
+  { href: "/dashboard", label: "Vue d'ensemble", short: "Accueil", Icon: LayoutDashboard },
+  { href: "/abonnements", label: "Abonnements", short: "Abos", Icon: Repeat },
+  { href: "/documents", label: "Documents", short: "Docs", Icon: FolderClosed },
+  { href: "/alertes", label: "Alertes", short: "Alertes", Icon: Bell },
+  { href: "/reglages", label: "Réglages", short: "Réglages", Icon: Settings },
+] as const;
+
+const PLAN_LABELS = { free: "Gratuit", pro: "Pro", family: "Famille" } as const;
+
+export function Sidebar({
+  plan,
+  email,
+  name,
+  reviewCount,
+  documentsUsed,
+  documentsLimit,
+}: {
+  plan: keyof typeof PLAN_LABELS;
+  email: string;
+  name: string | null;
+  reviewCount: number;
+  documentsUsed: number;
+  documentsLimit: number | null;
+}) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  async function signOut() {
+    await createClient().auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
+
+  const quotaRatio =
+    documentsLimit === null ? 0 : Math.min(1, documentsUsed / documentsLimit);
+
+  const initials = (name ?? email)
+    .split(/[\s@.]/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+
+  return (
+    <nav
+      className="
+        fixed bottom-0 left-0 z-20 flex w-full justify-around border-t
+        border-[var(--border)] bg-[rgba(14,14,20,.92)] backdrop-blur-xl
+        pb-[env(safe-area-inset-bottom,0px)]
+        md:sticky md:top-0 md:h-dvh md:w-[252px] md:shrink-0 md:flex-col
+        md:justify-start md:border-t-0 md:bg-transparent md:p-3.5
+      "
+    >
+      <div className="hidden h-full flex-col gap-1 rounded-[var(--radius-xl)] border border-[var(--border)] bg-[rgba(255,255,255,.02)] px-3 py-3.5 backdrop-blur-xl md:flex">
+        <div className="flex items-center gap-2.5 px-1.5 pt-1 pb-[18px]">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2.5 text-[var(--text)] hover:text-[var(--text)]"
+          >
+            <span className="grid size-[30px] place-items-center rounded-[var(--radius-sm)] bg-gradient-to-br from-[#8b7cf0] via-[#5b4bd6] to-[#3b2fa8] shadow-[0_0_18px_rgba(139,124,240,.45),inset_0_1px_0_rgba(255,255,255,.3)]">
+              <Send className="size-[15px] text-white" />
+            </span>
+            <span className="text-base font-bold tracking-[-0.02em]">
+              AdminPilot
+            </span>
+          </Link>
+          <span
+            className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+              plan === "free"
+                ? "bg-[rgba(255,255,255,.06)] text-[var(--text-faint)]"
+                : "bg-[rgba(139,124,240,.18)] text-[var(--accent-lighter)]"
+            }`}
+          >
+            {PLAN_LABELS[plan]}
+          </span>
+        </div>
+
+        {LINKS.map(({ href, label, Icon }) => {
+          const active = pathname.startsWith(href);
+          const badge = href === "/abonnements" ? reviewCount : 0;
+
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              className={`relative flex items-center gap-2.5 rounded-[var(--radius-xs)] px-2.5 py-[9px] text-sm no-underline transition-colors ${
+                active
+                  ? "bg-[rgba(139,124,240,.14)] text-[var(--accent-lighter)] shadow-[inset_2px_0_0_#8b7cf0]"
+                  : "text-[#7a7a8c] hover:bg-[rgba(255,255,255,.04)] hover:text-[var(--text)]"
+              }`}
+            >
+              <Icon className="size-[17px] shrink-0" />
+              <span className="flex-1 text-left">{label}</span>
+              {badge > 0 && (
+                <span
+                  title={`${badge} à vérifier`}
+                  className="min-w-5 rounded-full bg-[rgba(224,161,56,.16)] px-1.5 py-px text-center text-[11px] font-semibold text-[var(--warning-light)]"
+                >
+                  {badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+
+        <Link
+          href="/documents"
+          className="mt-3.5 flex items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[rgba(139,124,240,.4)] bg-gradient-to-b from-[rgba(139,124,240,.22)] to-[rgba(91,75,214,.12)] py-2.5 text-sm font-semibold text-white no-underline transition-all hover:border-[rgba(169,157,245,.8)] hover:text-white hover:shadow-[0_0_30px_-6px_rgba(139,124,240,.9)]"
+        >
+          <Plus className="size-4" />
+          Ajouter un document
+        </Link>
+
+        <div className="flex-1" />
+
+        {documentsLimit !== null && (
+          <div className="mb-2.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[rgba(255,255,255,.02)] p-3.5">
+            <div className="flex justify-between text-xs text-[var(--text-faint)]">
+              <span>Documents</span>
+              <span className="mono text-[var(--text-muted)]">
+                {documentsUsed} / {documentsLimit}
+              </span>
+            </div>
+            <div className="mt-2 h-[5px] overflow-hidden rounded-[5px] bg-[rgba(255,255,255,.06)]">
+              <div
+                className="h-full bg-gradient-to-r from-[#6f7cf5] to-[#8b7cf0]"
+                style={{ width: `${Math.max(3, quotaRatio * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[rgba(255,255,255,.03)] p-2">
+          <span className="grid size-[34px] shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#f5c451] to-[#e07a38] text-[13px] font-semibold text-[#1a0f00]">
+            {initials}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[13px] font-semibold">
+              {name ?? "Mon compte"}
+            </div>
+            <div className="truncate text-[11px] text-[var(--text-faint)]">
+              {email}
+            </div>
+          </div>
+          <Link
+            href="/reglages"
+            title="Réglages"
+            className="grid size-[30px] shrink-0 place-items-center rounded-lg text-[var(--text-faint)] transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-white"
+          >
+            <Settings className="size-4" />
+          </Link>
+          <button
+            type="button"
+            onClick={signOut}
+            title="Déconnexion"
+            className="grid size-[30px] shrink-0 place-items-center rounded-lg text-[var(--text-faint)] transition-colors hover:bg-[rgba(240,113,104,.12)] hover:text-[var(--danger)]"
+          >
+            <LogOut className="size-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Barre inférieure mobile.
+          Libellés raccourcis : à cinq entrées sur 375 px, « Vue d'ensemble »
+          passe à la ligne et déborde de la barre. Le libellé complet reste
+          porté par `aria-label` pour les lecteurs d'écran. */}
+      {LINKS.map(({ href, label, short, Icon }) => {
+        const active = pathname.startsWith(href);
+        const badge = href === "/abonnements" ? reviewCount : 0;
+
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-label={label}
+            aria-current={active ? "page" : undefined}
+            className={`flex min-w-0 flex-1 flex-col items-center gap-1 px-1 py-2.5 text-[10px] font-medium whitespace-nowrap no-underline md:hidden ${
+              active
+                ? "text-[var(--accent-lighter)]"
+                : "text-[var(--text-faint)]"
+            }`}
+          >
+            <span className="relative">
+              <Icon className="size-5" />
+              {badge > 0 && (
+                <span className="absolute -top-1 -right-2 min-w-[15px] rounded-full bg-[var(--warning)] px-1 text-[9px] font-bold text-black">
+                  {badge}
+                </span>
+              )}
+            </span>
+            {short}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

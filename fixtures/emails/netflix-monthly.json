@@ -1,0 +1,15 @@
+{
+  "input": {
+    "from": "Netflix <info@mailer.netflix.com>",
+    "subject": "Votre facture Netflix",
+    "date": "2026-09-03T08:12:00Z",
+    "body": "Bonjour,\n\nVotre abonnement Netflix Standard a ete renouvele.\n\nMontant preleve : 13,49 EUR\nPeriode : du 03/09/2026 au 02/10/2026\nProchain prelevement : 03/10/2026\n\nMerci de votre confiance.\nL'equipe Netflix"
+  },
+  "expected": {
+    "type": "subscription",
+    "provider": "Netflix",
+    "amount": 13.49,
+    "billing_cycle": "monthly",
+    "next_renewal": "2026-10-03"
+  }
+}

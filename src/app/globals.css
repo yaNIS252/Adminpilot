@@ -1,0 +1,269 @@
+@import "tailwindcss";
+
+/**
+ * Tokens repris de l'export Claude Design.
+ *
+ * Les valeurs sont celles de la maquette, pas des approximations : les
+ * transparences sur blanc (`rgba(255,255,255,.08)` pour les bordures,
+ * `.045 → .012` pour les fonds de carte) donnent la profondeur du design, et
+ * les remplacer par des gris opaques l'aplatirait.
+ */
+:root {
+  --bg: #0a0a0f;
+  --bg-elevated: #0e0e15;
+  --bg-overlay: rgba(20, 20, 29, 0.92);
+
+  /* Fonds de carte : dégradé subtil du haut vers le bas. */
+  --surface: rgba(255, 255, 255, 0.025);
+  --surface-raised: rgba(255, 255, 255, 0.045);
+  --surface-hover: rgba(255, 255, 255, 0.07);
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-soft: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+
+  --text: #e8e8ef;
+  --text-bright: #f3f3f8;
+  --text-soft: #dcdce6;
+  --text-muted: #c4c4d2;
+  --text-dim: #a0a0b2;
+  --text-faint: #8c8c9e;
+  --text-ghost: #6b6b7b;
+
+  --accent: #8b7cf0;
+  --accent-deep: #5b4bd6;
+  --accent-deeper: #3b2fa8;
+  --accent-light: #a99df5;
+  --accent-lighter: #c9c1fa;
+  --accent-blue: #6f7cf5;
+  --accent-blue-light: #aab3ff;
+
+  --positive: #3fcf95;
+  --positive-light: #7ee0b5;
+  --positive-pale: #9fe6c7;
+
+  --warning: #e0a138;
+  --warning-light: #f0c070;
+  --warning-bright: #f5c451;
+
+  --danger: #f07168;
+  --danger-light: #f5a09a;
+
+  --radius-xs: 8px;
+  --radius-sm: 9px;
+  --radius: 11px;
+  --radius-md: 13px;
+  --radius-lg: 16px;
+  --radius-xl: 18px;
+  --radius-2xl: 20px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent-light);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--accent-lighter);
+}
+
+input::placeholder {
+  color: var(--text-ghost);
+}
+
+/* Les montants sont toujours en mono tabulaire : dans une colonne de prix,
+   l'œil compare des chiffres alignés, pas des mots. */
+.mono {
+  font-family: var(--font-geist-mono), "Geist Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.label-caps {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-light);
+}
+
+/* Dégradés de texte du titre d'accroche. */
+.text-gradient-white {
+  background: linear-gradient(180deg, #ffffff 30%, #b9b9c9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.text-gradient-accent {
+  background: linear-gradient(95deg, #b4a8ff, #8b7cf0 40%, #6f7cf5 70%, #9fd4ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Halo violet derrière l'accroche et le tableau de bord. */
+.glow-top {
+  background: radial-gradient(
+    closest-side,
+    rgba(110, 90, 240, 0.28),
+    rgba(99, 102, 241, 0.08) 55%,
+    transparent
+  );
+}
+
+.grid-backdrop {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 70% 50% at 50% 0%, #000 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 50% at 50% 0%, #000 30%, transparent 80%);
+}
+
+.card-sheen {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.045),
+    rgba(255, 255, 255, 0.012)
+  );
+}
+
+@keyframes ap-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(139, 124, 240, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(139, 124, 240, 0);
+  }
+}
+@keyframes ap-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes ap-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ap-border {
+  0%,
+  100% {
+    border-color: rgba(224, 161, 56, 0.35);
+    box-shadow: 0 0 0 0 rgba(224, 161, 56, 0), 0 0 40px -20px rgba(139, 124, 240, 0.4);
+  }
+  50% {
+    border-color: rgba(139, 124, 240, 0.55);
+    box-shadow: 0 0 0 4px rgba(224, 161, 56, 0.06), 0 0 50px -14px rgba(139, 124, 240, 0.6);
+  }
+}
+
+.anim-pulse {
+  animation: ap-pulse 3s ease-in-out infinite;
+}
+.anim-dot {
+  animation: ap-dot 2s ease-in-out infinite;
+}
+.anim-up {
+  animation: ap-up 0.7s ease both;
+}
+.anim-border {
+  animation: ap-border 3s ease-in-out infinite;
+}
+
+/* Les animations d'entrée sont du confort, pas de l'information : quelqu'un
+   qui demande moins de mouvement ne doit rien perdre. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes ap-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+@keyframes ap-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ap-scan {
+  0% {
+    left: -30%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+@keyframes ap-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ap-caret {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.anim-float {
+  animation: ap-float 6s ease-in-out infinite;
+}
+.anim-in {
+  animation: ap-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.anim-scan {
+  animation: ap-scan 1.8s linear infinite;
+}
+.anim-spin {
+  animation: ap-spin 1.2s linear infinite;
+}
+.anim-caret {
+  animation: ap-caret 1s steps(1) infinite;
+}

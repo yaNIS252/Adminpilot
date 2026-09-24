@@ -1,0 +1,121 @@
+import { z } from "zod";
+
+/**
+ * Source de vérité unique des données extraites par l'IA.
+ *
+ * Ces schémas servent trois usages à partir d'une seule définition :
+ *  1. contrat des structured outputs Claude (via `toJsonSchema`)
+ *  2. validation avant insertion en base
+ *  3. types TypeScript dans l'UI
+ *
+ * Toute modification ici se propage partout — c'est voulu.
+ */
+
+export const BILLING_CYCLES = [
+  "monthly",
+  "yearly",
+  "quarterly",
+  "weekly",
+  "one_time",
+  "unknown",
+] as const;
+
+export const DOC_CATEGORIES = [
+  "facture",
+  "contrat",
+  "assurance",
+  "impots",
+  "banque",
+  "logement",
+  "sante",
+  "vehicule",
+  "identite",
+  "travail",
+  "autre",
+] as const;
+
+export const SUB_CATEGORIES = [
+  "streaming",
+  "energie",
+  "telecom",
+  "assurance",
+  "banque",
+  "transport",
+  "logement",
+  "sante",
+  "logiciel",
+  "presse",
+  "sport",
+  "autre",
+] as const;
+
+/** Date ISO `YYYY-MM-DD`, ou null quand le document ne la donne pas. */
+const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "attendu YYYY-MM-DD")
+  .nullable();
+
+/**
+ * Niveau de certitude du modèle. Pilote l'escalade vers Sonnet et la file de
+ * revue manuelle. Affiché à l'utilisateur : on ne masque jamais une incertitude.
+ */
+const confidence = z.number().min(0).max(1);
+
+// ------------------------------------------------------------------ email
+
+export const EmailExtractionSchema = z.object({
+  /** `skip` couvre tout ce qui n'est pas transactionnel (newsletters, pubs...). */
+  type: z.enum(["subscription", "invoice", "contract", "receipt", "skip"]),
+  provider: z.string().nullable(),
+  amount: z.number().nullable(),
+  currency: z.string().default("EUR"),
+  billing_cycle: z.enum(BILLING_CYCLES).default("unknown"),
+  next_renewal: isoDate,
+  category: z.enum(SUB_CATEGORIES).default("autre"),
+  confidence,
+  /** Ce sur quoi le modèle s'est appuyé — sert au débogage des faux positifs. */
+  reasoning: z.string().max(300).nullable(),
+});
+
+export type EmailExtraction = z.infer<typeof EmailExtractionSchema>;
+
+// ------------------------------------------------------------------ document
+
+export const DocumentExtractionSchema = z.object({
+  category: z.enum(DOC_CATEGORIES),
+  /** Nom de fichier lisible, ex. `Facture_EDF_2026-09.pdf`. */
+  suggested_name: z.string().max(120),
+  provider: z.string().nullable(),
+  amount: z.number().nullable(),
+  currency: z.string().default("EUR"),
+  document_date: isoDate,
+  /** Échéance de paiement ou d'action détectée dans le document. */
+  deadline: isoDate,
+  reference: z.string().nullable(),
+  confidence,
+});
+
+export type DocumentExtraction = z.infer<typeof DocumentExtractionSchema>;
+
+// ------------------------------------------------------------------ recherche
+
+export const SearchFiltersSchema = z.object({
+  category: z.enum(DOC_CATEGORIES).nullable(),
+  provider: z.string().nullable(),
+  date_from: isoDate,
+  date_to: isoDate,
+  amount_min: z.number().nullable(),
+  amount_max: z.number().nullable(),
+  /** Termes restants, passés à la recherche full-text. */
+  keywords: z.string().nullable(),
+});
+
+export type SearchFilters = z.infer<typeof SearchFiltersSchema>;
+
+// ------------------------------------------------------------------ seuils
+
+/** En dessous : on rejoue sur un modèle plus capable. */
+export const ESCALATION_THRESHOLD = 0.7;
+
+/** En dessous : la ligne part en file de revue manuelle, jamais affichée comme acquise. */
+export const REVIEW_THRESHOLD = 0.4;

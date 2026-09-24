@@ -1,0 +1,11 @@
+{
+  "input": {
+    "from": "Spotify <news@spotify.com>",
+    "subject": "Decouvrez les nouveautes de la semaine",
+    "date": "2026-09-10T10:00:00Z",
+    "body": "Votre Mix du vendredi est pret. Des nouveaux titres selectionnes pour vous.\n\nPassez a Premium des 10,99 EUR par mois et profitez de la musique sans publicite.\n\nEcouter maintenant."
+  },
+  "expected": {
+    "type": "skip"
+  }
+}

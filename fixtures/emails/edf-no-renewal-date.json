@@ -1,0 +1,14 @@
+{
+  "input": {
+    "from": "EDF <contact@edf.fr>",
+    "subject": "Votre facture d'electricite est disponible",
+    "date": "2026-09-15T06:30:00Z",
+    "body": "Bonjour,\n\nVotre facture du mois d'aout est disponible dans votre espace client.\n\nSous-total HT : 72,41 EUR\nTVA : 14,48 EUR\nNet a payer TTC : 86,89 EUR\n\nSolde de votre compte : 0,00 EUR\n\nPrelevement automatique en cours."
+  },
+  "expected": {
+    "type": "invoice",
+    "provider": "EDF",
+    "amount": 86.89,
+    "next_renewal": null
+  }
+}
