@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/require-user";
 import { getStripe } from "@/lib/billing/stripe";
+import { readJson } from "@/lib/http/request";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -33,13 +34,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
   }
 
-  const parsed = BodySchema.safeParse(await request.json());
-  if (!parsed.success) {
-    return NextResponse.json({ error: "requête invalide" }, { status: 400 });
-  }
+  const body = await readJson(request, BodySchema);
+  if (!body.ok) return body.response;
 
   if (
-    parsed.data.confirmEmail.toLowerCase().trim() !==
+    body.data.confirmEmail.toLowerCase().trim() !==
     auth.profile.email.toLowerCase().trim()
   ) {
     return NextResponse.json(
@@ -72,9 +71,20 @@ export async function POST(request: Request) {
     .select("raw_url")
     .eq("user_id", auth.userId);
 
+  // Les lettres de résiliation sont stockées comme les documents, mais dans une
+  // table à part : elles étaient oubliées de la purge. Or ce sont les fichiers
+  // les plus identifiants du produit — nom, adresse postale complète et
+  // référence de contrat de la personne. Les laisser derrière soi après une
+  // demande d'effacement est exactement ce que l'article 17 interdit.
+  const { data: letters } = await db
+    .from("cancellations")
+    .select("letter_url")
+    .eq("user_id", auth.userId);
+
   const keys = [
     ...(documents ?? []).map((d) => d.file_url),
     ...(jobs ?? []).map((j) => j.raw_url),
+    ...(letters ?? []).map((l) => l.letter_url),
   ].filter((key): key is string => Boolean(key));
 
   const { deleteRaw } = await import("@/lib/storage");

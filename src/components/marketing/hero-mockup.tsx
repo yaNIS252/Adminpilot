@@ -40,7 +40,7 @@ export function HeroMockup() {
             <span className="size-2.5 rounded-full bg-[#3a3a46]" />
             <span className="size-2.5 rounded-full bg-[#3a3a46]" />
             <div className="mono mx-auto rounded-[7px] bg-[rgba(255,255,255,.04)] px-3.5 py-1 text-[11px] text-[var(--text-ghost)]">
-              adminpilot.zylax.fr/dashboard
+              adminpilot.fr/dashboard
             </div>
           </div>
 

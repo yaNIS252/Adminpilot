@@ -61,7 +61,10 @@ export async function createCheckoutSession(input: {
     client_reference_id: input.userId,
     subscription_data: { metadata: { user_id: input.userId } },
     success_url: `${input.siteUrl}/dashboard?abonnement=actif`,
-    cancel_url: `${input.siteUrl}/pricing`,
+    // `/pricing` n'existe pas : la grille tarifaire est une section de la page
+    // d'accueil. Abandonner le paiement menait donc sur un 404, au pire moment
+    // possible — juste après une hésitation à payer.
+    cancel_url: `${input.siteUrl}/#tarifs`,
     allow_promotion_codes: true,
     locale: "fr",
   });

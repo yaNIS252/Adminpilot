@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
 import { buildDeadlineEmail, buildRenewalEmail } from "@/lib/alerts/email";
+import { siteUrl } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -25,6 +26,12 @@ function daysUntil(date: string): number {
   return Math.round((target - today) / 86_400_000);
 }
 
+/** Adresse d'expédition, alignée sur le domaine d'ingestion configuré. */
+function sender(): string {
+  const domain = process.env.INBOUND_DOMAIN ?? "in.zylax.fr";
+  return `AdminPilot <alertes@${domain}>`;
+}
+
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
@@ -33,7 +40,7 @@ export async function GET(request: Request) {
 
   const db = createAdminClient();
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://adminpilot.zylax.fr";
+  const base = siteUrl();
   const today = new Date().toISOString().slice(0, 10);
 
   const { data: alerts, error } = await db
@@ -44,41 +51,74 @@ export async function GET(request: Request) {
     .limit(BATCH_SIZE);
 
   if (error) throw error;
+  if (!alerts?.length) {
+    return NextResponse.json({ candidates: 0, sent: 0, failed: 0, refused: 0 });
+  }
+
+  // Les objets référencés sont chargés en deux requêtes, pas en deux par
+  // alerte : sur un lot de cent, l'ancienne version en faisait cent et un.
+  const subIds = alerts
+    .filter((a) => a.ref_type === "subscription")
+    .map((a) => a.ref_id);
+  const docIds = alerts
+    .filter((a) => a.ref_type === "document")
+    .map((a) => a.ref_id);
+
+  const [subs, docs] = await Promise.all([
+    subIds.length
+      ? db
+          .from("subscriptions")
+          .select(
+            "id, user_id, provider, amount, currency, next_renewal, confirmed_by_user",
+          )
+          .in("id", subIds)
+      : Promise.resolve({ data: [] as never[] }),
+    docIds.length
+      ? db
+          .from("documents")
+          .select("id, user_id, filename_ai, filename_original, deadline")
+          .in("id", docIds)
+      : Promise.resolve({ data: [] as never[] }),
+  ]);
+
+  const subById = new Map((subs.data ?? []).map((s) => [s.id, s]));
+  const docById = new Map((docs.data ?? []).map((d) => [d.id, d]));
 
   let sent = 0;
   let failed = 0;
+  let refused = 0;
 
-  for (const alert of alerts ?? []) {
+  for (const alert of alerts) {
     const profile = alert.profiles as unknown as {
       email: string;
       deleted_at: string | null;
     };
 
-    // Compte supprimé entre la programmation et l'envoi : ne rien envoyer,
-    // mais clore l'alerte pour qu'elle ne soit pas reprise indéfiniment.
-    if (profile.deleted_at) {
-      await db
-        .from("alerts")
-        .update({ sent_at: new Date().toISOString() })
-        .eq("id", alert.id);
-      continue;
-    }
-
+    // Clore l'alerte d'abord, dans tous les cas de figure : une alerte qu'on
+    // renonce à envoyer ne doit pas être reprise à chaque passage du cron.
     await db
       .from("alerts")
       .update({ sent_at: new Date().toISOString() })
       .eq("id", alert.id);
 
+    // Compte supprimé entre la programmation et l'envoi.
+    if (profile.deleted_at) continue;
+
     try {
-      const dashboardUrl = `${siteUrl}/dashboard`;
+      const dashboardUrl = `${base}/dashboard`;
       let email;
 
       if (alert.ref_type === "subscription") {
-        const { data: sub } = await db
-          .from("subscriptions")
-          .select("provider, amount, currency, next_renewal, confirmed_by_user")
-          .eq("id", alert.ref_id)
-          .maybeSingle();
+        const sub = subById.get(alert.ref_id);
+
+        // Second verrou contre une alerte pointant vers l'objet d'autrui. La
+        // route de création vérifie déjà la propriété, mais cette lecture-ci
+        // passe par le client de service, qui contourne RLS : si le contrôle
+        // amont venait à sauter, c'est ici que la fuite se produirait.
+        if (sub && sub.user_id !== alert.user_id) {
+          refused += 1;
+          continue;
+        }
 
         // L'abonnement a pu être supprimé ou résilié depuis : plus d'objet,
         // plus d'alerte.
@@ -94,24 +134,24 @@ export async function GET(request: Request) {
           confirmed: sub.confirmed_by_user,
         });
       } else {
-        const { data: doc } = await db
-          .from("documents")
-          .select("filename_ai, filename_original, deadline")
-          .eq("id", alert.ref_id)
-          .maybeSingle();
+        const doc = docById.get(alert.ref_id);
 
+        if (doc && doc.user_id !== alert.user_id) {
+          refused += 1;
+          continue;
+        }
         if (!doc?.deadline) continue;
 
         email = buildDeadlineEmail({
           title: doc.filename_ai ?? doc.filename_original,
           deadline: doc.deadline,
           daysLeft: Math.max(0, daysUntil(doc.deadline)),
-          dashboardUrl: `${siteUrl}/documents`,
+          dashboardUrl: `${base}/documents`,
         });
       }
 
       await resend.emails.send({
-        from: "AdminPilot <alertes@in.zylax.fr>",
+        from: sender(),
         to: profile.email,
         subject: email.subject,
         html: email.html,
@@ -126,5 +166,10 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ candidates: alerts?.length ?? 0, sent, failed });
+  return NextResponse.json({
+    candidates: alerts.length,
+    sent,
+    failed,
+    refused,
+  });
 }

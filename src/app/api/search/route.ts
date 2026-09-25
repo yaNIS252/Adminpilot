@@ -6,6 +6,7 @@ import { MODEL_FAST, getAnthropic } from "@/lib/ai/client";
 import { SearchFiltersSchema } from "@/lib/ai/schemas";
 import { requireUser } from "@/lib/auth/require-user";
 import { checkLimit, incrementUsage } from "@/lib/billing/quotas";
+import { readJson } from "@/lib/http/request";
 import { consume, tooManyRequests } from "@/lib/rate-limit";
 import { SEARCH_QUERY_SYSTEM } from "@/prompts/search-query";
 import { createClient } from "@/lib/supabase/server";
@@ -41,10 +42,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const parsed = BodySchema.safeParse(await request.json());
-  if (!parsed.success) {
-    return NextResponse.json({ error: "requête invalide" }, { status: 400 });
-  }
+  const body = await readJson(request, BodySchema);
+  if (!body.ok) return body.response;
 
   const response = await getAnthropic().messages.parse({
     model: MODEL_FAST,
@@ -59,7 +58,7 @@ export async function POST(request: Request) {
     messages: [
       {
         role: "user",
-        content: `Date du jour : ${new Date().toISOString().slice(0, 10)}\nRecherche : ${parsed.data.query}`,
+        content: `Date du jour : ${new Date().toISOString().slice(0, 10)}\nRecherche : ${body.data.query}`,
       },
     ],
     output_config: { format: zodOutputFormat(SearchFiltersSchema) },

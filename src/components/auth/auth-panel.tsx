@@ -73,9 +73,25 @@ function humanError(message: string, status: number | undefined, mode: Mode) {
       ? "Aucun compte n’existe avec cette adresse. Passe par « Créer un compte »."
       : "La création de compte est momentanément indisponible.";
   }
-  if (status === 429 || raw.includes("rate limit") || raw.includes("security purposes")) {
-    return "Trop de demandes en peu de temps. Patiente une minute avant de réessayer.";
+
+  // Supabase distingue deux limitations, et les confondre envoie l'utilisateur
+  // attendre une minute là où il devra patienter une heure.
+  //
+  // « For security purposes… after N seconds » : délai minimal entre deux
+  // demandes pour une même adresse. Le nombre est dans le message, on le reprend
+  // plutôt que d'annoncer une durée inventée.
+  const delay = /after (\d+) seconds?/.exec(raw)?.[1];
+  if (delay) {
+    return `Une demande vient déjà d’être envoyée. Réessaie dans ${delay} secondes.`;
   }
+
+  // « email rate limit exceeded » : plafond horaire du service d'envoi. Rien à
+  // voir avec un abus de la part de l'utilisateur, d'où un message qui ne le
+  // met pas en cause.
+  if (raw.includes("rate limit") || status === 429) {
+    return "Le service d’envoi d’e-mails a atteint sa limite horaire. Réessaie dans une heure, ou connecte-toi avec Google.";
+  }
+
   if (raw.includes("invalid") && raw.includes("email")) {
     return "Cette adresse e-mail ne semble pas valide.";
   }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
+import { getSignedUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -32,6 +33,23 @@ export async function GET() {
       supabase.from("usage_counters").select("*"),
     ]);
 
+  // Les URL de téléchargement annoncées plus haut étaient documentées mais
+  // jamais produites : l'export ne contenait que la clé de stockage interne,
+  // inexploitable pour l'utilisateur. Un export dont les pièces jointes sont
+  // inaccessibles ne satisfait pas le droit à la portabilité.
+  //
+  // Vingt-quatre heures : assez pour tout rapatrier sans se presser, assez peu
+  // pour qu'un fichier d'export égaré ne reste pas une clé ouverte.
+  const documentsWithUrls = await Promise.all(
+    (documents.data ?? []).map(async (document) => ({
+      ...document,
+      download_url: await getSignedUrl(document.file_url, 86_400).catch(
+        () => null,
+      ),
+      download_url_expires_in: 86_400,
+    })),
+  );
+
   const payload = {
     exported_at: new Date().toISOString(),
     profile: {
@@ -42,7 +60,7 @@ export async function GET() {
       created_at: auth.profile.created_at,
     },
     subscriptions: subscriptions.data ?? [],
-    documents: documents.data ?? [],
+    documents: documentsWithUrls,
     alerts: alerts.data ?? [],
     cancellations: cancellations.data ?? [],
     usage_counters: usage.data ?? [],

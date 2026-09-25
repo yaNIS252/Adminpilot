@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireUser } from "@/lib/auth/require-user";
+import { invalidId, readUuid } from "@/lib/http/request";
 import { deleteRaw, getSignedUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,7 +25,9 @@ export async function GET(
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const id = readUuid((await params).id);
+  if (!id) return invalidId();
+
   const supabase = await createClient();
 
   // Lecture sous RLS : un document appartenant à un autre compte ne remonte
@@ -55,7 +58,9 @@ export async function DELETE(
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const id = readUuid((await params).id);
+  if (!id) return invalidId();
+
   const supabase = await createClient();
 
   const { data: document } = await supabase
@@ -71,7 +76,12 @@ export async function DELETE(
   // La ligne d'abord, le fichier ensuite. Dans l'autre sens, un échec de
   // suppression en base laisserait une entrée pointant vers un fichier absent.
   const { error } = await supabase.from("documents").delete().eq("id", id);
-  if (error) throw error;
+  if (error) {
+    return NextResponse.json(
+      { error: "suppression impossible" },
+      { status: 500 },
+    );
+  }
 
   await supabase
     .from("alerts")

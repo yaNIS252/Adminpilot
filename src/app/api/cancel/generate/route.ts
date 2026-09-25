@@ -6,6 +6,8 @@ import { requireUser } from "@/lib/auth/require-user";
 import { checkLimit, incrementUsage } from "@/lib/billing/quotas";
 import { CANCEL_LETTER_SYSTEM, LEGAL_TEMPLATES } from "@/lib/cancel/templates";
 import { renderLetterPdf } from "@/lib/cancel/generate-pdf";
+import { readJson } from "@/lib/http/request";
+import { consume, tooManyRequests } from "@/lib/rate-limit";
 import { buildKey, uploadRaw } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -42,14 +44,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
   }
 
-  const parsed = BodySchema.safeParse(await request.json());
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "requête invalide", details: parsed.error.issues },
-      { status: 400 },
-    );
+  const parsedBody = await readJson(request, BodySchema);
+  if (!parsedBody.ok) return parsedBody.response;
+  const input = parsedBody.data;
+
+  // Limite de débit horaire, en plus du quota mensuel.
+  //
+  // Cette route appelle Sonnet avec 2048 tokens de sortie : c'est de loin
+  // l'appel le plus coûteux du produit. Le seul garde-fou était le quota
+  // mensuel du plan — or il vaut `null`, donc illimité, sur la formule Famille.
+  // Un compte à 9,99 € pouvait ainsi lancer des générations en rafale sans
+  // aucune borne. Le compteur existait dans `LIMITS.cancel` ; il n'était
+  // simplement jamais consommé.
+  if (!(await consume("cancel", auth.userId))) {
+    return tooManyRequests("cancel");
   }
-  const input = parsed.data;
 
   const quota = await checkLimit(
     auth.userId,

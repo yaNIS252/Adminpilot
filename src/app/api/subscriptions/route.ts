@@ -4,6 +4,7 @@ import { z } from "zod";
 import { BILLING_CYCLES, SUB_CATEGORIES } from "@/lib/ai/schemas";
 import { requireUser } from "@/lib/auth/require-user";
 import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
+import { invalidId, readJson, readUuid } from "@/lib/http/request";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -68,15 +69,10 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
   }
 
-  const parsed = PatchSchema.safeParse(await request.json());
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "requête invalide", details: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const body = await readJson(request, PatchSchema);
+  if (!body.ok) return body.response;
 
-  const { id, ...changes } = parsed.data;
+  const { id, ...changes } = body.data;
   const supabase = await createClient();
 
   // Une correction manuelle vaut confirmation : si l'utilisateur prend la
@@ -131,10 +127,8 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
   }
 
-  const id = new URL(request.url).searchParams.get("id");
-  if (!id) {
-    return NextResponse.json({ error: "id manquant" }, { status: 400 });
-  }
+  const id = readUuid(new URL(request.url).searchParams.get("id"));
+  if (!id) return invalidId();
 
   const supabase = await createClient();
   const { error } = await supabase.from("subscriptions").delete().eq("id", id);

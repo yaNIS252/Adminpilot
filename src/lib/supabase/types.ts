@@ -222,6 +222,7 @@ export type Database = {
       ingestion_jobs: {
         Row: {
           attempts: number;
+          claimed_at: string | null;
           content_hash: string;
           created_at: string;
           error: string | null;
@@ -239,6 +240,7 @@ export type Database = {
         };
         Insert: {
           attempts?: number;
+          claimed_at?: string | null;
           content_hash: string;
           created_at?: string;
           error?: string | null;
@@ -256,6 +258,7 @@ export type Database = {
         };
         Update: {
           attempts?: number;
+          claimed_at?: string | null;
           content_hash?: string;
           created_at?: string;
           error?: string | null;
@@ -507,6 +510,14 @@ export type Database = {
       purge_rate_limits: {
         Args: Record<string, never>;
         Returns: undefined;
+      };
+      claim_ingestion_jobs: {
+        Args: {
+          p_limit?: number;
+          p_max_attempts?: number;
+          p_stale_seconds?: number;
+        };
+        Returns: Database["public"]["Tables"]["ingestion_jobs"]["Row"][];
       };
     };
     Enums: {

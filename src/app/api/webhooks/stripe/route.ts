@@ -14,7 +14,23 @@ export const runtime = "nodejs";
  * fait foi pour accorder ou retirer un plan.
  */
 
-async function applySubscription(subscription: Stripe.Subscription) {
+/**
+ * Applique l'état d'un abonnement au profil.
+ *
+ * `fresh` force une relecture chez Stripe au lieu de croire la charge utile de
+ * l'événement. Stripe ne garantit pas l'ordre de livraison : un
+ * `subscription.updated` retardé, arrivant après un `subscription.deleted`,
+ * rouvrait un accès payant sur un abonnement résilié. Relire l'objet donne
+ * toujours son état courant, quel que soit l'ordre d'arrivée.
+ */
+async function applySubscription(
+  event: Stripe.Subscription,
+  { fresh = true }: { fresh?: boolean } = {},
+) {
+  const subscription = fresh
+    ? await getStripe().subscriptions.retrieve(event.id)
+    : event;
+
   const db = createAdminClient();
   const userId = subscription.metadata?.user_id;
   const customerId =
@@ -87,7 +103,9 @@ export async function POST(request: Request) {
             metadata: subscription.metadata,
           });
         }
-        await applySubscription(subscription);
+        // Déjà relu à l'instant depuis Stripe : une seconde lecture n'apporte
+        // rien et consomme un appel d'API.
+        await applySubscription(subscription, { fresh: false });
       }
       break;
     }

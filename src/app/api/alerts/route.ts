@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/require-user";
 import { checkLimit, incrementUsage } from "@/lib/billing/quotas";
+import { invalidId, readJson, readUuid } from "@/lib/http/request";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -62,23 +63,43 @@ export async function POST(request: Request) {
     );
   }
 
-  const parsed = PostSchema.safeParse(await request.json());
-  if (!parsed.success) {
+  const body = await readJson(request, PostSchema);
+  if (!body.ok) return body.response;
+  const input = body.data;
+
+  const supabase = await createClient();
+
+  // Vérification de propriété de l'objet référencé.
+  //
+  // Sans elle, rien n'empêchait de créer une alerte pointant vers l'abonnement
+  // d'un autre compte : la ligne d'alerte appartenait bien à son auteur, donc
+  // RLS la laissait passer, mais le cron d'envoi relit l'objet référencé avec
+  // le client de service, qui contourne RLS. L'attaquant recevait par email le
+  // fournisseur, le montant et la date de reconduction d'un inconnu.
+  //
+  // La lecture se fait ici sous l'identité de l'utilisateur : si l'objet ne lui
+  // appartient pas, la policy ne le renvoie pas et la requête est refusée.
+  const owned = await supabase
+    .from(input.ref_type === "subscription" ? "subscriptions" : "documents")
+    .select("id")
+    .eq("id", input.ref_id)
+    .maybeSingle();
+
+  if (!owned.data) {
     return NextResponse.json(
-      { error: "requête invalide", details: parsed.error.issues },
-      { status: 400 },
+      { error: "objet référencé introuvable" },
+      { status: 404 },
     );
   }
 
-  const supabase = await createClient();
   const { data, error } = await supabase
     .from("alerts")
     .insert({
-      ...parsed.data,
+      ...input,
       user_id: auth.userId,
       // Suffixe aléatoire : une alerte manuelle peut légitimement doublonner
       // une alerte automatique sur la même échéance.
-      dedup_key: `manuel:${auth.userId}:${parsed.data.ref_id}:${crypto.randomUUID()}`,
+      dedup_key: `manuel:${auth.userId}:${input.ref_id}:${crypto.randomUUID()}`,
     })
     .select("*")
     .single();
@@ -95,10 +116,8 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
   }
 
-  const id = new URL(request.url).searchParams.get("id");
-  if (!id) {
-    return NextResponse.json({ error: "id manquant" }, { status: 400 });
-  }
+  const id = readUuid(new URL(request.url).searchParams.get("id"));
+  if (!id) return invalidId();
 
   const supabase = await createClient();
   // Seules les alertes non envoyées sont supprimables : l'historique de ce qui

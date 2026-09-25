@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { TablesUpdate } from "@/lib/supabase/types";
 import { REVIEW_THRESHOLD } from "@/lib/ai/schemas";
 import { extractFromDocument, extractFromEmail } from "@/lib/ai/extract";
 import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
@@ -76,37 +77,37 @@ export async function enqueue(input: EnqueueInput): Promise<EnqueueResult> {
 }
 
 /**
- * Réserve un lot de jobs en attente.
+ * Délai au-delà duquel un job resté `processing` est considéré abandonné.
  *
- * Le passage en `processing` est fait avant tout travail : deux exécutions
- * concurrentes du drain ne peuvent pas traiter le même job deux fois.
+ * Très supérieur au `maxDuration` de la route de drain (60 s) : reprendre un
+ * job qu'une exécution encore vivante est en train de traiter doublerait
+ * l'appel au modèle et créerait deux lignes pour un seul document.
+ */
+const STALE_CLAIM_SECONDS = 900;
+
+/**
+ * Réserve un lot de jobs traitables.
+ *
+ * Toute la réservation tient dans une fonction Postgres à `for update skip
+ * locked` : deux drains concurrents ne voient jamais les mêmes lignes, et la
+ * reprise d'un job abandonné consomme une tentative.
+ *
+ * Sont repris les jobs `pending`, `failed`, et ceux restés `processing` au-delà
+ * du délai. Sans ce dernier cas, une exécution tuée en plein vol laissait le
+ * job figé pour toujours : l'utilisateur voyait son document partir et ne
+ * jamais arriver, sans la moindre erreur nulle part.
  */
 export async function claimPendingJobs(limit = 10) {
   const db = createAdminClient();
 
-  const { data: candidates, error } = await db
-    .from("ingestion_jobs")
-    .select("id")
-    .in("status", ["pending", "failed"])
-    .lt("attempts", MAX_ATTEMPTS)
-    .order("created_at", { ascending: true })
-    .limit(limit);
+  const { data, error } = await db.rpc("claim_ingestion_jobs", {
+    p_limit: limit,
+    p_max_attempts: MAX_ATTEMPTS,
+    p_stale_seconds: STALE_CLAIM_SECONDS,
+  });
 
   if (error) throw error;
-  if (!candidates?.length) return [];
-
-  const { data: claimed, error: claimError } = await db
-    .from("ingestion_jobs")
-    .update({ status: "processing" })
-    .in(
-      "id",
-      candidates.map((c) => c.id),
-    )
-    .in("status", ["pending", "failed"]) // perd la course => n'est pas réservé
-    .select("*");
-
-  if (claimError) throw claimError;
-  return claimed ?? [];
+  return data ?? [];
 }
 
 /** Consigne un échec. Le job repart en file tant que le quota d'essais tient. */
@@ -165,24 +166,41 @@ export async function processEmailJob(job: {
 
   const needsReview = data.confidence < REVIEW_THRESHOLD;
 
-  const { data: inserted, error } = await db
-    .from("subscriptions")
-    .insert({
-      user_id: job.user_id,
-      provider: data.provider,
-      amount: data.amount,
-      currency: data.currency,
-      cycle: data.billing_cycle,
-      category: data.category,
-      next_renewal: data.next_renewal,
-      confidence: data.confidence,
-      source_job_id: job.id,
-      metadata: { reasoning: data.reasoning, detected_type: data.type },
-    })
-    .select("id")
-    .single();
+  // Rapprochement avec un abonnement déjà connu du même fournisseur.
+  //
+  // Sans lui, chaque facture mensuelle transférée créait une ligne de plus :
+  // trois factures Netflix donnaient trois abonnements Netflix, et le total
+  // mensuel affiché en tête du tableau de bord — le chiffre pour lequel les
+  // gens installent ce produit — triplait. La déduplication par hash de contenu
+  // ne protège que du même email renvoyé deux fois, pas de deux factures
+  // successives.
+  const existing = await findExistingSubscription(
+    db,
+    job.user_id,
+    data.provider,
+  );
 
-  if (error) throw error;
+  const inserted = existing
+    ? await refreshSubscription(db, existing, {
+        amount: data.amount,
+        currency: data.currency,
+        cycle: data.billing_cycle,
+        category: data.category,
+        nextRenewal: data.next_renewal,
+        confidence: data.confidence,
+      })
+    : await insertSubscription(db, {
+        userId: job.user_id,
+        provider: data.provider,
+        amount: data.amount,
+        currency: data.currency,
+        cycle: data.billing_cycle,
+        category: data.category,
+        nextRenewal: data.next_renewal,
+        confidence: data.confidence,
+        sourceJobId: job.id,
+        metadata: { reasoning: data.reasoning, detected_type: data.type },
+      });
 
   // Une échéance connue vaut une alerte, sauf si l'extraction est trop peu
   // sûre : alerter sur une date inventée est pire que ne pas alerter.
@@ -271,4 +289,139 @@ export async function processDocumentJob(job: {
     .eq("id", job.id);
 
   return { documentId: inserted.id, needsReview };
+}
+
+// ---------------------------------------------------------------- rapprochement
+
+type Db = ReturnType<typeof createAdminClient>;
+
+/**
+ * Forme comparable d'un nom de fournisseur.
+ *
+ * « Netflix », « NETFLIX.COM » et « Netflix International B.V. » désignent le
+ * même abonnement pour l'utilisateur. Sans normalisation, la comparaison stricte
+ * les traiterait comme trois fournisseurs distincts et le rapprochement ne
+ * servirait à rien.
+ */
+function normalizeProvider(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/\b(sas|sasu|sa|sarl|bv|b\.v\.|inc|ltd|llc|gmbh|international)\b/g, "")
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+}
+
+/** Abonnement actif du même fournisseur, s'il en existe un. */
+async function findExistingSubscription(
+  db: Db,
+  userId: string,
+  provider: string,
+) {
+  const { data } = await db
+    .from("subscriptions")
+    .select("id, provider, amount, cycle, next_renewal, confidence, confirmed_by_user")
+    .eq("user_id", userId)
+    .eq("status", "active");
+
+  const target = normalizeProvider(provider);
+  return (
+    (data ?? []).find((row) => normalizeProvider(row.provider) === target) ??
+    null
+  );
+}
+
+type Extraction = {
+  amount: number | null;
+  currency: string;
+  cycle: string;
+  category: string | null;
+  nextRenewal: string | null;
+  confidence: number;
+};
+
+/**
+ * Met à jour un abonnement existant à partir d'une nouvelle facture.
+ *
+ * Deux règles, et elles comptent autant l'une que l'autre :
+ *
+ *  · une ligne corrigée à la main par l'utilisateur n'est jamais écrasée par le
+ *    modèle. Voir sa correction défaite par la machine est le genre de détail
+ *    qui fait désinstaller un produit ;
+ *  · une extraction moins sûre que celle déjà en place ne la remplace pas. Une
+ *    facture mal océrisée ne doit pas dégrader une donnée déjà fiable.
+ *
+ * L'échéance fait exception : une date postérieure à celle connue est une
+ * information neuve, pas une correction, et elle est donc retenue même sur une
+ * ligne confirmée.
+ */
+async function refreshSubscription(
+  db: Db,
+  existing: {
+    id: string;
+    amount: number | null;
+    cycle: string;
+    next_renewal: string | null;
+    confidence: number;
+    confirmed_by_user: boolean;
+  },
+  next: Extraction,
+): Promise<{ id: string }> {
+  const patch: TablesUpdate<"subscriptions"> = {};
+
+  const dateAvance =
+    next.nextRenewal &&
+    (!existing.next_renewal || next.nextRenewal > existing.next_renewal);
+  if (dateAvance) patch.next_renewal = next.nextRenewal;
+
+  if (!existing.confirmed_by_user && next.confidence >= existing.confidence) {
+    if (next.amount !== null) patch.amount = next.amount;
+    if (next.currency) patch.currency = next.currency;
+    if (next.cycle) patch.cycle = next.cycle as TablesUpdate<"subscriptions">["cycle"];
+    if (next.category) patch.category = next.category;
+    patch.confidence = next.confidence;
+  }
+
+  if (Object.keys(patch).length) {
+    await db.from("subscriptions").update(patch).eq("id", existing.id);
+  }
+
+  return { id: existing.id };
+}
+
+async function insertSubscription(
+  db: Db,
+  input: {
+    userId: string;
+    provider: string;
+    amount: number | null;
+    currency: string;
+    cycle: string;
+    category: string | null;
+    nextRenewal: string | null;
+    confidence: number;
+    sourceJobId: string;
+    metadata: Record<string, unknown>;
+  },
+): Promise<{ id: string }> {
+  const { data, error } = await db
+    .from("subscriptions")
+    .insert({
+      user_id: input.userId,
+      provider: input.provider,
+      amount: input.amount,
+      currency: input.currency,
+      cycle: input.cycle as never,
+      category: input.category,
+      next_renewal: input.nextRenewal,
+      confidence: input.confidence,
+      source_job_id: input.sourceJobId,
+      metadata: input.metadata as never,
+    })
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  return data;
 }

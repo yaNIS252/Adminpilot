@@ -5,6 +5,7 @@ import { checkLimit } from "@/lib/billing/quotas";
 import { ACCEPTED_MIME_TYPES, MAX_UPLOAD_BYTES } from "@/lib/constants";
 import { hashFile } from "@/lib/ingest/dedupe";
 import { enqueue } from "@/lib/ingest/pipeline";
+import { sniffMimeType } from "@/lib/ingest/sniff";
 import { consume, tooManyRequests } from "@/lib/rate-limit";
 import { buildKey, uploadRaw } from "@/lib/storage";
 
@@ -71,23 +72,38 @@ export async function POST(request: Request) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
+
+  // Le type déclaré vient du client : on vérifie qu'il correspond au contenu
+  // réel. C'est le type RECONNU qui est retenu ensuite, jamais le type annoncé.
+  const actualType = sniffMimeType(buffer);
+  if (!actualType || actualType !== file.type) {
+    return NextResponse.json(
+      {
+        error: "le contenu du fichier ne correspond pas à son type déclaré",
+        declared: file.type || "inconnu",
+        detected: actualType ?? "non reconnu",
+      },
+      { status: 415 },
+    );
+  }
+
   const contentHash = hashFile(buffer);
 
   const key = buildKey({
     userId: auth.userId,
     source: "upload",
     contentHash,
-    extension: EXTENSIONS[file.type] ?? "bin",
+    extension: EXTENSIONS[actualType] ?? "bin",
   });
 
-  await uploadRaw({ key, body: buffer, contentType: file.type });
+  await uploadRaw({ key, body: buffer, contentType: actualType });
 
   const result = await enqueue({
     userId: auth.userId,
     source: "upload",
     contentHash,
     rawUrl: key,
-    mimeType: file.type,
+    mimeType: actualType,
     originalFilename: file.name,
   });
 
