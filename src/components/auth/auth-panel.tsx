@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useId, useState, useSyncExternalStore } from "react";
 import {
   ArrowRight,
   CircleAlert,
@@ -98,6 +98,29 @@ function humanError(message: string, status: number | undefined, mode: Mode) {
   return "L’envoi a échoué. Réessaie dans un instant.";
 }
 
+/**
+ * Message d'un échec survenu APRÈS le clic sur le lien reçu par e-mail.
+ *
+ * Ces erreurs arrivent par l'URL (`/login?error=…`, posé par le callback ou
+ * par le middleware) et n'étaient jamais affichées : l'utilisateur revenait sur
+ * un formulaire vierge, sans savoir que son lien avait échoué ni pourquoi.
+ */
+function linkErrorMessage(code: string): string {
+  switch (code) {
+    case "otp_expired":
+      return "Ce lien a expiré ou a déjà servi. Chaque nouvelle demande annule les précédentes : utilise toujours le dernier e-mail reçu, ou demande un nouveau lien.";
+    case "jeton_manquant":
+      return "Ce lien de connexion est incomplet. Demande-en un nouveau.";
+    default:
+      return "La connexion par ce lien a échoué. Demande un nouveau lien, en l’ouvrant dans le même navigateur que celui où tu l’as demandé.";
+  }
+}
+
+/** L'URL ne change pas sous nos pieds : aucun abonnement nécessaire. */
+function noopSubscribe() {
+  return () => {};
+}
+
 export function AuthPanel() {
   const emailId = useId();
   const termsId = useId();
@@ -107,6 +130,24 @@ export function AuthPanel() {
   const [terms, setTerms] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
+
+  // Erreur transmise par l'URL après un lien raté. `useSyncExternalStore`
+  // plutôt qu'un état initialisé depuis `window` : la page est rendue
+  // statiquement, le serveur ne connaît pas la requête, et l'instantané serveur
+  // `null` évite tout écart d'hydratation.
+  const urlError = useSyncExternalStore(
+    noopSubscribe,
+    () => new URLSearchParams(window.location.search).get("error"),
+    () => null,
+  );
+  const [urlErrorDismissed, setUrlErrorDismissed] = useState(false);
+
+  const shownError =
+    status === "error"
+      ? message
+      : urlError && !urlErrorDismissed
+        ? linkErrorMessage(urlError)
+        : null;
 
   /** Destination voulue, posée par le middleware sur la redirection. */
   function callbackUrl() {
@@ -124,6 +165,7 @@ export function AuthPanel() {
   }
 
   async function signInWithGoogle() {
+    setUrlErrorDismissed(true);
     setStatus("sending");
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
@@ -137,6 +179,7 @@ export function AuthPanel() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    setUrlErrorDismissed(true);
 
     if (mode === "signup" && !terms) {
       fail("Merci d’accepter les conditions pour créer ton compte.");
@@ -361,13 +404,13 @@ export function AuthPanel() {
         </button>
       </form>
 
-      {status === "error" && (
+      {shownError && (
         <div
           role="alert"
           className="flex items-start gap-2.5 rounded-xl border border-[rgba(240,113,104,.3)] bg-[rgba(240,113,104,.08)] px-3.5 py-3 text-[13px] text-[var(--danger-light)]"
         >
           <CircleAlert className="mt-px size-4 shrink-0" />
-          {message}
+          {shownError}
         </div>
       )}
 

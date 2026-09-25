@@ -62,6 +62,20 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Supabase renvoie ses erreurs d'authentification (lien expiré, déjà
+  // utilisé…) sur le Site URL du projet, c'est-à-dire la page d'accueil, qui
+  // les ignorait : l'utilisateur cliquait son lien et se retrouvait sur la
+  // vitrine sans comprendre. On les réoriente vers la connexion, qui sait les
+  // expliquer.
+  const authError = request.nextUrl.searchParams.get("error_code");
+  if (pathname === "/" && authError) {
+    const login = request.nextUrl.clone();
+    login.pathname = "/login";
+    login.search = "";
+    login.searchParams.set("error", authError);
+    return NextResponse.redirect(login);
+  }
+
   if (!user && !isPublic(pathname)) {
     // Une route API doit répondre en JSON, jamais par une redirection : un
     // `fetch()` suivrait le 307, recevrait le HTML de la page de connexion, et
