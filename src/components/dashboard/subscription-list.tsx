@@ -292,7 +292,7 @@ function EditForm({
         <button
           type="submit"
           disabled={busy}
-          className="flex items-center gap-1.5 rounded-[var(--radius-sm)] bg-gradient-to-b from-[#9888f7] to-[#5b4bd6] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+          className="btn-primary h-10 px-4 text-sm disabled:opacity-60"
         >
           <Check className="size-4" />
           {busy ? "…" : "Enregistrer"}

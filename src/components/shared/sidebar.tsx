@@ -9,10 +9,10 @@ import {
   LogOut,
   Plus,
   Repeat,
-  Send,
   Settings,
 } from "lucide-react";
 
+import { LogoMark } from "@/components/marketing/logo-mark";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -86,10 +86,8 @@ export function Sidebar({
             href="/dashboard"
             className="flex items-center gap-2.5 text-[var(--text)] hover:text-[var(--text)]"
           >
-            <span className="grid size-[30px] place-items-center rounded-[var(--radius-sm)] bg-gradient-to-br from-[#8b7cf0] via-[#5b4bd6] to-[#3b2fa8] shadow-[0_0_18px_rgba(139,124,240,.45),inset_0_1px_0_rgba(255,255,255,.3)]">
-              <Send className="size-[15px] text-white" />
-            </span>
-            <span className="text-base font-bold tracking-[-0.02em]">
+            <LogoMark />
+            <span className="text-[15px] font-semibold tracking-[-0.01em]">
               AdminPilot
             </span>
           </Link>
@@ -135,7 +133,7 @@ export function Sidebar({
 
         <Link
           href="/documents"
-          className="mt-3.5 flex items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[rgba(139,124,240,.4)] bg-gradient-to-b from-[rgba(139,124,240,.22)] to-[rgba(91,75,214,.12)] py-2.5 text-sm font-semibold text-white no-underline transition-all hover:border-[rgba(169,157,245,.8)] hover:text-white hover:shadow-[0_0_30px_-6px_rgba(139,124,240,.9)]"
+          className="btn-primary mt-3.5 h-10 text-sm"
         >
           <Plus className="size-4" />
           Ajouter un document
@@ -153,7 +151,7 @@ export function Sidebar({
             </div>
             <div className="mt-2 h-[5px] overflow-hidden rounded-[5px] bg-[rgba(255,255,255,.06)]">
               <div
-                className="h-full bg-gradient-to-r from-[#6f7cf5] to-[#8b7cf0]"
+                className="h-full bg-[var(--accent)]"
                 style={{ width: `${Math.max(3, quotaRatio * 100)}%` }}
               />
             </div>
@@ -161,7 +159,7 @@ export function Sidebar({
         )}
 
         <div className="flex items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[rgba(255,255,255,.03)] p-2">
-          <span className="grid size-[34px] shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#f5c451] to-[#e07a38] text-[13px] font-semibold text-[#1a0f00]">
+          <span className="grid size-[34px] shrink-0 place-items-center rounded-full border border-[var(--border-strong)] text-[13px] font-semibold text-[var(--text-muted)]">
             {initials}
           </span>
           <div className="min-w-0 flex-1">

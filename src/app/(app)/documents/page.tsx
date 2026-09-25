@@ -15,7 +15,7 @@ export default async function DocumentsPage() {
   return (
     <div className="flex flex-col gap-5">
       <header className="anim-up">
-        <h1 className="m-0 text-[26px] font-bold tracking-[-0.03em]">
+        <h1 className="serif m-0 text-[36px] leading-[1.05]">
           Documents
         </h1>
         <p className="m-0 mt-1 max-w-xl text-sm text-[var(--text-dim)]">

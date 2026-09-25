@@ -169,12 +169,10 @@ export function AuthPanel() {
         role="status"
         className="flex animate-[ap-up_.4s_ease_both] flex-col gap-4"
       >
-        <span className="grid size-[60px] place-items-center rounded-[18px] border border-[rgba(139,124,240,.4)] bg-[rgba(139,124,240,.14)] text-[var(--accent-lighter)] shadow-[0_0_40px_-6px_rgba(139,124,240,.8)]">
-          <MailCheck className="size-[26px]" />
-        </span>
+        <MailCheck className="size-7 text-[var(--accent-lighter)]" />
 
-        <h1 className="m-0 text-[30px] font-bold tracking-[-0.03em]">
-          Vérifie ta boîte mail
+        <h1 className="serif m-0 text-[40px] leading-[1.02]">
+          Vérifie ta <em>boîte mail.</em>
         </h1>
 
         <p className="m-0 text-[15px] leading-[1.55] text-[var(--text-dim)]">
@@ -190,7 +188,7 @@ export function AuthPanel() {
               href={webmail.href}
               target="_blank"
               rel="noreferrer noopener"
-              className="flex h-[46px] items-center justify-center gap-2 rounded-xl border border-[rgba(255,255,255,.1)] bg-[rgba(255,255,255,.04)] text-sm text-[var(--text)] transition-colors hover:bg-[rgba(255,255,255,.08)] hover:text-white"
+              className="btn-primary h-11 text-sm"
             >
               {webmail.label}
               <ExternalLink className="size-3.5" />
@@ -202,7 +200,7 @@ export function AuthPanel() {
               setStatus("idle");
               setMessage("");
             }}
-            className="h-[46px] rounded-xl border border-[rgba(255,255,255,.1)] text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]"
+            className="btn-secondary h-11 text-sm"
           >
             Changer d’adresse
           </button>
@@ -221,11 +219,9 @@ export function AuthPanel() {
   return (
     <div className="flex animate-[ap-up_.5s_ease_both] flex-col gap-[22px]">
       <div className="flex flex-col gap-2">
-        <h1 className="m-0 text-[clamp(28px,6vw,34px)] leading-[1.1] font-bold tracking-[-0.035em]">
+        <h1 className="serif m-0 text-[clamp(38px,8vw,48px)] leading-[1.02]">
           {mode === "signin" ? "Bon retour " : "Reprends la main sur "}
-          <span className="bg-gradient-to-r from-[#c9c1fa] via-[#8b7cf0] to-[#6f7cf5] bg-clip-text text-transparent">
-            {mode === "signin" ? "parmi nous." : "tes abonnements."}
-          </span>
+          <em>{mode === "signin" ? "parmi nous." : "tes abonnements."}</em>
         </h1>
         <p className="m-0 text-[15px] leading-[1.5] text-[var(--text-dim)]">
           {mode === "signin"
@@ -240,7 +236,7 @@ export function AuthPanel() {
       <div
         role="radiogroup"
         aria-label="Connexion ou création de compte"
-        className="grid grid-cols-2 gap-1 rounded-[14px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] p-1"
+        className="grid grid-cols-2 gap-1 rounded-[10px] border border-[var(--border)] p-1"
       >
         {(
           [
@@ -258,9 +254,9 @@ export function AuthPanel() {
               setStatus("idle");
               setMessage("");
             }}
-            className={`h-10 rounded-[10px] text-sm font-medium transition-colors ${
+            className={`h-9 rounded-[7px] text-sm font-medium transition-colors ${
               mode === value
-                ? "bg-[rgba(255,255,255,.09)] text-[var(--text-bright)] shadow-[inset_0_1px_0_rgba(255,255,255,.1)]"
+                ? "bg-[var(--paper)] text-[var(--ink)]"
                 : "text-[var(--text-faint)] hover:text-[var(--text-muted)]"
             }`}
           >
@@ -273,7 +269,7 @@ export function AuthPanel() {
         type="button"
         onClick={signInWithGoogle}
         disabled={sending}
-        className="flex h-[50px] items-center justify-center gap-2.5 rounded-[14px] border border-[rgba(255,255,255,.12)] bg-[rgba(255,255,255,.05)] text-[15px] font-medium text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,.06)] transition-colors hover:border-[rgba(255,255,255,.2)] hover:bg-[rgba(255,255,255,.09)] disabled:opacity-60"
+        className="btn-secondary h-12 gap-2.5 text-[15px] disabled:opacity-60"
       >
         <GoogleMark />
         Continuer avec Google
@@ -291,7 +287,7 @@ export function AuthPanel() {
         </label>
 
         <div
-          className={`flex h-[50px] items-center gap-2.5 rounded-[14px] border bg-[rgba(255,255,255,.035)] px-3.5 transition-colors focus-within:border-[rgba(139,124,240,.6)] ${
+          className={`flex h-12 items-center gap-2.5 rounded-[8px] border bg-[rgba(255,255,255,.02)] px-3.5 transition-colors focus-within:border-[var(--text-faint)] ${
             status === "error"
               ? "border-[rgba(240,113,104,.5)]"
               : "border-[rgba(255,255,255,.1)]"
@@ -347,11 +343,11 @@ export function AuthPanel() {
         <button
           type="submit"
           disabled={sending}
-          className="flex h-[50px] items-center justify-center gap-2 rounded-[14px] border border-[rgba(201,193,250,.35)] bg-gradient-to-b from-[#8b7cf0] to-[#5b4bd6] text-[15px] font-semibold text-white shadow-[0_10px_30px_-10px_rgba(139,124,240,.9),inset_0_1px_0_rgba(255,255,255,.25)] transition-shadow hover:shadow-[0_0_0_4px_rgba(139,124,240,.18),0_14px_40px_-8px_rgba(139,124,240,1),inset_0_1px_0_rgba(255,255,255,.25)] disabled:opacity-70"
+          className="btn-primary h-12 text-[15px] disabled:opacity-70"
         >
           {sending ? (
             <>
-              <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              <span className="size-4 animate-spin rounded-full border-2 border-[rgba(22,20,31,.25)] border-t-[var(--ink)]" />
               Envoi…
             </>
           ) : (

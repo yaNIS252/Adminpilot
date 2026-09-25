@@ -131,7 +131,7 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
         <button
           type="button"
           onClick={() => input.current?.click()}
-          className="rounded-[var(--radius-sm)] bg-gradient-to-b from-[#9888f7] to-[#5b4bd6] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_20px_-8px_rgba(139,124,240,.9)]"
+          className="btn-primary h-10 px-4 text-sm"
         >
           Choisir un fichier
         </button>

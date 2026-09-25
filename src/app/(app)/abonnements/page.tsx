@@ -37,7 +37,7 @@ export default async function SubscriptionsPage({
     <div className="flex flex-col gap-5">
       <header className="anim-up flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="m-0 text-[26px] font-bold tracking-[-0.03em]">
+          <h1 className="serif m-0 text-[36px] leading-[1.05]">
             {reviewMode ? "À vérifier" : "Abonnements"}
           </h1>
           <p className="m-0 mt-1 max-w-xl text-sm text-[var(--text-dim)]">

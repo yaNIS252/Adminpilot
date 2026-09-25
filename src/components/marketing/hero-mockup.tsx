@@ -14,32 +14,18 @@ import {
  * Les montants sont ceux de la maquette — ils illustrent une situation
  * plausible, et le visiteur comprend qu'il s'agit d'un exemple.
  *
- * `perspective` + `rotateX` donnent l'inclinaison ; le conteneur d'un pixel en
- * dégradé fait le liseré lumineux du bord supérieur.
+ * Posé à plat, sans inclinaison 3D ni halo violet derrière : le tableau de
+ * bord penché qui flotte dans une lueur est devenu la signature même des pages
+ * d'accueil générées. Un simple cadre montre le produit tel qu'il est.
  */
 export function HeroMockup() {
   return (
-    <div className="relative mx-auto mt-[72px] max-w-[1040px] [perspective:1600px]">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-[10%] top-[10%] -bottom-[10%] blur-[40px]"
-        style={{
-          background:
-            "radial-gradient(closest-side,rgba(139,124,240,.45),transparent)",
-        }}
-      />
-
-      <div
-        className="relative rounded-[18px] bg-gradient-to-b from-[rgba(255,255,255,.22)] to-[rgba(255,255,255,.03)] p-px shadow-[0_40px_120px_-30px_rgba(0,0,0,.9)]"
-        style={{ transform: "rotateX(12deg)", transformOrigin: "50% 0" }}
-      >
-        <div className="overflow-hidden rounded-[17px] bg-[var(--bg-elevated)] text-left">
-          {/* Barre de fenêtre */}
-          <div className="flex items-center gap-[7px] border-b border-[var(--border-soft)] px-4 py-3">
-            <span className="size-2.5 rounded-full bg-[#3a3a46]" />
-            <span className="size-2.5 rounded-full bg-[#3a3a46]" />
-            <span className="size-2.5 rounded-full bg-[#3a3a46]" />
-            <div className="mono mx-auto rounded-[7px] bg-[rgba(255,255,255,.04)] px-3.5 py-1 text-[11px] text-[var(--text-ghost)]">
+    <div className="relative mt-16 max-w-[1160px]">
+      <div className="relative rounded-[12px] border border-[var(--border-strong)] bg-[var(--bg-elevated)] shadow-[0_30px_80px_-40px_rgba(0,0,0,.9)]">
+        <div className="overflow-hidden rounded-[11px] text-left">
+          {/* Barre d'adresse */}
+          <div className="flex items-center border-b border-[var(--border-soft)] px-4 py-2.5">
+            <div className="mono text-[11px] text-[var(--text-ghost)]">
               adminpilot.fr/dashboard
             </div>
           </div>
@@ -47,7 +33,7 @@ export function HeroMockup() {
           <div className="flex min-h-[380px]">
             <div className="hidden w-[180px] shrink-0 flex-col gap-1 border-r border-[var(--border-soft)] bg-[rgba(255,255,255,.015)] px-3 py-4 sm:flex">
               <div className="flex items-center gap-2 px-2 pt-1.5 pb-3.5 text-[13px] font-bold">
-                <span className="size-[18px] rounded-md bg-gradient-to-br from-[#8b7cf0] to-[#3b2fa8]" />
+                <span className="size-[18px] rounded-[5px] bg-[var(--accent)]" />
                 AdminPilot
               </div>
               <MockNav icon={<LayoutDashboard className="size-3.5" />} active>
@@ -63,7 +49,12 @@ export function HeroMockup() {
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col gap-3.5 p-5">
-              <div className="text-[15px] font-semibold">Bonjour Yanis 👋</div>
+              <div className="flex items-baseline justify-between gap-3">
+                <div className="serif text-[22px] leading-none">Ce mois-ci</div>
+                <div className="mono text-[10px] text-[var(--text-ghost)]">
+                  8 abonnements suivis
+                </div>
+              </div>
 
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                 <MockStat label="Par mois" value="195,18 €">
@@ -73,7 +64,7 @@ export function HeroMockup() {
                 </MockStat>
                 <MockStat label="Sur un an" value="2 342,16 €">
                   <span className="mt-2 block h-1 overflow-hidden rounded bg-[rgba(255,255,255,.07)]">
-                    <span className="block h-full w-[74%] bg-gradient-to-r from-[#6f7cf5] to-[#8b7cf0]" />
+                    <span className="block h-full w-[74%] bg-[var(--accent)]" />
                   </span>
                 </MockStat>
                 <MockStat label="Actifs" value="8" className="col-span-2 sm:col-span-1">
@@ -83,7 +74,7 @@ export function HeroMockup() {
                 </MockStat>
               </div>
 
-              <div className="flex flex-1 flex-col gap-2 rounded-[11px] border border-[var(--border)] bg-[rgba(255,255,255,.02)] p-3">
+              <div className="flex flex-1 flex-col gap-2 rounded-[8px] border border-[var(--border)] p-3">
                 <div className="text-[11px] text-[var(--text-faint)]">
                   Répartition · au mois
                 </div>
@@ -102,7 +93,7 @@ export function HeroMockup() {
                     </div>
                     <span className="block h-1 overflow-hidden rounded bg-[rgba(255,255,255,.06)]">
                       <span
-                        className="block h-full bg-gradient-to-r from-[#6f7cf5] to-[#8b7cf0]"
+                        className="block h-full bg-[var(--accent)]"
                         style={{ width: `${width}%` }}
                       />
                     </span>
@@ -132,7 +123,7 @@ function MockNav({
     <div
       className={`flex items-center gap-2 rounded-lg px-2.5 py-[7px] text-xs ${
         active
-          ? "bg-[rgba(139,124,240,.14)] text-[var(--accent-lighter)] shadow-[inset_2px_0_0_#8b7cf0]"
+          ? "bg-[rgba(255,255,255,.06)] text-[var(--text-bright)]"
           : "text-[#7a7a8c]"
       }`}
     >
@@ -154,9 +145,11 @@ function MockStat({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`rounded-[11px] border border-[var(--border)] bg-[rgba(255,255,255,.025)] p-3 ${className}`}>
+    <div className={`min-w-0 rounded-[8px] border border-[var(--border)] p-3 ${className}`}>
       <div className="text-[10px] text-[var(--text-faint)]">{label}</div>
-      <div className="mono mt-1 text-[15px] font-semibold sm:text-[17px]">{value}</div>
+      <div className="mono mt-1 text-[14px] font-semibold whitespace-nowrap sm:text-[17px]">
+        {value}
+      </div>
       {children}
     </div>
   );

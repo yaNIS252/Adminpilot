@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { InboxAddress } from "@/components/shared/inbox-address";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -29,7 +30,6 @@ export function OnboardingWizard({
 }) {
   const router = useRouter();
   const [confirmation, setConfirmation] = useState(initialConfirmation);
-  const [copied, setCopied] = useState(false);
   const [finishing, setFinishing] = useState(false);
 
   // Écoute la ligne de profil : dès que le pipeline y écrit le code, il
@@ -60,17 +60,6 @@ export function OnboardingWizard({
     };
   }, [userId]);
 
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(address);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Presse-papier refusé (contexte non sécurisé, permission) : l'adresse
-      // reste sélectionnable à la main, rien n'est bloqué.
-    }
-  }
-
   async function finish() {
     setFinishing(true);
     const supabase = createClient();
@@ -84,111 +73,136 @@ export function OnboardingWizard({
 
   return (
     <>
-      <h1 className="mb-1 text-2xl font-bold tracking-tight">
-        Connecte ta boîte mail
+      <div className="section-mark">Configuration · 2 minutes</div>
+      <h1 className="serif mt-6 mb-3 text-[clamp(40px,8vw,56px)] leading-[1.02]">
+        Branche ta <em>boîte mail.</em>
       </h1>
-      <p className="mb-8 text-sm text-[var(--text-dim)]">
-        AdminPilot lit uniquement les emails que tu lui transfères. Aucun accès
-        à ta boîte, aucun mot de passe.
+      <p className="mt-0 mb-12 max-w-[460px] text-[15px] leading-[1.65] text-[var(--text-dim)]">
+        AdminPilot ne lit que les emails que tu lui transfères. Aucun accès à ta
+        boîte, aucun mot de passe.
       </p>
 
-      <Step number={1} title="Copie ton adresse AdminPilot">
-        <div className="flex items-center gap-2">
-          <code className="flex-1 overflow-x-auto rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm">
-            {address}
-          </code>
-          <button
-            type="button"
-            onClick={copy}
-            className="shrink-0 rounded-[var(--radius)] bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white"
-          >
-            {copied ? "Copié" : "Copier"}
-          </button>
-        </div>
-      </Step>
+      <ol className="m-0 list-none p-0">
+        <Step number={1} title="Copie ton adresse AdminPilot">
+          <InboxAddress address={address} />
+        </Step>
 
-      <Step number={2} title="Ajoute-la dans Gmail">
-        <p className="m-0 text-sm text-[var(--text-dim)]">
-          Dans Gmail : <strong>Paramètres</strong> →{" "}
-          <strong>Transfert et POP/IMAP</strong> →{" "}
-          <strong>Ajouter une adresse de transfert</strong>. Colle l’adresse
-          ci-dessus et valide.
-        </p>
-      </Step>
-
-      <Step number={3} title="Le code de confirmation">
-        {confirmation ? (
-          <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--accent-soft)] p-4">
-            <p className="m-0 mb-2 text-sm">
-              Gmail vient d’envoyer son code. Le voici :
-            </p>
-            <div className="tabular mb-3 text-2xl font-bold tracking-widest">
-              {confirmation.code}
-            </div>
-            {confirmation.url && (
-              <a
-                href={confirmation.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-medium text-[var(--accent)]"
-              >
-                Confirmer directement chez Google
-              </a>
-            )}
-          </div>
-        ) : (
-          <p className="m-0 text-sm text-[var(--text-dim)]">
-            Gmail va t’envoyer un code de validation. Il arrive chez nous, donc
-            il s’affichera ici tout seul — reste sur cette page.
+        <Step number={2} title="Ajoute-la dans Gmail">
+          <p className="m-0 text-sm leading-[1.7] text-[var(--text-dim)]">
+            Dans Gmail :{" "}
+            <strong className="text-[var(--text)]">Paramètres</strong> →{" "}
+            <strong className="text-[var(--text)]">Transfert et POP/IMAP</strong>{" "}
+            →{" "}
+            <strong className="text-[var(--text)]">
+              Ajouter une adresse de transfert
+            </strong>
+            . Colle l’adresse ci-dessus et valide.
           </p>
-        )}
-      </Step>
+        </Step>
 
-      <Step number={4} title="Crée le filtre (recommandé)">
-        <p className="m-0 text-sm text-[var(--text-dim)]">
-          Pour que tout soit automatique : Gmail →{" "}
-          <strong>Filtres et adresses bloquées</strong> →{" "}
-          <strong>Créer un filtre</strong>, avec comme critère{" "}
-          <code className="rounded bg-[var(--surface-alt)] px-1">
+        <Step number={3} title="Le code de confirmation">
+          {confirmation ? (
+            <div className="rounded-[10px] border border-[rgba(139,124,240,.4)] bg-[var(--accent-soft)] p-5">
+              <p className="m-0 mb-3 text-sm text-[var(--text-dim)]">
+                Gmail vient d’envoyer son code. Le voici :
+              </p>
+              <div className="mono mb-4 text-[32px] font-semibold tracking-[0.12em] text-[var(--text-bright)]">
+                {confirmation.code}
+              </div>
+              {confirmation.url && (
+                <a
+                  href={confirmation.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary h-10 px-4 text-sm"
+                >
+                  Confirmer directement chez Google
+                </a>
+              )}
+            </div>
+          ) : (
+            <p className="m-0 flex items-start gap-2.5 text-sm leading-[1.7] text-[var(--text-dim)]">
+              {/* Indicateur d’attente : le code est écouté en temps réel, il
+                  faut que l’utilisateur voie que quelque chose veille. */}
+              <span className="mt-[7px] size-1.5 shrink-0 animate-[ap-dot_2s_infinite] rounded-full bg-[var(--accent-light)]" />
+              Gmail va t’envoyer un code de validation. Il arrive chez nous,
+              donc il s’affichera ici tout seul — reste sur cette page.
+            </p>
+          )}
+        </Step>
+
+        <Step number={4} title="Crée le filtre" hint="recommandé" last>
+          <p className="m-0 text-sm leading-[1.7] text-[var(--text-dim)]">
+            Pour que tout soit automatique : Gmail →{" "}
+            <strong className="text-[var(--text)]">
+              Filtres et adresses bloquées
+            </strong>{" "}
+            → <strong className="text-[var(--text)]">Créer un filtre</strong>,
+            avec comme critère :
+          </p>
+          <code className="mono my-3 block overflow-x-auto rounded-[8px] border border-[var(--border)] bg-[var(--surface-alt)] px-3.5 py-2.5 text-[12px] whitespace-nowrap">
             facture OR abonnement OR prélèvement OR renouvellement
           </code>
-          , puis coche <strong>Transférer à</strong> ton adresse AdminPilot.
-        </p>
-        <p className="m-0 mt-2 text-sm text-[var(--text-dim)]">
-          Tu peux aussi sauter cette étape et transférer tes emails à la main.
-        </p>
-      </Step>
+          <p className="m-0 text-sm leading-[1.7] text-[var(--text-dim)]">
+            puis coche{" "}
+            <strong className="text-[var(--text)]">Transférer à</strong> ton
+            adresse AdminPilot. Tu peux aussi sauter cette étape et transférer
+            tes emails à la main.
+          </p>
+        </Step>
+      </ol>
 
       <button
         type="button"
         onClick={finish}
         disabled={finishing}
-        className="mt-4 w-full rounded-[var(--radius)] bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+        className="btn-primary mt-10 h-12 w-full text-[15px] disabled:opacity-60"
       >
-        {finishing ? "…" : "C’est fait, accéder à AdminPilot"}
+        {finishing ? "Un instant…" : "C’est fait, accéder à AdminPilot"}
       </button>
     </>
   );
 }
 
+/**
+ * Une étape, reliée à la suivante par un filet vertical : on lit un parcours,
+ * pas quatre blocs indépendants. Le numéro en chiffres mono rappelle les
+ * sections numérotées du reste du site.
+ */
 function Step({
   number,
   title,
+  hint,
+  last,
   children,
 }: {
   number: number;
   title: string;
+  hint?: string;
+  last?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <section className="mb-6">
-      <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-xs text-[var(--accent)]">
-          {number}
+    <li className="relative grid grid-cols-[36px_1fr] gap-x-4">
+      <div className="flex flex-col items-center">
+        <span className="mono grid size-8 shrink-0 place-items-center rounded-full border border-[var(--border-strong)] text-xs text-[var(--text-muted)]">
+          {String(number).padStart(2, "0")}
         </span>
-        {title}
-      </h2>
-      <div className="pl-8">{children}</div>
-    </section>
+        {!last && (
+          <span aria-hidden className="w-px flex-1 bg-[var(--border)]" />
+        )}
+      </div>
+      <div className={last ? "pb-0" : "pb-10"}>
+        <h2 className="mt-1.5 mb-3 flex items-baseline gap-2.5 text-[16px] font-semibold">
+          {title}
+          {hint && (
+            <span className="font-mono text-[11px] font-normal tracking-[0.06em] text-[var(--text-faint)] uppercase">
+              {hint}
+            </span>
+          )}
+        </h2>
+        {children}
+      </div>
+    </li>
   );
 }

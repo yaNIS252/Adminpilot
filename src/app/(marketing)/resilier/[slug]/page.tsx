@@ -69,8 +69,8 @@ export default async function CancelGuidePage({
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-10">
       <article>
-        <h1 className="mb-2 text-3xl font-bold tracking-tight">
-          Comment résilier {provider.name}
+        <h1 className="serif mt-0 mb-4 text-[clamp(38px,6vw,56px)] leading-[1.04]">
+          Comment résilier <em>{provider.name}</em>
         </h1>
         <p className="mb-8 text-[var(--text-dim)]">
           {provider.cancel_method
@@ -86,7 +86,7 @@ export default async function CancelGuidePage({
         </Block>
 
         <Block title="La marche à suivre">
-          <ol className="m-0 space-y-2 pl-5">
+          <ol className="m-0 list-decimal space-y-2.5 pl-6 marker:font-mono marker:text-[13px] marker:text-[var(--accent-light)]">
             <li>
               Rassemble ta référence de contrat : elle figure sur tes factures
               et sur ton espace client.
@@ -136,7 +136,7 @@ export default async function CancelGuidePage({
           </p>
           <Link
             href="/login"
-            className="inline-block rounded-[var(--radius)] bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white no-underline"
+            className="btn-primary h-10 px-4 text-sm"
           >
             Essayer gratuitement
           </Link>

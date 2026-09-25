@@ -18,6 +18,13 @@
   --surface-raised: rgba(255, 255, 255, 0.045);
   --surface-hover: rgba(255, 255, 255, 0.07);
 
+  /* Utilisées par les guides de résiliation et l'onboarding, mais jamais
+     définies : des restes des jetons d'avant la maquette. Une variable
+     inconnue est ignorée sans erreur, si bien que ces encadrés et ces blocs de
+     code s'affichaient sans leur fond depuis le début. */
+  --surface-alt: rgba(255, 255, 255, 0.045);
+  --accent-soft: rgba(139, 124, 240, 0.07);
+
   --border: rgba(255, 255, 255, 0.08);
   --border-soft: rgba(255, 255, 255, 0.06);
   --border-strong: rgba(255, 255, 255, 0.12);
@@ -49,12 +56,21 @@
   --danger: #f07168;
   --danger-light: #f5a09a;
 
+  /* Papier et encre : le bouton principal est clair sur fond sombre. C'est à
+     la fois le contraste le plus fort possible et le contre-pied exact du
+     bouton violet lumineux de toutes les pages d'accueil générées. */
+  --paper: #f2eee6;
+  --paper-hover: #ffffff;
+  --ink: #16141f;
+
   --radius-xs: 8px;
   --radius-sm: 9px;
   --radius: 11px;
   --radius-md: 13px;
   --radius-lg: 16px;
-  --radius-xl: 18px;
+  /* Les cartes passent de 18 à 10 px : les très grands arrondis empilés
+     font « application générée », un arrondi modeste fait « document ». */
+  --radius-xl: 10px;
   --radius-2xl: 20px;
 }
 
@@ -97,6 +113,112 @@
 
   input::placeholder {
     color: var(--text-ghost);
+  }
+}
+
+/*
+ * Composants partagés. Dans `@layer components` : au-dessus des styles de
+ * base, en dessous des utilitaires — une classe Tailwind posée à côté peut
+ * donc toujours ajuster un détail.
+ */
+@layer components {
+  /* Bouton principal. Pas de dégradé, pas de halo, pas de reflet : un aplat
+     net, un rayon modeste, et une flèche qui avance d'un cran au survol. La
+     sobriété est ce qui le distingue. */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 8px;
+    background: var(--paper);
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    transition: background-color 0.15s ease;
+  }
+  .btn-primary:hover {
+    background: var(--paper-hover);
+    color: var(--ink);
+  }
+  .btn-primary svg {
+    transition: transform 0.15s ease;
+  }
+  .btn-primary:hover svg {
+    transform: translateX(2px);
+  }
+  .btn-primary:focus-visible,
+  .btn-secondary:focus-visible,
+  .btn-link:focus-visible {
+    outline: 2px solid var(--accent-light);
+    outline-offset: 3px;
+  }
+
+  /* Bouton secondaire : un simple contour, sans fond. */
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    font-weight: 500;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+  .btn-secondary:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-bright);
+  }
+
+  /* Lien d'action : souligné, comme dans un texte. Pour les actions
+     secondaires, qui n'ont pas à concurrencer le bouton principal. */
+  .btn-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-soft);
+    font-weight: 500;
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 255, 255, 0.25);
+    text-underline-offset: 5px;
+    text-decoration-thickness: 1px;
+    transition: text-decoration-color 0.15s ease, color 0.15s ease;
+  }
+  .btn-link:hover {
+    color: var(--text-bright);
+    text-decoration-color: var(--text-bright);
+  }
+
+  /* Titres éditoriaux. */
+  .serif {
+    font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+  }
+  .serif em {
+    font-style: italic;
+    color: var(--accent-lighter);
+  }
+
+  /* Repère de section, façon document : « § 02 — Tarifs ». Le paragraphe
+     juridique est un clin d'œil assumé à ce que fait le produit. */
+  .section-mark {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .section-mark::after {
+    content: "";
+    height: 1px;
+    flex: 1;
+    background: var(--border);
   }
 }
 
@@ -148,12 +270,11 @@
   -webkit-mask-image: radial-gradient(ellipse 70% 50% at 50% 0%, #000 30%, transparent 80%);
 }
 
+/* Fond de carte. Un aplat très léger plutôt que le reflet dégradé du haut
+   vers le bas, autre tic des interfaces générées. Le nom est conservé pour ne
+   pas toucher les dizaines d'usages. */
 .card-sheen {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.045),
-    rgba(255, 255, 255, 0.012)
-  );
+  background: rgba(255, 255, 255, 0.022);
 }
 
 @keyframes ap-pulse {

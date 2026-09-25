@@ -1,11 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Menu, Send, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
+
+import { LogoMark } from "@/components/marketing/logo-mark";
 
 /**
  * En-tête des pages publiques.
+ *
+ * Une barre pleine largeur soulignée d'un filet, et non plus une pilule
+ * flottante en verre dépoli — autre signature des pages générées. La pastille
+ * « hébergé dans l'UE » passe dans le pied de page : c'est une information de
+ * réassurance, pas de navigation.
  *
  * Sur mobile, la navigation passe dans un panneau dépliant. Sans lui, les
  * quatre entrées et surtout « Connexion » disparaissaient purement et
@@ -17,7 +24,7 @@ const LINKS = [
   { href: "/#fonctionnalites", label: "Fonctionnalités" },
   { href: "/#tarifs", label: "Tarifs" },
   { href: "/resilier", label: "Guides" },
-  { href: "/#faq", label: "FAQ" },
+  { href: "/#faq", label: "Questions" },
 ] as const;
 
 export function SiteHeader() {
@@ -35,27 +42,25 @@ export function SiteHeader() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-50 px-4 py-3.5 sm:px-5">
-      <div className="mx-auto flex max-w-[1160px] items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[rgba(14,14,20,.75)] py-2.5 pr-2.5 pl-3.5 backdrop-blur-xl sm:gap-5 sm:pr-3 sm:pl-4">
+    <header className="sticky top-0 z-50 border-b border-[var(--border-soft)] bg-[rgba(10,10,15,.82)] backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-[1160px] items-center gap-3 px-5 sm:gap-6">
         <Link
           href="/"
           onClick={() => setOpen(false)}
           className="flex shrink-0 items-center gap-2.5 text-[var(--text-bright)] hover:text-[var(--text-bright)]"
         >
-          <span className="anim-pulse grid size-[30px] place-items-center rounded-[var(--radius-sm)] bg-gradient-to-br from-[#8b7cf0] via-[#5b4bd6] to-[#3b2fa8] shadow-[0_0_18px_rgba(139,124,240,.5),inset_0_1px_0_rgba(255,255,255,.3)]">
-            <Send className="size-[15px] text-white" />
-          </span>
-          <span className="text-base font-bold tracking-[-0.02em]">
+          <LogoMark />
+          <span className="text-[15px] font-semibold tracking-[-0.01em]">
             AdminPilot
           </span>
         </Link>
 
-        <nav className="ml-3 hidden gap-1 lg:flex">
+        <nav className="hidden gap-6 lg:flex">
           {LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-[var(--radius-sm)] px-3 py-[7px] text-sm text-[var(--text-dim)] transition-colors hover:bg-[rgba(255,255,255,.05)] hover:text-[var(--text-bright)]"
+              className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text-bright)]"
             >
               {link.label}
             </Link>
@@ -64,21 +69,16 @@ export function SiteHeader() {
 
         <div className="flex-1" />
 
-        <span className="hidden items-center gap-2 rounded-full border border-[rgba(63,207,149,.22)] bg-[rgba(63,207,149,.06)] px-3 py-1.5 text-xs whitespace-nowrap text-[var(--positive-pale)] xl:inline-flex">
-          <span className="anim-dot size-[7px] rounded-full bg-[var(--positive)] shadow-[0_0_8px_var(--positive)]" />
-          Données hébergées dans l&apos;Union européenne
-        </span>
-
         <Link
           href="/login"
-          className="hidden px-2.5 py-2 text-sm whitespace-nowrap text-[var(--text-muted)] hover:text-white lg:inline"
+          className="hidden text-sm whitespace-nowrap text-[var(--text-muted)] transition-colors hover:text-[var(--text-bright)] lg:inline"
         >
           Connexion
         </Link>
 
         <Link
           href="/login"
-          className="flex shrink-0 items-center gap-1.5 rounded-[var(--radius)] bg-gradient-to-b from-[#7c6ae9] via-[#5744cf] to-[#3a2ca6] px-3.5 py-2.5 text-sm font-bold whitespace-nowrap text-white shadow-[inset_0_1px_0_rgba(255,255,255,.35),inset_0_0_0_1px_rgba(255,255,255,.2),0_6px_20px_-6px_rgba(139,124,240,.7)] transition-all hover:-translate-y-px hover:text-white sm:px-4"
+          className="btn-primary h-9 shrink-0 px-3.5 text-sm whitespace-nowrap sm:px-4"
         >
           Commencer
           <ArrowRight className="size-3.5" />
@@ -89,9 +89,9 @@ export function SiteHeader() {
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
           aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
-          className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-sm)] border border-[var(--border)] text-[var(--text-muted)] lg:hidden"
+          className="grid size-9 shrink-0 place-items-center rounded-[8px] border border-[var(--border)] text-[var(--text-muted)] lg:hidden"
         >
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          {open ? <X className="size-[18px]" /> : <Menu className="size-[18px]" />}
         </button>
       </div>
 
@@ -102,37 +102,29 @@ export function SiteHeader() {
             type="button"
             aria-label="Fermer le menu"
             onClick={() => setOpen(false)}
-            className="fixed inset-0 z-40 cursor-default bg-black/50 lg:hidden"
+            className="fixed inset-0 top-16 z-40 cursor-default bg-black/60 lg:hidden"
           />
 
-          <nav className="relative z-50 mx-auto mt-2 max-w-[1160px] rounded-[var(--radius-lg)] border border-[var(--border)] bg-[rgba(14,14,20,.97)] p-2 backdrop-blur-xl lg:hidden">
+          <nav className="absolute inset-x-0 top-16 z-50 border-b border-[var(--border)] bg-[var(--bg)] px-5 pt-2 pb-5 lg:hidden">
             {LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="flex items-center justify-between rounded-[var(--radius-sm)] px-3.5 py-3 text-[15px] text-[var(--text-soft)] hover:bg-[rgba(255,255,255,.05)] hover:text-white"
+                className="flex items-center justify-between border-b border-[var(--border-soft)] py-3.5 text-[17px] text-[var(--text-soft)] hover:text-[var(--text-bright)]"
               >
                 {link.label}
                 <ArrowRight className="size-4 text-[var(--text-ghost)]" />
               </Link>
             ))}
 
-            <div className="my-1.5 h-px bg-[var(--border)]" />
-
             <Link
               href="/login"
               onClick={() => setOpen(false)}
-              className="flex items-center justify-between rounded-[var(--radius-sm)] px-3.5 py-3 text-[15px] font-medium text-[var(--accent-light)] hover:bg-[rgba(139,124,240,.1)]"
+              className="btn-secondary mt-5 h-11 w-full text-[15px]"
             >
               J&apos;ai déjà un compte
-              <ArrowRight className="size-4" />
             </Link>
-
-            <div className="flex items-center gap-2 px-3.5 py-2.5 text-xs text-[var(--positive-pale)]">
-              <span className="anim-dot size-[7px] rounded-full bg-[var(--positive)]" />
-              Données hébergées dans l&apos;Union européenne
-            </div>
           </nav>
         </>
       )}

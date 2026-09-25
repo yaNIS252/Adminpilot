@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 
 import "./globals.css";
 
@@ -21,6 +21,23 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+/**
+ * Une typographie à empattements pour les titres, et pour eux seuls.
+ *
+ * Un sans-serif géométrique en graisse extra-bold sur fond sombre, c'est la
+ * signature de mille pages d'accueil générées. Un serif de titrage déplace le
+ * ton vers l'éditorial — un journal, un document — ce qui colle mieux à un
+ * produit qui parle de contrats et de lettres recommandées. Le corps de texte
+ * reste en Geist, plus lisible aux petites tailles.
+ */
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-serif",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "AdminPilot — le pilote automatique de ta vie admin",
   description:
@@ -31,7 +48,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr" className={`${geist.variable} ${geistMono.variable}`}>
+    <html
+      lang="fr"
+      className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable}`}
+    >
       <body>{children}</body>
     </html>
   );

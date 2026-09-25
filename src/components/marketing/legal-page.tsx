@@ -31,7 +31,7 @@ export function LegalLayout({
 }) {
   return (
     <main className="mx-auto w-full max-w-[760px] px-5 pt-16 pb-10">
-      <h1 className="m-0 text-[clamp(28px,5vw,40px)] font-bold tracking-[-0.035em]">
+      <h1 className="serif m-0 text-[clamp(40px,7vw,64px)] leading-[1.02]">
         {title}
       </h1>
       <p className="mt-3 mb-1 text-[17px] text-pretty text-[var(--text-dim)]">
@@ -41,16 +41,16 @@ export function LegalLayout({
         Dernière mise à jour : {updated}
       </p>
 
-      <nav className="mt-8 flex flex-wrap gap-2">
+      <nav className="mt-8 flex flex-wrap gap-x-6 gap-y-2 border-b border-[var(--border)]">
         {LEGAL_PAGES.map((page) => (
           <Link
             key={page.href}
             href={page.href}
             aria-current={page.href === current ? "page" : undefined}
-            className={`rounded-full border px-3.5 py-1.5 text-xs font-medium no-underline transition-colors ${
+            className={`-mb-px border-b-2 pb-3 text-[13px] font-medium no-underline transition-colors ${
               page.href === current
-                ? "border-[rgba(139,124,240,.45)] bg-[rgba(139,124,240,.16)] text-[var(--accent-lighter)]"
-                : "border-[var(--border)] text-[var(--text-dim)] hover:bg-[rgba(255,255,255,.05)] hover:text-[var(--text)]"
+                ? "border-[var(--text-bright)] text-[var(--text-bright)]"
+                : "border-transparent text-[var(--text-dim)] hover:text-[var(--text)]"
             }`}
           >
             {page.label}

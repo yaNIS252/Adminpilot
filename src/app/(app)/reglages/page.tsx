@@ -23,7 +23,7 @@ export default async function SettingsPage() {
   return (
     <div className="flex flex-col gap-4">
       <header className="anim-up mb-1">
-        <h1 className="m-0 text-[26px] font-bold tracking-[-0.03em]">
+        <h1 className="serif m-0 text-[36px] leading-[1.05]">
           Réglages
         </h1>
       </header>

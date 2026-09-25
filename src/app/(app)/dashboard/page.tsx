@@ -110,19 +110,19 @@ export default async function DashboardPage() {
         <div className="text-[13px] text-[var(--text-faint)] first-letter:uppercase">
           {today}
         </div>
-        <h1 className="mt-0.5 mb-0 text-[26px] font-bold tracking-[-0.03em]">
+        <h1 className="serif mt-1 mb-0 text-[36px] leading-[1.05]">
           Bonjour
-          {auth?.profile.name ? ` ${auth.profile.name.split(" ")[0]}` : ""} 👋
+          {auth?.profile.name ? (
+            <em>{` ${auth.profile.name.split(" ")[0]}.`}</em>
+          ) : (
+            "."
+          )}
         </h1>
       </header>
 
       {reviewCount ? (
         <section
-          className="anim-border relative flex flex-wrap items-center gap-4 overflow-hidden rounded-[var(--radius-lg)] border px-5 py-[18px]"
-          style={{
-            background:
-              "linear-gradient(100deg,rgba(224,161,56,.1),rgba(139,124,240,.08) 60%,rgba(255,255,255,.02))",
-          }}
+          className="relative flex flex-wrap items-center gap-4 rounded-[10px] border border-[rgba(224,161,56,.35)] bg-[rgba(224,161,56,.05)] px-5 py-[18px]"
         >
           <span className="grid size-10 shrink-0 place-items-center rounded-[var(--radius)] border border-[rgba(224,161,56,.35)] bg-[rgba(224,161,56,.16)] text-[var(--warning-bright)]">
             <ScanEye className="size-[19px]" />
@@ -138,7 +138,7 @@ export default async function DashboardPage() {
           </div>
           <Link
             href="/abonnements?revue=1"
-            className="flex items-center gap-1.5 rounded-[var(--radius-xs)] bg-gradient-to-b from-[#f5c451] to-[#e0a138] px-4 py-2.5 text-[13px] font-semibold text-[#1a1300] no-underline shadow-[0_6px_24px_-8px_rgba(224,161,56,.9)] transition-shadow hover:text-[#1a1300] hover:shadow-[0_0_30px_-4px_rgba(245,196,81,.9)]"
+            className="btn-primary h-10 px-4 text-[13px]"
           >
             Vérifier maintenant ({reviewCount})
             <ArrowRight className="size-4" />
@@ -211,7 +211,7 @@ export default async function DashboardPage() {
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,.06)]">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#6f7cf5] to-[#8b7cf0]"
+                      className="h-full rounded-full bg-[var(--accent)]"
                       style={{
                         width: `${Math.max(3, (amount / monthlyTotal) * 100)}%`,
                       }}
@@ -331,14 +331,13 @@ function Stat({
   footer: React.ReactNode;
 }) {
   return (
-    <div className="card-sheen anim-up relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--border)] p-5 transition-colors hover:border-[rgba(139,124,240,.35)]">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-[60px] -right-[60px] size-[180px]"
-        style={{
-          background: `radial-gradient(closest-side,${tint}.2),transparent)`,
-        }}
-      />
+    <div
+      className="card-sheen anim-up relative rounded-[var(--radius-xl)] border border-[var(--border)] p-5"
+      // La teinte ne colore plus qu'un liseré en tête de carte : de quoi
+      // distinguer les trois chiffres d'un coup d'œil, sans la tache
+      // lumineuse d'angle qui signait l'ancienne version.
+      style={{ borderTopColor: `${tint}.55)` }}
+    >
       <div className="flex items-center gap-2 text-[13px] text-[var(--text-dim)]">
         {icon}
         {label}

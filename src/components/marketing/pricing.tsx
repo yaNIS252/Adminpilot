@@ -24,25 +24,25 @@ export function Pricing() {
 
   return (
     <>
-      <div className="mb-9 flex justify-center">
+      <div className="mb-8 flex">
         <div
           role="group"
           aria-label="Périodicité de facturation"
-          className="flex gap-1 rounded-[var(--radius-md)] border border-[var(--border)] bg-[rgba(255,255,255,.03)] p-1"
+          className="inline-flex gap-1 rounded-[10px] border border-[var(--border)] p-1"
         >
           <Toggle active={!yearly} onClick={() => setYearly(false)}>
             Mensuel
           </Toggle>
           <Toggle active={yearly} onClick={() => setYearly(true)}>
             Annuel
-            <span className="rounded-full bg-[rgba(63,207,149,.15)] px-[7px] py-0.5 text-[11px] font-semibold text-[var(--positive-light)]">
-              jusqu&apos;à −32 %
+            <span className="font-mono text-[11px] text-[var(--positive-light)]">
+              −32 %
             </span>
           </Toggle>
         </div>
       </div>
 
-      <div className="grid items-stretch gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))]">
+      <div className="grid items-stretch gap-4 md:grid-cols-3">
         <Plan
           name="Gratuit"
           price="0 €"
@@ -112,9 +112,9 @@ function Toggle({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex items-center gap-2 rounded-[var(--radius-sm)] px-4 py-2.5 text-sm font-medium transition-all ${
+      className={`flex items-center gap-2 rounded-[7px] px-4 py-2 text-sm font-medium transition-colors ${
         active
-          ? "bg-[rgba(139,124,240,.22)] text-white shadow-[inset_0_0_0_1px_rgba(139,124,240,.45),0_0_20px_-6px_rgba(139,124,240,.8)]"
+          ? "bg-[var(--paper)] text-[var(--ink)]"
           : "text-[var(--text-dim)] hover:text-[var(--text)]"
       }`}
     >
@@ -142,22 +142,26 @@ function Plan({
 }) {
   const body = (
     <div
-      className={`flex h-full flex-col rounded-[var(--radius-2xl)] p-7 ${
+      className={`relative flex h-full flex-col rounded-[12px] border p-7 ${
         highlight
-          ? "bg-gradient-to-b from-[#17152a] to-[#0f0f18]"
-          : "border border-[var(--border)] bg-[var(--surface)]"
+          ? "border-[rgba(139,124,240,.55)] bg-[#12111c]"
+          : "border-[var(--border)]"
       }`}
     >
-      <div
-        className={`text-[15px] font-semibold ${
-          highlight ? "text-[var(--accent-lighter)]" : ""
-        }`}
-      >
-        {name}
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[15px] font-semibold">{name}</div>
+        {/* « Recommandé » et non « Plus populaire » : sans clients, une
+            popularité affichée serait une affirmation inventée. Une
+            recommandation, elle, n'engage que nous. */}
+        {highlight && (
+          <span className="font-mono text-[11px] tracking-[0.06em] text-[var(--accent-lighter)] uppercase">
+            Recommandé
+          </span>
+        )}
       </div>
 
       <div className="mt-3.5 flex items-baseline gap-1.5">
-        <span className="mono text-[44px] font-bold tracking-[-0.03em]">
+        <span className="serif text-[52px] leading-none">
           {price}
         </span>
         <span className="text-sm text-[var(--text-faint)]">{suffix}</span>
@@ -188,10 +192,8 @@ function Plan({
 
       <Link
         href="/login"
-        className={`block rounded-[var(--radius)] py-3 text-center text-sm font-semibold transition-shadow ${
-          highlight
-            ? "bg-gradient-to-b from-[#7c6ae9] via-[#5744cf] to-[#3a2ca6] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.45),inset_0_0_0_1px_rgba(255,255,255,.2),0_8px_30px_-8px_rgba(139,124,240,.9)] hover:text-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,.55),0_0_44px_-4px_rgba(139,124,240,1)]"
-            : "border border-[var(--border-strong)] bg-[rgba(255,255,255,.03)] text-[var(--text)] hover:bg-[rgba(255,255,255,.08)] hover:text-white"
+        className={`h-11 w-full text-sm ${
+          highlight ? "btn-primary" : "btn-secondary"
         }`}
       >
         {cta}
@@ -199,16 +201,5 @@ function Plan({
     </div>
   );
 
-  if (!highlight) return body;
-
-  // Bordure en dégradé : un conteneur d'un pixel et demi qui porte le dégradé,
-  // avec la carte posée dessus. `border-image` ne permet pas de coins arrondis.
-  return (
-    <div className="relative rounded-[21px] bg-gradient-to-br from-[#b4a8ff] via-[#6f7cf5] to-[#8b7cf0] p-[1.5px] shadow-[0_30px_80px_-30px_rgba(139,124,240,.7)]">
-      <span className="anim-pulse absolute -top-[13px] left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#8b7cf0] to-[#6f7cf5] px-3 py-[5px] text-xs font-semibold whitespace-nowrap text-white shadow-[0_0_24px_rgba(139,124,240,.8)]">
-        Plus populaire
-      </span>
-      {body}
-    </div>
-  );
+  return body;
 }

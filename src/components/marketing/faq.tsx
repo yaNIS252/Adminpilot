@@ -13,6 +13,10 @@ import { useState } from "react";
  *
  * L'ouverture se fait par `grid-template-rows: 0fr → 1fr`, ce qui permet
  * d'animer vers une hauteur inconnue à l'avance, impossible avec `height`.
+ *
+ * Présentées en liste séparée de filets, et non en boîtes arrondies empilées :
+ * c'est plus calme, et l'œil suit une colonne de questions plutôt qu'une pile
+ * de cartes.
  */
 
 const QUESTIONS = [
@@ -42,24 +46,17 @@ export function Faq() {
   const [open, setOpen] = useState(0);
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="border-t border-[var(--border)]">
       {QUESTIONS.map((item, index) => {
         const isOpen = open === index;
 
         return (
-          <div
-            key={item.q}
-            className={`rounded-[14px] border transition-all ${
-              isOpen
-                ? "border-[rgba(139,124,240,.35)] bg-[rgba(139,124,240,.06)]"
-                : "border-[var(--border)] bg-[rgba(255,255,255,.02)]"
-            }`}
-          >
+          <div key={item.q} className="border-b border-[var(--border)]">
             <button
               type="button"
               onClick={() => setOpen(isOpen ? -1 : index)}
               aria-expanded={isOpen}
-              className="flex w-full items-center gap-3 px-5 py-[18px] text-left text-base font-medium text-[#f0f0f5]"
+              className="flex w-full items-center gap-4 py-5 text-left text-[17px] font-medium text-[var(--text-bright)]"
             >
               <span className="flex-1">{item.q}</span>
               <Plus
@@ -76,7 +73,7 @@ export function Faq() {
               style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
             >
               <div className="overflow-hidden">
-                <p className="m-0 px-5 pb-[18px] text-[15px] leading-[1.65] text-[var(--text-dim)]">
+                <p className="m-0 max-w-[620px] pr-10 pb-6 text-[15px] leading-[1.7] text-pretty text-[var(--text-dim)]">
                   {item.a}
                 </p>
               </div>

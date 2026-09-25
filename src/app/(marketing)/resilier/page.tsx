@@ -45,8 +45,9 @@ export default async function CancelIndexPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-12">
-      <h1 className="mb-2 text-3xl font-bold tracking-tight">
-        Guides de résiliation
+      <div className="section-mark mb-6">Guides pratiques</div>
+      <h1 className="serif mt-0 mb-4 text-[clamp(40px,7vw,64px)] leading-[1.02]">
+        Guides de <em>résiliation.</em>
       </h1>
       <p className="mb-10 text-[var(--text-dim)]">
         La base légale applicable, la procédure acceptée et les délais à
@@ -83,7 +84,7 @@ export default async function CancelIndexPage() {
         </p>
         <Link
           href="/login"
-          className="inline-block rounded-[var(--radius)] bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white no-underline"
+          className="btn-primary h-10 px-4 text-sm"
         >
           Essayer gratuitement
         </Link>

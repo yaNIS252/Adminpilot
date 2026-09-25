@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, Copy } from "lucide-react";
-import { useState } from "react";
+import { Check, Copy, TextSelect } from "lucide-react";
+import { useRef, useState } from "react";
 
 /**
  * Adresse d'ingestion, avec copie en un geste.
@@ -9,37 +9,68 @@ import { useState } from "react";
  * Cette adresse est saisie dans les réglages Gmail : la recopier à la main est
  * le moyen le plus sûr de se tromper d'un caractère et de ne jamais comprendre
  * pourquoi rien n'arrive.
+ *
+ * Utilisée par l'onboarding ET par les réglages. L'onboarding en avait sa
+ * propre copie, qui avait le même défaut que celle-ci : quand le presse-papier
+ * était refusé, le bouton ne faisait rien du tout, sans le moindre retour.
  */
 export function InboxAddress({ address }: { address: string }) {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "selected">("idle");
+  const codeRef = useRef<HTMLElement>(null);
 
   async function copy() {
     try {
       await navigator.clipboard.writeText(address);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setState("copied");
     } catch {
-      // Presse-papier indisponible (contexte non sécurisé, permission refusée) :
-      // l'adresse reste sélectionnable à la main, rien n'est bloqué.
+      // Presse-papier refusé — ça arrive vraiment : navigateurs intégrés aux
+      // applis (Gmail, Instagram sur mobile), permission refusée, page sans
+      // focus. On sélectionne alors l'adresse, pour qu'il ne reste qu'à faire
+      // Ctrl+C ou « Copier » dans le menu du téléphone. Ne rien faire du tout
+      // laisserait l'utilisateur bloqué à la toute première étape.
+      const node = codeRef.current;
+      const selection = window.getSelection();
+      if (node && selection) {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      setState("selected");
     }
+    setTimeout(() => setState("idle"), 2500);
   }
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <code className="mono min-w-0 flex-1 overflow-x-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 py-2.5 text-sm whitespace-nowrap">
+      <code
+        ref={codeRef}
+        className="mono min-w-0 flex-1 overflow-x-auto rounded-[8px] border border-[var(--border)] bg-[var(--surface-alt)] px-3.5 py-2.5 text-[13px] whitespace-nowrap select-all"
+      >
         {address}
       </code>
       <button
         type="button"
         onClick={copy}
-        className={`flex shrink-0 items-center gap-1.5 rounded-[var(--radius-sm)] px-3.5 py-2.5 text-sm font-medium transition-colors ${
-          copied
-            ? "bg-[rgba(63,207,149,.15)] text-[var(--positive-light)]"
-            : "bg-gradient-to-b from-[#9888f7] to-[#5b4bd6] text-white"
+        aria-live="polite"
+        className={`h-10 shrink-0 px-4 text-sm ${
+          state === "idle"
+            ? "btn-primary"
+            : "inline-flex items-center gap-1.5 rounded-[8px] bg-[rgba(63,207,149,.15)] font-medium text-[var(--positive-light)]"
         }`}
       >
-        {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-        {copied ? "Copié" : "Copier"}
+        {state === "copied" ? (
+          <Check className="size-4" />
+        ) : state === "selected" ? (
+          <TextSelect className="size-4" />
+        ) : (
+          <Copy className="size-4" />
+        )}
+        {state === "copied"
+          ? "Copié"
+          : state === "selected"
+            ? "Sélectionné, fais Ctrl+C"
+            : "Copier"}
       </button>
     </div>
   );
