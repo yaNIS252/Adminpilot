@@ -58,32 +58,46 @@
   --radius-2xl: 20px;
 }
 
-* {
-  box-sizing: border-box;
-}
+/*
+ * Styles de base, rangés dans `@layer base`.
+ *
+ * Ils étaient hors de toute couche, et c'est un piège de Tailwind v4 : les
+ * utilitaires y vivent dans `@layer utilities`, or une règle hors couche
+ * l'emporte TOUJOURS sur une règle en couche, spécificité ou pas. `a { color }`
+ * écrasait donc `text-white` sur chaque lien du site — les boutons « Commencer »
+ * affichaient leur texte en lavande sur fond violet, illisibles, quelle que soit
+ * la classe posée dessus. Dans `@layer base`, ces règles redeviennent ce
+ * qu'elles doivent être : des valeurs par défaut que n'importe quel utilitaire
+ * surcharge.
+ */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
 
-html {
-  scroll-behavior: smooth;
-}
+  html {
+    scroll-behavior: smooth;
+  }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
 
-a {
-  color: var(--accent-light);
-  text-decoration: none;
-}
-a:hover {
-  color: var(--accent-lighter);
-}
+  a {
+    color: var(--accent-light);
+    text-decoration: none;
+  }
+  a:hover {
+    color: var(--accent-lighter);
+  }
 
-input::placeholder {
-  color: var(--text-ghost);
+  input::placeholder {
+    color: var(--text-ghost);
+  }
 }
 
 /* Les montants sont toujours en mono tabulaire : dans une colonne de prix,

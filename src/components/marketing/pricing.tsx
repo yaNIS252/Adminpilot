@@ -190,7 +190,7 @@ function Plan({
         href="/login"
         className={`block rounded-[var(--radius)] py-3 text-center text-sm font-semibold transition-shadow ${
           highlight
-            ? "bg-gradient-to-b from-[#9888f7] to-[#5b4bd6] text-white shadow-[0_8px_30px_-8px_rgba(139,124,240,.9)] hover:text-white hover:shadow-[0_0_44px_-4px_rgba(139,124,240,1)]"
+            ? "bg-gradient-to-b from-[#7c6ae9] via-[#5744cf] to-[#3a2ca6] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.45),inset_0_0_0_1px_rgba(255,255,255,.2),0_8px_30px_-8px_rgba(139,124,240,.9)] hover:text-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,.55),0_0_44px_-4px_rgba(139,124,240,1)]"
             : "border border-[var(--border-strong)] bg-[rgba(255,255,255,.03)] text-[var(--text)] hover:bg-[rgba(255,255,255,.08)] hover:text-white"
         }`}
       >

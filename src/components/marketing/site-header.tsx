@@ -78,7 +78,7 @@ export function SiteHeader() {
 
         <Link
           href="/login"
-          className="flex shrink-0 items-center gap-1.5 rounded-[var(--radius)] bg-gradient-to-b from-[#8b7cf0] via-[#6a58e0] to-[#4b3bc4] px-3.5 py-2.5 text-sm font-bold whitespace-nowrap text-white [text-shadow:0_1px_2px_rgba(28,18,72,.55)] shadow-[inset_0_1px_0_rgba(255,255,255,.35),inset_0_0_0_1px_rgba(255,255,255,.2),0_6px_20px_-6px_rgba(139,124,240,.7)] transition-all hover:-translate-y-px hover:text-white sm:px-4"
+          className="flex shrink-0 items-center gap-1.5 rounded-[var(--radius)] bg-gradient-to-b from-[#7c6ae9] via-[#5744cf] to-[#3a2ca6] px-3.5 py-2.5 text-sm font-bold whitespace-nowrap text-white shadow-[inset_0_1px_0_rgba(255,255,255,.35),inset_0_0_0_1px_rgba(255,255,255,.2),0_6px_20px_-6px_rgba(139,124,240,.7)] transition-all hover:-translate-y-px hover:text-white sm:px-4"
         >
           Commencer
           <ArrowRight className="size-3.5" />

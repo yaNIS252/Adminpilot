@@ -50,7 +50,7 @@ export default function LandingPage() {
               href="/login"
 
               // bouton doit accrocher l'œil avant tout le reste du bloc.
-              className="flex items-center gap-2 rounded-[var(--radius-md)] bg-gradient-to-b from-[#8b7cf0] via-[#6a58e0] to-[#4b3bc4] px-[26px] py-[15px] text-base font-bold text-white [text-shadow:0_1px_2px_rgba(28,18,72,.55)] shadow-[inset_0_1px_0_rgba(255,255,255,.55),inset_0_0_0_1px_rgba(255,255,255,.22),0_10px_40px_-10px_rgba(139,124,240,.9)] transition-all hover:-translate-y-0.5 hover:text-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,.6),inset_0_0_0_1px_rgba(255,255,255,.32),0_0_60px_-6px_rgba(139,124,240,1)]"
+              className="flex items-center gap-2 rounded-[var(--radius-md)] bg-gradient-to-b from-[#7c6ae9] via-[#5744cf] to-[#3a2ca6] px-[26px] py-[15px] text-base font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.45),inset_0_0_0_1px_rgba(255,255,255,.22),0_10px_40px_-10px_rgba(139,124,240,.9)] transition-all hover:-translate-y-0.5 hover:text-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,.6),inset_0_0_0_1px_rgba(255,255,255,.32),0_0_60px_-6px_rgba(139,124,240,1)]"
             >
               Commencer gratuitement
               <ArrowRight className="size-4" />
@@ -231,7 +231,7 @@ export default function LandingPage() {
           </h2>
           <Link
             href="/login"
-            className="mt-[26px] inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-gradient-to-b from-[#8b7cf0] via-[#6a58e0] to-[#4b3bc4] px-6 py-3.5 font-bold text-white [text-shadow:0_1px_2px_rgba(28,18,72,.55)] shadow-[inset_0_1px_0_rgba(255,255,255,.55),inset_0_0_0_1px_rgba(255,255,255,.22),0_10px_40px_-10px_rgba(139,124,240,.9)] transition-all hover:-translate-y-0.5 hover:text-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,.6),inset_0_0_0_1px_rgba(255,255,255,.32),0_0_60px_-6px_rgba(139,124,240,1)]"
+            className="mt-[26px] inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-gradient-to-b from-[#7c6ae9] via-[#5744cf] to-[#3a2ca6] px-6 py-3.5 font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.45),inset_0_0_0_1px_rgba(255,255,255,.22),0_10px_40px_-10px_rgba(139,124,240,.9)] transition-all hover:-translate-y-0.5 hover:text-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,.6),inset_0_0_0_1px_rgba(255,255,255,.32),0_0_60px_-6px_rgba(139,124,240,1)]"
           >
             Commencer gratuitement
             <ArrowRight className="size-4" />
