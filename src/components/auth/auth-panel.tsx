@@ -95,6 +95,14 @@ function humanError(message: string, status: number | undefined, mode: Mode) {
   if (raw.includes("invalid") && raw.includes("email")) {
     return "Cette adresse e-mail ne semble pas valide.";
   }
+
+  // « Error sending magic link email » : la demande est bonne, c'est le
+  // service d'envoi qui a refusé (domaine d'expédition non vérifié, SMTP mal
+  // configuré). Réessayer ne changera rien tant que ce n'est pas réparé :
+  // mieux vaut le dire que laisser l'utilisateur insister.
+  if (raw.includes("error sending") || (status !== undefined && status >= 500)) {
+    return "Notre service d’envoi d’e-mails rencontre un problème de notre côté. Réessaie un peu plus tard.";
+  }
   return "L’envoi a échoué. Réessaie dans un instant.";
 }
 
