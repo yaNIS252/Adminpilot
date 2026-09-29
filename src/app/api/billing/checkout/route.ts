@@ -2,9 +2,14 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/require-user";
-import { createCheckoutSession, createPortalSession } from "@/lib/billing/stripe";
+import {
+  createCheckoutSession,
+  createPortalSession,
+  ensureCustomer,
+} from "@/lib/billing/stripe";
 import { readJson } from "@/lib/http/request";
 import { siteUrl } from "@/lib/site-url";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -24,6 +29,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
   }
 
+  // Stripe absent de la configuration : un message exploitable plutôt qu'une
+  // exception brute, pour que l'interface puisse dire la vérité à
+  // l'utilisateur au lieu d'un « erreur 500 » incompréhensible.
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json(
+      { error: "paiement indisponible", code: "billing_not_configured" },
+      { status: 503 },
+    );
+  }
+
   const base = siteUrl();
 
   // Déjà client et déjà sur un plan payant : le portail Stripe est le bon
@@ -39,10 +54,25 @@ export async function POST(request: Request) {
   const body = await readJson(request, BodySchema);
   if (!body.ok) return body.response;
 
-  const url = await createCheckoutSession({
+  const customerId = await ensureCustomer({
     userId: auth.userId,
     email: auth.profile.email,
     stripeCustomerId: auth.profile.stripe_customer_id,
+  });
+
+  // Mémorisé tout de suite, avant même le paiement : une seconde tentative
+  // réutilisera ce client au lieu d'en créer un autre. Client de service, car
+  // l'utilisateur ne doit pas pouvoir écrire lui-même cette colonne.
+  if (customerId !== auth.profile.stripe_customer_id) {
+    await createAdminClient()
+      .from("profiles")
+      .update({ stripe_customer_id: customerId })
+      .eq("id", auth.userId);
+  }
+
+  const url = await createCheckoutSession({
+    userId: auth.userId,
+    stripeCustomerId: customerId,
     plan: body.data.plan,
     cycle: body.data.cycle,
     siteUrl: base,

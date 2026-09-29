@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
+import { REVIEW_THRESHOLD } from "@/lib/ai/schemas";
+import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
 import { getStripe, planFromPriceId } from "@/lib/billing/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -60,8 +62,49 @@ async function applySubscription(
     ? db.from("profiles").update(update).eq("id", userId)
     : db.from("profiles").update(update).eq("stripe_customer_id", customerId);
 
-  const { error } = await query;
+  const { data: profiles, error } = await query.select("id");
   if (error) throw error;
+
+  if (update.plan !== "free") {
+    for (const profile of profiles ?? []) {
+      await unlockHiddenSubscriptions(db, profile.id);
+    }
+  }
+}
+
+/**
+ * Révèle les abonnements détectés au-delà du quota gratuit.
+ *
+ * C'est la promesse faite par l'encart « N autres abonnements détectés » :
+ * payer les fait apparaître tout de suite, sans retransférer un seul e-mail.
+ * Leurs alertes n'avaient pas été programmées tant qu'ils étaient masqués ;
+ * elles le sont ici, avec les mêmes règles que dans le pipeline — une
+ * extraction peu sûre ne déclenche pas d'alerte.
+ */
+async function unlockHiddenSubscriptions(
+  db: ReturnType<typeof createAdminClient>,
+  userId: string,
+) {
+  const { data: unlocked, error } = await db
+    .from("subscriptions")
+    .update({ over_quota: false })
+    .eq("user_id", userId)
+    .eq("over_quota", true)
+    .select("id, provider, next_renewal, confidence");
+
+  if (error) throw error;
+
+  for (const sub of unlocked ?? []) {
+    if (!sub.next_renewal || sub.confidence < REVIEW_THRESHOLD) continue;
+    await scheduleDeadlineAlerts({
+      userId,
+      refType: "subscription",
+      refId: sub.id,
+      deadline: sub.next_renewal,
+      title: `${sub.provider} se renouvelle`,
+      message: `Prochaine échéance le ${sub.next_renewal}.`,
+    });
+  }
 }
 
 export async function POST(request: Request) {

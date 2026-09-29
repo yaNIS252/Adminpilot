@@ -3,6 +3,7 @@
 import { ExternalLink, FileText, Trash2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 
+import { UpgradeNotice } from "@/components/billing/upgrade-notice";
 import { DOC_CATEGORIES } from "@/lib/ai/schemas";
 import { ACCEPTED_MIME_TYPES, MAX_UPLOAD_BYTES } from "@/lib/constants";
 import { formatDate, formatRelativeDeadline } from "@/lib/format";
@@ -32,6 +33,9 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
   const [items, setItems] = useState(initial);
   const [category, setCategory] = useState<string>("");
   const [status, setStatus] = useState<string | null>(null);
+  // Limite de documents atteinte : un encart pour passer Pro plutôt que le
+  // « quota atteint » brut renvoyé par le serveur.
+  const [quotaReached, setQuotaReached] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
   const input = useRef<HTMLInputElement>(null);
 
@@ -68,8 +72,21 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
       });
       const body = await response.json().catch(() => ({}));
 
+      if (response.status === 402) {
+        setQuotaReached(typeof body.max === "number" ? body.max : 0);
+        setStatus(`${file.name} n’a pas été ajouté : ton coffre-fort est plein.`);
+        // Les fichiers suivants seraient refusés pour la même raison.
+        break;
+      }
+
       if (!response.ok) {
-        setStatus(body.error ?? `${file.name} : échec de l’envoi.`);
+        setStatus(
+          response.status === 415
+            ? `${file.name} : ce type de fichier n’est pas accepté.`
+            : response.status === 429
+              ? "Trop d’envois en peu de temps. Réessaie dans quelques minutes."
+              : `${file.name} : l’envoi a échoué. Réessaie dans un instant.`,
+        );
         continue;
       }
 
@@ -147,6 +164,13 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
           className="hidden"
         />
       </div>
+
+      {quotaReached !== null && (
+        <UpgradeNotice
+          title="Coffre-fort plein"
+          body={`La formule gratuite garde ${quotaReached || "tes"} documents. Passe Pro pour en ajouter autant que tu veux, et les retrouver en langage courant.`}
+        />
+      )}
 
       {status && (
         <p

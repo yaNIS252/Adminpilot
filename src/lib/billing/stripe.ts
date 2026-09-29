@@ -40,10 +40,49 @@ export function priceIdFor(
   return priceId;
 }
 
-export async function createCheckoutSession(input: {
+/**
+ * Mention obligatoire sur chaque facture tant que l'activité relève de la
+ * franchise en base de TVA (article 293 B du CGI, seuil de 37 500 € de
+ * chiffre d'affaires annuel pour les prestations de services). Son absence
+ * est une irrégularité de facturation. À retirer le jour où la franchise
+ * cesse — les prix affichés deviennent alors TTC avec 20 % de TVA.
+ */
+const VAT_FOOTER = "TVA non applicable, art. 293 B du CGI.";
+
+/**
+ * Client Stripe du compte, créé s'il n'existe pas encore.
+ *
+ * Créé AVANT la session de paiement et non par Checkout : c'est le seul moyen
+ * de poser la mention de TVA sur toutes ses factures futures, et de pouvoir
+ * mémoriser son identifiant tout de suite. Laisser Checkout le créer
+ * produisait un nouveau client à chaque tentative abandonnée.
+ */
+export async function ensureCustomer(input: {
   userId: string;
   email: string;
   stripeCustomerId: string | null;
+}): Promise<string> {
+  const stripe = getStripe();
+
+  if (input.stripeCustomerId) {
+    await stripe.customers.update(input.stripeCustomerId, {
+      invoice_settings: { footer: VAT_FOOTER },
+    });
+    return input.stripeCustomerId;
+  }
+
+  const customer = await stripe.customers.create({
+    email: input.email,
+    metadata: { user_id: input.userId },
+    invoice_settings: { footer: VAT_FOOTER },
+    preferred_locales: ["fr"],
+  });
+  return customer.id;
+}
+
+export async function createCheckoutSession(input: {
+  userId: string;
+  stripeCustomerId: string;
   plan: "pro" | "family";
   cycle: "monthly" | "yearly";
   siteUrl: string;
@@ -53,18 +92,15 @@ export async function createCheckoutSession(input: {
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     line_items: [{ price: priceIdFor(input.plan, input.cycle), quantity: 1 }],
-    ...(input.stripeCustomerId
-      ? { customer: input.stripeCustomerId }
-      : { customer_email: input.email }),
+    customer: input.stripeCustomerId,
     // Seule source fiable pour relier la session à un compte au retour du
     // webhook : l'email peut différer de celui du compte.
     client_reference_id: input.userId,
     subscription_data: { metadata: { user_id: input.userId } },
     success_url: `${input.siteUrl}/dashboard?abonnement=actif`,
-    // `/pricing` n'existe pas : la grille tarifaire est une section de la page
-    // d'accueil. Abandonner le paiement menait donc sur un 404, au pire moment
-    // possible — juste après une hésitation à payer.
-    cancel_url: `${input.siteUrl}/#tarifs`,
+    // Retour là où le bouton a été cliqué, avec le choix intact : une
+    // hésitation au moment de payer ne doit pas obliger à tout recommencer.
+    cancel_url: `${input.siteUrl}/reglages?formule=${input.plan}&cycle=${input.cycle}&paiement=annule#formules`,
     allow_promotion_codes: true,
     locale: "fr",
   });

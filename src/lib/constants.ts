@@ -18,23 +18,27 @@ export const PLAN_LIMITS: Record<
   Enums<"plan">,
   Record<Feature, number | null>
 > = {
+  // Scénario B du plan financier (septembre 2026) : un gratuit qui laisse
+  // essayer le cœur du produit — détecter et être prévenu — et garde pour le
+  // Pro ce qui fait gagner du temps ou de l'argent : recherche et résiliation.
   free: {
     subscriptions: 5,
     documents: 10,
-    alerts: 1,
-    searches: 5,
+    // Alertes ENVOYÉES dans le mois, automatiques comme manuelles.
+    alerts: 3,
+    searches: 0,
     cancellations: 0,
   },
   pro: {
     subscriptions: null,
-    documents: 500,
+    documents: null,
     alerts: null,
     searches: null,
-    cancellations: 3,
+    cancellations: null,
   },
   family: {
     subscriptions: null,
-    documents: 1000,
+    documents: null,
     alerts: null,
     searches: null,
     cancellations: null,

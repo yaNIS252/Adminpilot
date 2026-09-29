@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/require-user";
-import { checkLimit, incrementUsage } from "@/lib/billing/quotas";
 import { invalidId, readJson, readUuid } from "@/lib/http/request";
 import { createClient } from "@/lib/supabase/server";
 
@@ -55,14 +54,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
   }
 
-  const quota = await checkLimit(auth.userId, auth.profile.plan, "alerts");
-  if (!quota.allowed) {
-    return NextResponse.json(
-      { error: "quota atteint", feature: "alerts", ...quota },
-      { status: 402 },
-    );
-  }
-
   const body = await readJson(request, PostSchema);
   if (!body.ok) return body.response;
   const input = body.data;
@@ -105,8 +96,10 @@ export async function POST(request: Request) {
     .single();
 
   if (error) throw error;
-  await incrementUsage(auth.userId, "alerts");
 
+  // Pas de décompte ici : le quota porte sur les alertes ENVOYÉES, et c'est le
+  // cron d'envoi qui le tient. Compter aussi à la création ferait payer deux
+  // fois la même alerte.
   return NextResponse.json({ alert: data }, { status: 201 });
 }
 

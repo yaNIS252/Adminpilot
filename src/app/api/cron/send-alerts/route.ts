@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
 import { buildDeadlineEmail, buildRenewalEmail } from "@/lib/alerts/email";
+import { currentPeriod, incrementUsage } from "@/lib/billing/quotas";
+import { PLAN_LIMITS } from "@/lib/constants";
 import { siteUrl } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -45,7 +47,7 @@ export async function GET(request: Request) {
 
   const { data: alerts, error } = await db
     .from("alerts")
-    .select("*, profiles!inner(email, deleted_at)")
+    .select("*, profiles!inner(email, deleted_at, plan)")
     .is("sent_at", null)
     .lte("alert_date", today)
     .limit(BATCH_SIZE);
@@ -82,16 +84,31 @@ export async function GET(request: Request) {
   ]);
 
   const subById = new Map((subs.data ?? []).map((s) => [s.id, s]));
+
+  // Alertes déjà envoyées ce mois-ci, par utilisateur, pour appliquer le quota
+  // des formules limitées. Chargées une fois pour tout le lot, puis tenues à
+  // jour en mémoire à chaque envoi.
+  const userIds = [...new Set(alerts.map((a) => a.user_id))];
+  const { data: counters } = await db
+    .from("usage_counters")
+    .select("user_id, alerts_count")
+    .eq("period", currentPeriod())
+    .in("user_id", userIds);
+  const sentThisMonth = new Map(
+    (counters ?? []).map((c) => [c.user_id, c.alerts_count]),
+  );
   const docById = new Map((docs.data ?? []).map((d) => [d.id, d]));
 
   let sent = 0;
   let failed = 0;
   let refused = 0;
+  let capped = 0;
 
   for (const alert of alerts) {
     const profile = alert.profiles as unknown as {
       email: string;
       deleted_at: string | null;
+      plan: keyof typeof PLAN_LIMITS;
     };
 
     // Clore l'alerte d'abord, dans tous les cas de figure : une alerte qu'on
@@ -103,6 +120,16 @@ export async function GET(request: Request) {
 
     // Compte supprimé entre la programmation et l'envoi.
     if (profile.deleted_at) continue;
+
+    // Quota mensuel d'alertes envoyées (3 en gratuit). L'alerte est close sans
+    // envoi : la relancer le mois suivant la ferait arriver après l'échéance,
+    // ce qui serait pire qu'inutile.
+    const limit = PLAN_LIMITS[profile.plan]?.alerts ?? null;
+    const already = sentThisMonth.get(alert.user_id) ?? 0;
+    if (limit !== null && already >= limit) {
+      capped += 1;
+      continue;
+    }
 
     try {
       const dashboardUrl = `${base}/dashboard`;
@@ -159,6 +186,9 @@ export async function GET(request: Request) {
       });
 
       sent += 1;
+      sentThisMonth.set(alert.user_id, already + 1);
+      // Compteur en base, pour les passages suivants et l'affichage du quota.
+      await incrementUsage(alert.user_id, "alerts").catch(() => {});
     } catch {
       // Aucun détail loggé : le message d'erreur d'un envoi contient
       // l'adresse du destinataire.
@@ -171,5 +201,6 @@ export async function GET(request: Request) {
     sent,
     failed,
     refused,
+    capped,
   });
 }

@@ -9,6 +9,11 @@ import {
   Wallet,
 } from "lucide-react";
 
+import {
+  UpgradeNotice,
+  hiddenSubscriptionsCopy,
+} from "@/components/billing/upgrade-notice";
+
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { requireUser } from "@/lib/auth/require-user";
 import {
@@ -43,18 +48,30 @@ const CATEGORY_LABELS: Record<string, string> = {
   travail: "Travail",
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ abonnement?: string }>;
+}) {
   const auth = await requireUser();
+  const { abonnement } = await searchParams;
+  const justPaid = abonnement === "actif";
   const supabase = await createClient();
 
   // `count` vit sur la réponse, pas dans `data` : avec `head: true`, `data`
   // est toujours null.
-  const [{ data: subscriptions }, { data: documents }, { count: reviewCount }] =
+  const [
+    { data: subscriptions },
+    { data: documents },
+    { count: reviewCount },
+    { count: hiddenCount },
+  ] =
     await Promise.all([
       supabase
         .from("subscriptions")
         .select("*")
         .eq("status", "active")
+        .eq("over_quota", false)
         .order("amount", { ascending: false, nullsFirst: false }),
       supabase
         .from("documents")
@@ -64,8 +81,13 @@ export default async function DashboardPage() {
       supabase
         .from("subscriptions")
         .select("id", { count: "exact", head: true })
+        .eq("over_quota", false)
         .eq("confirmed_by_user", false)
         .lt("confidence", 0.7),
+      supabase
+        .from("subscriptions")
+        .select("id", { count: "exact", head: true })
+        .eq("over_quota", true),
     ]);
 
   const subs = subscriptions ?? [];
@@ -119,6 +141,31 @@ export default async function DashboardPage() {
           )}
         </h1>
       </header>
+
+      {/* Retour de paiement. Le webhook Stripe, seul juge du plan, arrive en
+          général avant l'utilisateur — mais pas toujours : si le profil est
+          encore en gratuit, on le dit plutôt que de laisser croire à un échec. */}
+      {justPaid && (
+        <section
+          role="status"
+          className="rounded-[10px] border border-[rgba(63,207,149,.35)] bg-[rgba(63,207,149,.06)] px-5 py-4"
+        >
+          <div className="text-[15px] font-semibold">
+            {auth?.profile.plan && auth.profile.plan !== "free"
+              ? `Bienvenue en ${auth.profile.plan === "family" ? "Famille" : "Pro"}.`
+              : "Paiement reçu, activation en cours."}
+          </div>
+          <p className="m-0 mt-0.5 text-[13px] text-[var(--text-dim)]">
+            {auth?.profile.plan && auth.profile.plan !== "free"
+              ? "Tout est débloqué, y compris les abonnements déjà détectés au-delà de la limite gratuite. Ta facture est disponible dans les réglages."
+              : "Ta formule sera active d’ici quelques secondes. Recharge la page si rien ne change."}
+          </p>
+        </section>
+      )}
+
+      {hiddenCount ? (
+        <UpgradeNotice {...hiddenSubscriptionsCopy(hiddenCount)} />
+      ) : null}
 
       {reviewCount ? (
         <section

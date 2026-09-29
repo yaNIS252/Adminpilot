@@ -390,6 +390,7 @@ export type Database = {
           id: string;
           metadata: Json | null;
           next_renewal: string | null;
+          over_quota: boolean;
           provider: string;
           provider_id: string | null;
           source_job_id: string | null;
@@ -408,6 +409,7 @@ export type Database = {
           id?: string;
           metadata?: Json | null;
           next_renewal?: string | null;
+          over_quota?: boolean;
           provider: string;
           provider_id?: string | null;
           source_job_id?: string | null;
@@ -426,6 +428,7 @@ export type Database = {
           id?: string;
           metadata?: Json | null;
           next_renewal?: string | null;
+          over_quota?: boolean;
           provider?: string;
           provider_id?: string | null;
           source_job_id?: string | null;

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { useState } from "react";
 
-import { PLAN_PRICES } from "@/lib/constants";
+import { FAMILY_SEATS, PLAN_LIMITS, PLAN_PRICES } from "@/lib/constants";
 
 /**
  * Tarifs, avec bascule mensuel / annuel.
@@ -14,6 +14,19 @@ import { PLAN_PRICES } from "@/lib/constants";
  * afficher « 49 € » à côté de « 5,99 € » donnerait l'impression d'un
  * renchérissement.
  */
+
+/**
+ * Destination d'un bouton payant.
+ *
+ * Les réglages portent le sélecteur de paiement. Un visiteur non connecté y
+ * est renvoyé vers la connexion par le middleware, qui conserve la formule
+ * choisie dans `next` : après connexion, il retombe exactement sur le bouton
+ * « Payer » de la formule qu'il avait cliquée, au lieu d'un tableau de bord
+ * où il faudrait la rechercher.
+ */
+function checkoutHref(plan: "pro" | "family", yearly: boolean): string {
+  return `/reglages?formule=${plan}&cycle=${yearly ? "yearly" : "monthly"}#formules`;
+}
 
 function monthlyEquivalent(yearly: number): string {
   return `${(yearly / 12).toFixed(2).replace(".", ",")} €`;
@@ -47,8 +60,13 @@ export function Pricing() {
           name="Gratuit"
           price="0 €"
           suffix="pour toujours"
-          features={["5 abonnements suivis", "10 documents", "1 alerte par mois"]}
+          features={[
+            `${PLAN_LIMITS.free.subscriptions} abonnements suivis`,
+            `${PLAN_LIMITS.free.documents} documents`,
+            `${PLAN_LIMITS.free.alerts} alertes par mois`,
+          ]}
           cta="Commencer"
+          href="/login"
         />
 
         <Plan
@@ -65,11 +83,12 @@ export function Pricing() {
               : "Sans engagement"
           }
           features={[
-            "Abonnements et alertes illimités",
-            "500 documents · recherche illimitée",
-            "3 résiliations par mois",
+            "Abonnements, documents et alertes illimités",
+            "Recherche en langage courant",
+            "Lettres de résiliation illimitées",
           ]}
           cta="Passer Pro"
+          href={checkoutHref("pro", yearly)}
           highlight
         />
 
@@ -88,10 +107,11 @@ export function Pricing() {
           }
           features={[
             "Tout le plan Pro",
-            "1 000 documents",
-            "Résiliations illimitées · 5 membres",
+            `Jusqu’à ${FAMILY_SEATS} membres du foyer`,
+            "Un tableau de bord partagé",
           ]}
           cta="Choisir Famille"
+          href={checkoutHref("family", yearly)}
         />
       </div>
     </>
@@ -130,6 +150,7 @@ function Plan({
   note,
   features,
   cta,
+  href,
   highlight,
 }: {
   name: string;
@@ -138,6 +159,7 @@ function Plan({
   note?: string;
   features: string[];
   cta: string;
+  href: string;
   highlight?: boolean;
 }) {
   const body = (
@@ -191,7 +213,7 @@ function Plan({
       </ul>
 
       <Link
-        href="/login"
+        href={href}
         className={`h-11 w-full text-sm ${
           highlight ? "btn-primary" : "btn-secondary"
         }`}

@@ -49,6 +49,7 @@ export async function GET(request: Request) {
   let query = supabase
     .from("subscriptions")
     .select("*, known_providers(name, seo_slug, cancel_method, legal_basis)")
+    .eq("over_quota", false)
     .order("amount", { ascending: false, nullsFirst: false });
 
   if (needsReview) {

@@ -91,7 +91,12 @@ export async function middleware(request: NextRequest) {
     const login = request.nextUrl.clone();
     login.pathname = "/login";
     // Mémorise la destination pour y revenir après connexion.
-    login.searchParams.set("next", pathname);
+    // Chemin ET paramètres : « /reglages?formule=pro » doit revenir entier,
+    // sinon le visiteur qui cliquait « Passer Pro » perd son choix en route.
+    // `safeNext` du callback reste le garde-fou contre les redirections
+    // ouvertes, quelle que soit la valeur transportée ici.
+    login.search = "";
+    login.searchParams.set("next", pathname + request.nextUrl.search);
     return NextResponse.redirect(login);
   }
 

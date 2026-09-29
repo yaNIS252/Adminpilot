@@ -5,6 +5,7 @@ import type { TablesUpdate } from "@/lib/supabase/types";
 import { REVIEW_THRESHOLD } from "@/lib/ai/schemas";
 import { extractFromDocument, extractFromEmail } from "@/lib/ai/extract";
 import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
+import { PLAN_LIMITS } from "@/lib/constants";
 
 /**
  * Cœur du pipeline. Les deux sources — mail transféré et document uploadé —
@@ -180,6 +181,13 @@ export async function processEmailJob(job: {
     data.provider,
   );
 
+  // Au-delà du quota de la formule, l'abonnement est enregistré mais masqué.
+  // Une mise à jour d'un abonnement déjà connu ne change jamais ce statut : un
+  // abonnement visible le reste, un abonnement en réserve aussi.
+  const overQuota = existing
+    ? existing.over_quota
+    : await exceedsSubscriptionQuota(db, job.user_id);
+
   const inserted = existing
     ? await refreshSubscription(db, existing, {
         amount: data.amount,
@@ -199,12 +207,13 @@ export async function processEmailJob(job: {
         nextRenewal: data.next_renewal,
         confidence: data.confidence,
         sourceJobId: job.id,
+        overQuota,
         metadata: { reasoning: data.reasoning, detected_type: data.type },
       });
 
   // Une échéance connue vaut une alerte, sauf si l'extraction est trop peu
   // sûre : alerter sur une date inventée est pire que ne pas alerter.
-  if (data.next_renewal && !needsReview) {
+  if (data.next_renewal && !needsReview && !overQuota) {
     await scheduleDeadlineAlerts({
       userId: job.user_id,
       refType: "subscription",
@@ -321,7 +330,9 @@ async function findExistingSubscription(
 ) {
   const { data } = await db
     .from("subscriptions")
-    .select("id, provider, amount, cycle, next_renewal, confidence, confirmed_by_user")
+    .select(
+      "id, provider, amount, cycle, next_renewal, confidence, confirmed_by_user, over_quota",
+    )
     .eq("user_id", userId)
     .eq("status", "active");
 
@@ -390,6 +401,32 @@ async function refreshSubscription(
   return { id: existing.id };
 }
 
+/**
+ * Vrai si un nouvel abonnement dépasserait le quota de la formule.
+ *
+ * Seuls les abonnements VISIBLES comptent : ceux déjà en réserve ne doivent
+ * pas empêcher l'utilisateur de retrouver sa place s'il en supprime un.
+ */
+async function exceedsSubscriptionQuota(db: Db, userId: string): Promise<boolean> {
+  const { data: profile } = await db
+    .from("profiles")
+    .select("plan")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const limit = PLAN_LIMITS[profile?.plan ?? "free"].subscriptions;
+  if (limit === null) return false;
+
+  const { count } = await db
+    .from("subscriptions")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .eq("over_quota", false);
+
+  return (count ?? 0) >= limit;
+}
+
 async function insertSubscription(
   db: Db,
   input: {
@@ -402,6 +439,7 @@ async function insertSubscription(
     nextRenewal: string | null;
     confidence: number;
     sourceJobId: string;
+    overQuota: boolean;
     metadata: Record<string, unknown>;
   },
 ): Promise<{ id: string }> {
@@ -417,6 +455,7 @@ async function insertSubscription(
       next_renewal: input.nextRenewal,
       confidence: input.confidence,
       source_job_id: input.sourceJobId,
+      over_quota: input.overQuota,
       metadata: input.metadata as never,
     })
     .select("id")

@@ -30,6 +30,7 @@ export default async function AppLayout({
     supabase
       .from("subscriptions")
       .select("id", { count: "exact", head: true })
+      .eq("over_quota", false)
       .eq("confirmed_by_user", false)
       .lt("confidence", 0.7),
     supabase.from("documents").select("id", { count: "exact", head: true }),

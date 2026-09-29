@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { Inbox, ShieldCheck, Sparkles } from "lucide-react";
 
+import { ManageSubscription, PlanPicker } from "@/components/billing/plan-picker";
 import { AccountActions } from "@/components/shared/account-actions";
 import { InboxAddress } from "@/components/shared/inbox-address";
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
-import { PLAN_LIMITS, PLAN_PRICES, RAW_RETENTION_DAYS } from "@/lib/constants";
+import { PLAN_LIMITS, RAW_RETENTION_DAYS } from "@/lib/constants";
 
 export const metadata = { title: "Réglages — AdminPilot" };
 
@@ -14,11 +15,20 @@ const PLAN_LABELS = {
   family: "Famille",
 } as const;
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ formule?: string; cycle?: string; paiement?: string }>;
+}) {
   const auth = await requireUser();
   if (!auth) return null;
 
   const limits = PLAN_LIMITS[auth.profile.plan];
+  const params = await searchParams;
+
+  // Valeurs venues de l'URL, donc de n'importe qui : réduites à ce qui existe.
+  const initialPlan = params.formule === "family" ? "family" : "pro";
+  const initialCycle = params.cycle === "yearly" ? "yearly" : "monthly";
 
   return (
     <div className="flex flex-col gap-4">
@@ -52,14 +62,28 @@ export default async function SettingsPage() {
           <Limit label="Résiliations par mois" value={limits.cancellations} />
         </ul>
 
-        {auth.profile.plan === "free" && (
-          <p className="m-0 mt-4 text-xs text-[var(--text-faint)]">
-            Pro à {PLAN_PRICES.pro.monthly} €/mois, Famille à{" "}
-            {PLAN_PRICES.family.monthly} €/mois.{" "}
-            <Link href="/#tarifs">Voir les formules</Link>.
-          </p>
+        {auth.profile.plan !== "free" && (
+          <div className="mt-5">
+            <ManageSubscription />
+          </div>
         )}
       </Card>
+
+      {auth.profile.plan === "free" && (
+        <section id="formules" className="scroll-mt-6">
+          <Card
+            icon={<Sparkles className="size-4" />}
+            title="Passer à une formule payante"
+            subtitle="Recherche en langage courant, lettres de résiliation, tout illimité"
+          >
+            <PlanPicker
+              initialPlan={initialPlan}
+              initialCycle={initialCycle}
+              cancelled={params.paiement === "annule"}
+            />
+          </Card>
+        </section>
+      )}
 
       <Card
         icon={<ShieldCheck className="size-4 text-[var(--positive)]" />}
@@ -115,6 +139,10 @@ function Limit({ label, value }: { label: string; value: number | null }) {
       <span className="mono font-medium">
         {value === null ? (
           <span className="text-[var(--positive-light)]">illimité</span>
+        ) : value === 0 ? (
+          // « 0 recherche par mois » se lit comme une panne ; c'est une
+          // fonction réservée aux formules payantes, autant le dire.
+          <span className="text-[var(--text-faint)]">non incluse</span>
         ) : (
           value
         )}

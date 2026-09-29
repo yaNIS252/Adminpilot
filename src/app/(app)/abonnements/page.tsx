@@ -2,6 +2,10 @@ import Link from "next/link";
 
 import { SubscriptionList } from "@/components/dashboard/subscription-list";
 import { createClient } from "@/lib/supabase/server";
+import {
+  UpgradeNotice,
+  hiddenSubscriptionsCopy,
+} from "@/components/billing/upgrade-notice";
 
 export const metadata = { title: "Abonnements — AdminPilot" };
 
@@ -25,13 +29,20 @@ export default async function SubscriptionsPage({
   let query = supabase
     .from("subscriptions")
     .select("*")
+    .eq("over_quota", false)
     .order("amount", { ascending: false, nullsFirst: false });
 
   query = reviewMode
     ? query.eq("confirmed_by_user", false).lt("confidence", 0.7)
     : query.eq("status", "active");
 
-  const { data } = await query;
+  const [{ data }, { count: hiddenCount }] = await Promise.all([
+    query,
+    supabase
+      .from("subscriptions")
+      .select("id", { count: "exact", head: true })
+      .eq("over_quota", true),
+  ]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -54,6 +65,10 @@ export default async function SubscriptionsPage({
           {reviewMode ? "Voir tous les abonnements" : "Voir ceux à vérifier"}
         </Link>
       </header>
+
+      {!reviewMode && hiddenCount ? (
+        <UpgradeNotice {...hiddenSubscriptionsCopy(hiddenCount)} />
+      ) : null}
 
       <SubscriptionList initial={data ?? []} reviewMode={reviewMode} />
     </div>
