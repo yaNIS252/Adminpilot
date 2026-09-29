@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/require-user";
@@ -24,6 +25,41 @@ const BodySchema = z.object({
 });
 
 export async function POST(request: Request) {
+  try {
+    return await handle(request);
+  } catch (error) {
+    // Une erreur Stripe remontait en 500 au corps vide : impossible pour
+    // l'interface de dire quoi que ce soit, et pour nous de diagnostiquer.
+    if (error instanceof Stripe.errors.StripeError) {
+      console.error(
+        "[billing/checkout]",
+        error.type,
+        error.code,
+        error.param,
+        error.message,
+      );
+
+      // Cas typique d'une mise en place : clé du mode réel, prix créés en mode
+      // test (ou l'inverse). Stripe le signale dans son message ; on en fait un
+      // code explicite plutôt que de renvoyer le message brut au navigateur.
+      const modeMismatch = /similar object exists in (test|live) mode/i.test(
+        error.message,
+      );
+
+      return NextResponse.json(
+        {
+          error: "paiement indisponible",
+          code: modeMismatch ? "stripe_mode_mismatch" : (error.code ?? error.type),
+          param: error.param ?? null,
+        },
+        { status: 502 },
+      );
+    }
+    throw error;
+  }
+}
+
+async function handle(request: Request) {
   const auth = await requireUser();
   if (!auth) {
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
