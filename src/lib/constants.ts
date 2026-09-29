@@ -50,8 +50,52 @@ export const PLAN_PRICES = {
   family: { monthly: 9.99, yearly: 89 },
 } as const;
 
-/** Nombre de membres du foyer, plan Famille. */
+/** Nombre de comptes couverts par Premium, titulaire compris. */
 export const FAMILY_SEATS = 5;
+
+/**
+ * Noms affichés des formules.
+ *
+ * L'identifiant interne `family` reste celui de la base et des prix Stripe ;
+ * seul le nom change. « Famille » faisait hésiter les gens seuls ou en couple,
+ * qui y voyaient une offre qui ne les concernait pas : Premium dit « le plus
+ * complet », et le partage avec le foyer devient un avantage, pas une condition.
+ */
+export const PLAN_LABELS: Record<Enums<"plan">, string> = {
+  free: "Gratuit",
+  pro: "Pro",
+  family: "Premium",
+};
+
+/**
+ * Couleurs d'accent de l'interface. Les deux premières sont offertes ; les
+ * autres font partie des petits plus des formules payantes. La liste doit
+ * rester alignée sur la contrainte `profiles.accent` (migration 0011) et sur
+ * les thèmes `[data-accent]` de globals.css.
+ */
+export const ACCENTS = [
+  { id: "violet", label: "Violet", hex: "#8b7cf0", free: true },
+  { id: "bleu", label: "Bleu", hex: "#5b9cf5", free: true },
+  { id: "sarcelle", label: "Sarcelle", hex: "#3cbfc7", free: false },
+  { id: "ambre", label: "Ambre", hex: "#f0964b", free: false },
+  { id: "rose", label: "Rose", hex: "#e8729f", free: false },
+] as const;
+
+export type AccentId = (typeof ACCENTS)[number]["id"];
+
+export function isAccentId(value: string): value is AccentId {
+  return ACCENTS.some((accent) => accent.id === value);
+}
+
+/**
+ * Cookie de la bannière « Passer Pro » refermée. Défini ici et non dans le
+ * composant client : une valeur exportée d'un fichier « use client » arrive
+ * côté serveur sous forme de référence opaque, pas de chaîne.
+ */
+export const UPSELL_COOKIE = "ap_upsell_hidden";
+
+/** Validité d'une invitation au foyer. */
+export const INVITE_TTL_DAYS = 14;
 
 // ---------------------------------------------------------------- ingestion
 

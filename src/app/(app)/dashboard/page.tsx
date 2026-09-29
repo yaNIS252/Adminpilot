@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -13,9 +14,11 @@ import {
   UpgradeNotice,
   hiddenSubscriptionsCopy,
 } from "@/components/billing/upgrade-notice";
+import { UpsellBanner } from "@/components/billing/upsell-banner";
 
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { requireUser } from "@/lib/auth/require-user";
+import { PLAN_LABELS, UPSELL_COOKIE } from "@/lib/constants";
 import {
   daysUntil,
   formatAmount,
@@ -51,11 +54,13 @@ const CATEGORY_LABELS: Record<string, string> = {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ abonnement?: string }>;
+  searchParams: Promise<{ abonnement?: string; foyer?: string }>;
 }) {
   const auth = await requireUser();
-  const { abonnement } = await searchParams;
+  const { abonnement, foyer } = await searchParams;
   const justPaid = abonnement === "actif";
+  const justJoined = foyer === "rejoint" && auth?.profile.plan === "family";
+  const upsellHidden = (await cookies()).get(UPSELL_COOKIE)?.value === "1";
   const supabase = await createClient();
 
   // `count` vit sur la réponse, pas dans `data` : avec `head: true`, `data`
@@ -152,7 +157,7 @@ export default async function DashboardPage({
         >
           <div className="text-[15px] font-semibold">
             {auth?.profile.plan && auth.profile.plan !== "free"
-              ? `Bienvenue en ${auth.profile.plan === "family" ? "Famille" : "Pro"}.`
+              ? `Bienvenue en ${PLAN_LABELS[auth.profile.plan]}.`
               : "Paiement reçu, activation en cours."}
           </div>
           <p className="m-0 mt-0.5 text-[13px] text-[var(--text-dim)]">
@@ -161,6 +166,26 @@ export default async function DashboardPage({
               : "Ta formule sera active d’ici quelques secondes. Recharge la page si rien ne change."}
           </p>
         </section>
+      )}
+
+      {justJoined && (
+        <section
+          role="status"
+          className="rounded-[10px] border border-[rgba(63,207,149,.35)] bg-[rgba(63,207,149,.06)] px-5 py-4"
+        >
+          <div className="text-[15px] font-semibold">Bienvenue dans le foyer.</div>
+          <p className="m-0 mt-0.5 text-[13px] text-[var(--text-dim)]">
+            Ton compte profite maintenant de Premium : tout est illimité. Tes
+            données restent visibles de toi seul.
+          </p>
+        </section>
+      )}
+
+      {/* Une seule incitation à la fois : si des abonnements sont déjà
+          retenus par la limite, c'est cet encart concret qui parle, pas la
+          bannière générale. */}
+      {auth?.profile.plan === "free" && !hiddenCount && !upsellHidden && (
+        <UpsellBanner />
       )}
 
       {hiddenCount ? (
@@ -196,7 +221,7 @@ export default async function DashboardPage({
       <section className="grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))]">
         <Stat
           icon={<Wallet className="size-4 text-[var(--accent-light)]" />}
-          tint="rgba(139,124,240,"
+          tint="rgb(var(--accent-rgb) / "
           label="Dépenses mensuelles"
           value={formatAmount(monthlyTotal) ?? "—"}
           footer={

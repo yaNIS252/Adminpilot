@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 
 import { Sidebar } from "@/components/shared/sidebar";
 import { requireUser } from "@/lib/auth/require-user";
-import { PLAN_LIMITS } from "@/lib/constants";
+import { isAccentId, PLAN_LIMITS } from "@/lib/constants";
+import { avatarUrl } from "@/lib/profile/avatar";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -26,7 +27,7 @@ export default async function AppLayout({
   if (!auth.profile.gmail_forward_verified) redirect("/onboarding");
 
   const supabase = await createClient();
-  const [{ count: reviewCount }, { count: documentsUsed }] = await Promise.all([
+  const [{ count: reviewCount }, { count: documentsUsed }, photo] = await Promise.all([
     supabase
       .from("subscriptions")
       .select("id", { count: "exact", head: true })
@@ -34,14 +35,19 @@ export default async function AppLayout({
       .eq("confirmed_by_user", false)
       .lt("confidence", 0.7),
     supabase.from("documents").select("id", { count: "exact", head: true }),
+    avatarUrl(auth.profile.avatar_path),
   ]);
 
+  // Liste fermée côté base, revérifiée ici : la valeur finit dans un attribut.
+  const accent = isAccentId(auth.profile.accent) ? auth.profile.accent : "violet";
+
   return (
-    <div className="flex min-h-dvh flex-col md:flex-row">
+    <div data-accent={accent} className="flex min-h-dvh flex-col md:flex-row">
       <Sidebar
         plan={auth.profile.plan}
         email={auth.profile.email}
         name={auth.profile.name}
+        avatarUrl={photo}
         reviewCount={reviewCount ?? 0}
         documentsUsed={documentsUsed ?? 0}
         documentsLimit={PLAN_LIMITS[auth.profile.plan].documents}

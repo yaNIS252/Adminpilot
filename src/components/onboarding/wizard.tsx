@@ -102,7 +102,7 @@ export function OnboardingWizard({
 
         <Step number={3} title="Le code de confirmation">
           {confirmation ? (
-            <div className="rounded-[10px] border border-[rgba(139,124,240,.4)] bg-[var(--accent-soft)] p-5">
+            <div className="rounded-[10px] border border-[rgb(var(--accent-rgb)/.4)] bg-[var(--accent-soft)] p-5">
               <p className="m-0 mb-3 text-sm text-[var(--text-dim)]">
                 Gmail vient d’envoyer son code. Le voici :
               </p>

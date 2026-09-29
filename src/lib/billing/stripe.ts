@@ -103,6 +103,12 @@ export async function createCheckoutSession(input: {
     cancel_url: `${input.siteUrl}/reglages?formule=${input.plan}&cycle=${input.cycle}&paiement=annule#formules`,
     allow_promotion_codes: true,
     locale: "fr",
+    // « Managed Payments » est activé par défaut sur les comptes Stripe
+    // récents : Stripe y devient le vendeur officiel et collecte la TVA. Ce
+    // n'est pas le modèle d'AdminPilot — vendeur en nom propre, en franchise
+    // de TVA (art. 293 B du CGI), comme l'annoncent les CGU. Le laisser actif
+    // bloquait d'ailleurs tout paiement, faute de code fiscal sur les produits.
+    managed_payments: { enabled: false },
   });
 
   if (!session.url) throw new Error("Stripe n'a pas renvoyé d'URL de paiement");

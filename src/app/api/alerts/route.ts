@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/require-user";
 import { invalidId, readJson, readUuid } from "@/lib/http/request";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -83,7 +84,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
+  // Écriture avec la clé de service, et seulement ici : l'insertion directe
+  // depuis le navigateur est fermée en base (migration 0010), sans quoi un
+  // appel à Supabase en direct contournait la vérification ci-dessus.
+  const { data, error } = await createAdminClient()
     .from("alerts")
     .insert({
       ...input,

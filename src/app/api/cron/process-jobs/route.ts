@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { isAiConfigured } from "@/lib/ai/client";
+import { isMockMode } from "@/lib/ai/mock";
 import {
   claimPendingJobs,
   markFailed,
@@ -31,6 +33,13 @@ function authorize(request: Request): boolean {
 }
 
 async function drain() {
+  // Sans modèle configuré, chaque job échouait aussitôt et restait `failed`
+  // pour toujours : les emails reçus avant la pose de la clé étaient perdus.
+  // On les laisse en file ; le premier passage après configuration les traite.
+  if (!isAiConfigured() && !isMockMode()) {
+    return { claimed: 0, processed: 0, failed: 0, waiting: "ai_not_configured" };
+  }
+
   const jobs = await claimPendingJobs(BATCH_SIZE);
   let processed = 0;
   let failed = 0;

@@ -6,7 +6,7 @@ import {
   LegalLayout,
   ToComplete,
 } from "@/components/marketing/legal-page";
-import { PLAN_PRICES } from "@/lib/constants";
+import { FAMILY_SEATS, PLAN_PRICES } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Conditions d’utilisation — AdminPilot",
@@ -62,9 +62,15 @@ export default function TermsPage() {
           La formule Gratuite est accessible sans limite de durée, dans les
           limites d’usage indiquées sur la page des tarifs. Les formules Pro
           ({PLAN_PRICES.pro.monthly} € par mois ou {PLAN_PRICES.pro.yearly} €
-          par an) et Famille ({PLAN_PRICES.family.monthly} € par mois ou{" "}
+          par an) et Premium ({PLAN_PRICES.family.monthly} € par mois ou{" "}
           {PLAN_PRICES.family.yearly} € par an) sont payantes, sans engagement
           de durée.
+        </p>
+        <p>
+          La formule Premium permet à son titulaire d’inviter jusqu’à{" "}
+          {FAMILY_SEATS - 1} personnes, qui bénéficient des mêmes droits tant
+          que l’abonnement est actif. Chaque compte reste distinct : aucun
+          membre n’a accès aux documents ni aux abonnements d’un autre.
         </p>
         <p>
           Les paiements sont traités par Stripe. Aucune coordonnée bancaire ne

@@ -93,7 +93,7 @@ export function Pricing() {
         />
 
         <Plan
-          name="Famille"
+          name="Premium"
           price={
             yearly
               ? monthlyEquivalent(PLAN_PRICES.family.yearly)
@@ -107,10 +107,10 @@ export function Pricing() {
           }
           features={[
             "Tout le plan Pro",
-            `Jusqu’à ${FAMILY_SEATS} membres du foyer`,
-            "Un tableau de bord partagé",
+            `Jusqu’à ${FAMILY_SEATS - 1} proches invités, chacun son compte`,
+            "Idéal en couple ou en famille",
           ]}
-          cta="Choisir Famille"
+          cta="Choisir Premium"
           href={checkoutHref("family", yearly)}
         />
       </div>

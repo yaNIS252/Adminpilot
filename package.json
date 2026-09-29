@@ -11,7 +11,8 @@
     "db:types": "supabase gen types typescript --project-id cimqqparlgqptvsxrusj > src/lib/supabase/types.ts.new && mv src/lib/supabase/types.ts.new src/lib/supabase/types.ts",
     "eval:extract": "tsx --conditions=react-server --env-file=.env.local scripts/eval-extract.ts",
     "test:rls": "tsx --conditions=react-server --env-file=.env.local scripts/test-rls.ts",
-    "seed:demo": "tsx --conditions=react-server --env-file=.env.local scripts/seed-demo.ts"
+    "seed:demo": "tsx --conditions=react-server --env-file=.env.local scripts/seed-demo.ts",
+    "login:link": "tsx --conditions=react-server --env-file=.env.local scripts/login-link.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",

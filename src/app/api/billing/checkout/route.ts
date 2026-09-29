@@ -51,6 +51,14 @@ export async function POST(request: Request) {
           error: "paiement indisponible",
           code: modeMismatch ? "stripe_mode_mismatch" : (error.code ?? error.type),
           param: error.param ?? null,
+          // Description du refus par Stripe. Pour une requête invalide, elle
+          // décrit un réglage manquant ou un paramètre, jamais un secret, et
+          // c'est souvent la seule piste quand ni code ni paramètre ne sont
+          // renseignés (compte incomplet, par exemple).
+          detail:
+            error instanceof Stripe.errors.StripeInvalidRequestError
+              ? error.message
+              : null,
         },
         { status: 502 },
       );
@@ -63,6 +71,15 @@ async function handle(request: Request) {
   const auth = await requireUser();
   if (!auth) {
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
+  }
+
+  // Membre d'un foyer : Premium lui vient du titulaire, il n'a ni abonnement
+  // ni portail. Lui ouvrir un paiement le ferait payer une seconde fois.
+  if (auth.profile.plan !== "free" && !auth.profile.stripe_sub_id) {
+    return NextResponse.json(
+      { error: "formule incluse dans un foyer", code: "household_member" },
+      { status: 409 },
+    );
   }
 
   // Stripe absent de la configuration : un message exploitable plutôt qu'une

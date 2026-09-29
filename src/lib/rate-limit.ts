@@ -23,6 +23,10 @@ export const LIMITS = {
   search: { limit: 60, windowSecs: 3600 },
   /** Générations de lettre : coûteuses, et jamais légitimes en rafale. */
   cancel: { limit: 10, windowSecs: 3600 },
+  /** Changements de photo de profil. */
+  avatar: { limit: 10, windowSecs: 3600 },
+  /** Invitations au foyer : chacune peut partir par e-mail. */
+  invite: { limit: 20, windowSecs: 3600 },
 } as const;
 
 export type LimitKind = keyof typeof LIMITS;

@@ -20,7 +20,7 @@ export function UpgradeNotice({
   cta?: string;
 }) {
   return (
-    <section className="flex flex-wrap items-center gap-4 rounded-[10px] border border-[rgba(139,124,240,.4)] bg-[var(--accent-soft)] px-5 py-4">
+    <section className="flex flex-wrap items-center gap-4 rounded-[10px] border border-[rgb(var(--accent-rgb)/.4)] bg-[var(--accent-soft)] px-5 py-4">
       <Lock className="size-5 shrink-0 text-[var(--accent-lighter)]" />
       <div className="min-w-[240px] flex-1">
         <div className="text-[15px] font-semibold">{title}</div>

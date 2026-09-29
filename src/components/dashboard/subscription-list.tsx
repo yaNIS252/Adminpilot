@@ -97,7 +97,7 @@ export function SubscriptionList({
           return (
             <li
               key={sub.id}
-              className="card-sheen rounded-[var(--radius-xl)] border border-[var(--border)] p-4 transition-colors hover:border-[rgba(139,124,240,.28)]"
+              className="card-sheen rounded-[var(--radius-xl)] border border-[var(--border)] p-4 transition-colors hover:border-[rgb(var(--accent-rgb)/.28)]"
             >
               {editing === sub.id ? (
                 <EditForm

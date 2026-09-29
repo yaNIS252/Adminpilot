@@ -135,11 +135,11 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
         }}
         className={`anim-up rounded-[var(--radius-xl)] border border-dashed p-8 text-center transition-colors ${
           dragging
-            ? "border-[var(--accent)] bg-[rgba(139,124,240,.08)]"
+            ? "border-[var(--accent)] bg-[rgb(var(--accent-rgb)/.08)]"
             : "border-[var(--border-strong)] bg-[rgba(255,255,255,.02)]"
         }`}
       >
-        <span className="mx-auto mb-3 grid size-11 place-items-center rounded-[var(--radius)] bg-[rgba(139,124,240,.14)] text-[var(--accent-light)]">
+        <span className="mx-auto mb-3 grid size-11 place-items-center rounded-[var(--radius)] bg-[rgb(var(--accent-rgb)/.14)] text-[var(--accent-light)]">
           <Upload className="size-5" />
         </span>
         <p className="m-0 mb-3 text-sm text-[var(--text-dim)]">
@@ -208,7 +208,7 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
           {visible.map((doc) => (
             <li
               key={doc.id}
-              className="card-sheen flex flex-wrap items-center gap-3 rounded-[var(--radius-xl)] border border-[var(--border)] p-4 transition-colors hover:border-[rgba(139,124,240,.28)]"
+              className="card-sheen flex flex-wrap items-center gap-3 rounded-[var(--radius-xl)] border border-[var(--border)] p-4 transition-colors hover:border-[rgb(var(--accent-rgb)/.28)]"
             >
               <span className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-[rgba(111,124,245,.14)] text-[#aab3ff]">
                 <FileText className="size-[18px]" />
@@ -277,7 +277,7 @@ function Pill({
       aria-pressed={active}
       className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
         active
-          ? "border-[rgba(139,124,240,.45)] bg-[rgba(139,124,240,.16)] text-[var(--accent-lighter)]"
+          ? "border-[rgb(var(--accent-rgb)/.45)] bg-[rgb(var(--accent-rgb)/.16)] text-[var(--accent-lighter)]"
           : "border-[var(--border)] text-[var(--text-dim)] hover:bg-[rgba(255,255,255,.05)]"
       }`}
     >

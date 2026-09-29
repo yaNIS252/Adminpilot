@@ -6,6 +6,7 @@ import {
   Bell,
   FolderClosed,
   LayoutDashboard,
+  Lock,
   LogOut,
   Plus,
   Repeat,
@@ -13,6 +14,8 @@ import {
 } from "lucide-react";
 
 import { LogoMark } from "@/components/marketing/logo-mark";
+import { Avatar } from "@/components/shared/avatar";
+import { PLAN_LABELS } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -34,12 +37,11 @@ const LINKS = [
   { href: "/reglages", label: "Réglages", short: "Réglages", Icon: Settings },
 ] as const;
 
-const PLAN_LABELS = { free: "Gratuit", pro: "Pro", family: "Famille" } as const;
-
 export function Sidebar({
   plan,
   email,
   name,
+  avatarUrl,
   reviewCount,
   documentsUsed,
   documentsLimit,
@@ -47,6 +49,7 @@ export function Sidebar({
   plan: keyof typeof PLAN_LABELS;
   email: string;
   name: string | null;
+  avatarUrl: string | null;
   reviewCount: number;
   documentsUsed: number;
   documentsLimit: number | null;
@@ -62,13 +65,6 @@ export function Sidebar({
 
   const quotaRatio =
     documentsLimit === null ? 0 : Math.min(1, documentsUsed / documentsLimit);
-
-  const initials = (name ?? email)
-    .split(/[\s@.]/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
 
   return (
     <nav
@@ -95,7 +91,7 @@ export function Sidebar({
             className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
               plan === "free"
                 ? "bg-[rgba(255,255,255,.06)] text-[var(--text-faint)]"
-                : "bg-[rgba(139,124,240,.18)] text-[var(--accent-lighter)]"
+                : "bg-[rgb(var(--accent-rgb)/.18)] text-[var(--accent-lighter)]"
             }`}
           >
             {PLAN_LABELS[plan]}
@@ -113,7 +109,7 @@ export function Sidebar({
               aria-current={active ? "page" : undefined}
               className={`relative flex items-center gap-2.5 rounded-[var(--radius-xs)] px-2.5 py-[9px] text-sm no-underline transition-colors ${
                 active
-                  ? "bg-[rgba(139,124,240,.14)] text-[var(--accent-lighter)] shadow-[inset_2px_0_0_#8b7cf0]"
+                  ? "bg-[rgb(var(--accent-rgb)/.14)] text-[var(--accent-lighter)] shadow-[inset_2px_0_0_var(--accent)]"
                   : "text-[#7a7a8c] hover:bg-[rgba(255,255,255,.04)] hover:text-[var(--text)]"
               }`}
             >
@@ -142,7 +138,10 @@ export function Sidebar({
         <div className="flex-1" />
 
         {documentsLimit !== null && (
-          <div className="mb-2.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[rgba(255,255,255,.02)] p-3.5">
+          <Link
+            href="/reglages?formule=pro#formules"
+            className="group mb-2.5 block rounded-[var(--radius-md)] border border-[var(--border)] bg-[rgba(255,255,255,.02)] p-3.5 text-[var(--text)] no-underline transition-colors hover:border-[rgb(var(--accent-rgb)/.4)] hover:text-[var(--text)]"
+          >
             <div className="flex justify-between text-xs text-[var(--text-faint)]">
               <span>Documents</span>
               <span className="mono text-[var(--text-muted)]">
@@ -155,13 +154,15 @@ export function Sidebar({
                 style={{ width: `${Math.max(3, quotaRatio * 100)}%` }}
               />
             </div>
-          </div>
+            <div className="mt-3 flex items-center gap-1.5 text-[12px] font-medium text-[var(--accent-lighter)]">
+              <Lock className="size-3" />
+              Tout illimité avec Pro
+            </div>
+          </Link>
         )}
 
         <div className="flex items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[rgba(255,255,255,.03)] p-2">
-          <span className="grid size-[34px] shrink-0 place-items-center rounded-full border border-[var(--border-strong)] text-[13px] font-semibold text-[var(--text-muted)]">
-            {initials}
-          </span>
+          <Avatar name={name ?? email} url={avatarUrl} size={34} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-semibold">
               {name ?? "Mon compte"}

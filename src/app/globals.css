@@ -23,7 +23,7 @@
      inconnue est ignorée sans erreur, si bien que ces encadrés et ces blocs de
      code s'affichaient sans leur fond depuis le début. */
   --surface-alt: rgba(255, 255, 255, 0.045);
-  --accent-soft: rgba(139, 124, 240, 0.07);
+  --accent-soft: rgb(var(--accent-rgb) / 0.07);
 
   --border: rgba(255, 255, 255, 0.08);
   --border-soft: rgba(255, 255, 255, 0.06);
@@ -37,6 +37,9 @@
   --text-faint: #8c8c9e;
   --text-ghost: #6b6b7b;
 
+  /* Composantes RVB de l'accent, pour les transparences :
+     `rgb(var(--accent-rgb) / .14)`. Redéfinies par thème, plus bas. */
+  --accent-rgb: 139 124 240;
   --accent: #8b7cf0;
   --accent-deep: #5b4bd6;
   --accent-deeper: #3b2fa8;
@@ -72,6 +75,44 @@
      font « application générée », un arrondi modeste fait « document ». */
   --radius-xl: 10px;
   --radius-2xl: 20px;
+}
+
+/**
+ * Couleurs d'accent choisies dans les réglages, posées sur l'enveloppe de
+ * l'espace client (`data-accent`). Le violet est la valeur de `:root`.
+ * `--accent-soft` est recalculé ici : une variable définie à partir d'une
+ * autre est résolue là où elle est déclarée, pas là où elle est lue.
+ */
+[data-accent] {
+  --accent-soft: rgb(var(--accent-rgb) / 0.07);
+}
+[data-accent="bleu"] {
+  --accent-rgb: 91 156 245;
+  --accent: #5b9cf5;
+  --accent-deep: #2f6fd1;
+  --accent-light: #8dbaf8;
+  --accent-lighter: #c3dafc;
+}
+[data-accent="sarcelle"] {
+  --accent-rgb: 60 191 199;
+  --accent: #3cbfc7;
+  --accent-deep: #23909a;
+  --accent-light: #7ad6db;
+  --accent-lighter: #b8eaec;
+}
+[data-accent="ambre"] {
+  --accent-rgb: 240 150 75;
+  --accent: #f0964b;
+  --accent-deep: #c9692a;
+  --accent-light: #f5b582;
+  --accent-lighter: #fad6b8;
+}
+[data-accent="rose"] {
+  --accent-rgb: 232 114 159;
+  --accent: #e8729f;
+  --accent-deep: #bf4679;
+  --accent-light: #f09dbd;
+  --accent-lighter: #f7cadb;
 }
 
 /*
@@ -280,10 +321,10 @@
 @keyframes ap-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(139, 124, 240, 0.45);
+    box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0.45);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(139, 124, 240, 0);
+    box-shadow: 0 0 0 6px rgb(var(--accent-rgb) / 0);
   }
 }
 @keyframes ap-dot {
@@ -309,11 +350,11 @@
   0%,
   100% {
     border-color: rgba(224, 161, 56, 0.35);
-    box-shadow: 0 0 0 0 rgba(224, 161, 56, 0), 0 0 40px -20px rgba(139, 124, 240, 0.4);
+    box-shadow: 0 0 0 0 rgba(224, 161, 56, 0), 0 0 40px -20px rgb(var(--accent-rgb) / 0.4);
   }
   50% {
-    border-color: rgba(139, 124, 240, 0.55);
-    box-shadow: 0 0 0 4px rgba(224, 161, 56, 0.06), 0 0 50px -14px rgba(139, 124, 240, 0.6);
+    border-color: rgb(var(--accent-rgb) / 0.55);
+    box-shadow: 0 0 0 4px rgba(224, 161, 56, 0.06), 0 0 50px -14px rgb(var(--accent-rgb) / 0.6);
   }
 }
 

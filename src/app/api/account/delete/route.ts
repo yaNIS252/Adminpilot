@@ -4,6 +4,8 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth/require-user";
 import { getStripe } from "@/lib/billing/stripe";
 import { readJson } from "@/lib/http/request";
+import { revokeMemberPlan } from "@/lib/household";
+import { AVATAR_BUCKET } from "@/lib/profile/avatar";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -92,6 +94,24 @@ export async function POST(request: Request) {
 
   // 3. Le compte auth. Les ON DELETE CASCADE emportent profil, abonnements,
   //    documents, alertes, résiliations et compteurs.
+  // Titulaire d'un foyer : ses membres perdent Premium avec lui. La cascade
+  // supprimerait les liens mais laisserait leurs profils en Premium à vie.
+  const { data: members } = await db
+    .from("family_members")
+    .select("member_id")
+    .eq("owner_id", auth.userId)
+    .not("member_id", "is", null);
+  for (const member of members ?? []) {
+    if (member.member_id) await revokeMemberPlan(db, member.member_id);
+  }
+
+  if (auth.profile.avatar_path) {
+    await db.storage
+      .from(AVATAR_BUCKET)
+      .remove([auth.profile.avatar_path])
+      .catch(() => undefined);
+  }
+
   const { error } = await db.auth.admin.deleteUser(auth.userId);
   if (error) throw error;
 

@@ -1,19 +1,46 @@
 import Link from "next/link";
-import { Inbox, ShieldCheck, Sparkles } from "lucide-react";
+import { Inbox, Lock, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 
 import { ManageSubscription, PlanPicker } from "@/components/billing/plan-picker";
+import {
+  HouseholdManager,
+  HouseholdMembership,
+} from "@/components/household/household-manager";
+import { ProfileEditor } from "@/components/profile/profile-editor";
 import { AccountActions } from "@/components/shared/account-actions";
 import { InboxAddress } from "@/components/shared/inbox-address";
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
-import { PLAN_LIMITS, RAW_RETENTION_DAYS } from "@/lib/constants";
+import { getStripe, planFromPriceId } from "@/lib/billing/stripe";
+import {
+  FAMILY_SEATS,
+  isAccentId,
+  PLAN_LABELS,
+  PLAN_LIMITS,
+  RAW_RETENTION_DAYS,
+} from "@/lib/constants";
+import { householdOf, INVITE_SLOTS, membershipOf } from "@/lib/household";
+import { avatarUrl, avatarUrls } from "@/lib/profile/avatar";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata = { title: "Réglages — AdminPilot" };
 
-const PLAN_LABELS = {
-  free: "Gratuit",
-  pro: "Pro",
-  family: "Famille",
-} as const;
+type Plan = "pro" | "family";
+type Cycle = "monthly" | "yearly";
+
+/** Formule et périodicité réellement facturées, lues chez Stripe. */
+async function currentBilling(
+  subscriptionId: string,
+): Promise<{ plan: Plan; cycle: Cycle } | null> {
+  try {
+    const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
+    const price = subscription.items.data[0]?.price;
+    const plan = price ? planFromPriceId(price.id) : null;
+    if (!price || !plan || plan === "free") return null;
+    return { plan, cycle: price.recurring?.interval === "year" ? "yearly" : "monthly" };
+  } catch {
+    return null;
+  }
+}
 
 export default async function SettingsPage({
   searchParams,
@@ -23,27 +50,53 @@ export default async function SettingsPage({
   const auth = await requireUser();
   if (!auth) return null;
 
-  const limits = PLAN_LIMITS[auth.profile.plan];
+  const { profile } = auth;
+  const limits = PLAN_LIMITS[profile.plan];
   const params = await searchParams;
+  const db = createAdminClient();
+
+  // Titulaire d'un abonnement, membre d'un foyer, ou gratuit : trois écrans.
+  const subscriber = profile.plan !== "free" && Boolean(profile.stripe_sub_id);
+  const membership = subscriber ? null : await membershipOf(db, auth.userId);
+  const isMember = Boolean(membership) && profile.plan === "family";
+  const householdOwner = subscriber && profile.plan === "family";
+
+  const [billing, ownAvatar, household] = await Promise.all([
+    subscriber && profile.stripe_sub_id ? currentBilling(profile.stripe_sub_id) : null,
+    avatarUrl(profile.avatar_path),
+    householdOwner ? householdOf(db, auth.userId) : Promise.resolve([]),
+  ]);
+  const memberAvatars = await avatarUrls(household.map((row) => row.member?.avatar_path ?? null));
 
   // Valeurs venues de l'URL, donc de n'importe qui : réduites à ce qui existe.
-  const initialPlan = params.formule === "family" ? "family" : "pro";
-  const initialCycle = params.cycle === "yearly" ? "yearly" : "monthly";
+  const initialPlan: Plan = params.formule === "family" ? "family" : "pro";
+  const initialCycle: Cycle = params.cycle === "yearly" ? "yearly" : "monthly";
+
+  const ownerName = profile.name ?? profile.email;
+  const joinedCount = household.filter((row) => row.member).length;
 
   return (
     <div className="flex flex-col gap-4">
       <header className="anim-up mb-1">
-        <h1 className="serif m-0 text-[36px] leading-[1.05]">
-          Réglages
-        </h1>
+        <h1 className="serif m-0 text-[36px] leading-[1.05]">Réglages</h1>
       </header>
+
+      <Card icon={<UserRound className="size-4" />} title="Profil">
+        <ProfileEditor
+          email={profile.email}
+          initialName={profile.name}
+          avatarUrl={ownAvatar}
+          accent={isAccentId(profile.accent) ? profile.accent : "violet"}
+          paid={profile.plan !== "free"}
+        />
+      </Card>
 
       <Card
         icon={<Inbox className="size-4" />}
         title="Ton adresse d’ingestion"
         subtitle="C’est ici que tu transfères tes factures"
       >
-        <InboxAddress address={inboxAddress(auth.profile)} />
+        <InboxAddress address={inboxAddress(profile)} />
         <p className="m-0 mt-3 text-xs text-[var(--text-faint)]">
           Garde-la pour toi : quiconque la connaît peut y envoyer des documents
           qui apparaîtront dans ton compte.
@@ -52,7 +105,8 @@ export default async function SettingsPage({
 
       <Card
         icon={<Sparkles className="size-4" />}
-        title={`Formule ${PLAN_LABELS[auth.profile.plan]}`}
+        title={`Formule ${PLAN_LABELS[profile.plan]}`}
+        subtitle={isMember ? "Incluse dans un foyer Premium" : undefined}
       >
         <ul className="m-0 list-none space-y-0 p-0 text-sm">
           <Limit label="Abonnements suivis" value={limits.subscriptions} />
@@ -62,28 +116,84 @@ export default async function SettingsPage({
           <Limit label="Résiliations par mois" value={limits.cancellations} />
         </ul>
 
-        {auth.profile.plan !== "free" && (
+        {subscriber && (
           <div className="mt-5">
             <ManageSubscription />
           </div>
         )}
       </Card>
 
-      {auth.profile.plan === "free" && (
+      {!isMember && (
         <section id="formules" className="scroll-mt-6">
           <Card
             icon={<Sparkles className="size-4" />}
-            title="Passer à une formule payante"
-            subtitle="Recherche en langage courant, lettres de résiliation, tout illimité"
+            title={subscriber ? "Changer de formule" : "Passer à une formule payante"}
+            subtitle={
+              subscriber
+                ? "Pro pour toi seul, Premium pour toi et tes proches"
+                : "Recherche en langage courant, lettres de résiliation, tout illimité"
+            }
           >
             <PlanPicker
-              initialPlan={initialPlan}
-              initialCycle={initialCycle}
+              mode={subscriber ? "switch" : "checkout"}
+              initialPlan={billing?.plan ?? initialPlan}
+              initialCycle={billing?.cycle ?? initialCycle}
+              current={billing ?? undefined}
               cancelled={params.paiement === "annule"}
+              householdSize={joinedCount}
             />
           </Card>
         </section>
       )}
+
+      <Card
+        icon={<Users className="size-4" />}
+        title="Foyer"
+        subtitle={
+          householdOwner
+            ? `Jusqu’à ${FAMILY_SEATS} comptes, chacun avec ses propres données`
+            : undefined
+        }
+      >
+        {householdOwner ? (
+          <HouseholdManager
+            ownerName={ownerName}
+            ownerAvatarUrl={ownAvatar}
+            slots={INVITE_SLOTS}
+            rows={household.map((row) => ({
+              id: row.id,
+              email: row.email,
+              name: row.member?.name ?? row.name,
+              joined: Boolean(row.member),
+              expired:
+                !row.member &&
+                Boolean(row.expires_at && new Date(row.expires_at) < new Date()),
+              avatarUrl: row.member?.avatar_path
+                ? (memberAvatars.get(row.member.avatar_path) ?? null)
+                : null,
+            }))}
+          />
+        ) : isMember && membership ? (
+          <HouseholdMembership
+            ownerName={membership.owner?.name ?? membership.owner?.email ?? "ton foyer"}
+          />
+        ) : (
+          <div className="flex flex-wrap items-center gap-4">
+            <Lock className="size-5 shrink-0 text-[var(--accent-lighter)]" />
+            <p className="m-0 min-w-[220px] flex-1 text-sm text-[var(--text-dim)]">
+              Avec <strong className="text-[var(--text)]">Premium</strong>,
+              invite jusqu’à {INVITE_SLOTS} proches : chacun a son compte, ses
+              alertes et ses documents, pour le prix d’un seul abonnement.
+            </p>
+            <Link
+              href="/reglages?formule=family#formules"
+              className="btn-secondary h-10 px-4 text-[13px]"
+            >
+              Découvrir Premium
+            </Link>
+          </div>
+        )}
+      </Card>
 
       <Card
         icon={<ShieldCheck className="size-4 text-[var(--positive)]" />}
@@ -98,7 +208,7 @@ export default async function SettingsPage({
         </p>
       </Card>
 
-      <AccountActions email={auth.profile.email} />
+      <AccountActions email={profile.email} />
     </div>
   );
 }
@@ -142,7 +252,10 @@ function Limit({ label, value }: { label: string; value: number | null }) {
         ) : value === 0 ? (
           // « 0 recherche par mois » se lit comme une panne ; c'est une
           // fonction réservée aux formules payantes, autant le dire.
-          <span className="text-[var(--text-faint)]">non incluse</span>
+          <span className="inline-flex items-center gap-1.5 text-[var(--text-faint)]">
+            <Lock className="size-3" />
+            avec Pro
+          </span>
         ) : (
           value
         )}

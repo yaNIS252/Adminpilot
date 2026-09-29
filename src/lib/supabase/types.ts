@@ -187,29 +187,45 @@ export type Database = {
       family_members: {
         Row: {
           email: string;
+          expires_at: string | null;
           id: string;
           invited_at: string;
           joined_at: string | null;
+          member_id: string | null;
           name: string | null;
           owner_id: string;
+          token_hash: string | null;
         };
         Insert: {
           email: string;
+          expires_at?: string | null;
           id?: string;
           invited_at?: string;
           joined_at?: string | null;
+          member_id?: string | null;
           name?: string | null;
           owner_id: string;
+          token_hash?: string | null;
         };
         Update: {
           email?: string;
+          expires_at?: string | null;
           id?: string;
           invited_at?: string;
           joined_at?: string | null;
+          member_id?: string | null;
           name?: string | null;
           owner_id?: string;
+          token_hash?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "family_members_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "family_members_owner_id_fkey";
             columns: ["owner_id"];
@@ -331,6 +347,8 @@ export type Database = {
       };
       profiles: {
         Row: {
+          accent: string;
+          avatar_path: string | null;
           created_at: string;
           deleted_at: string | null;
           email: string;
@@ -346,6 +364,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          accent?: string;
+          avatar_path?: string | null;
           created_at?: string;
           deleted_at?: string | null;
           email: string;
@@ -361,6 +381,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          accent?: string;
+          avatar_path?: string | null;
           created_at?: string;
           deleted_at?: string | null;
           email?: string;
