@@ -58,6 +58,20 @@ export async function checkLimit(
 
     if (error) throw error;
     current = count ?? 0;
+
+    // Documents envoyés mais pas encore analysés : sans eux, un compte
+    // gratuit pouvait déposer bien plus que sa limite avant le premier
+    // passage du traitement, et chacun devenait ensuite un document.
+    if (feature === "documents") {
+      const { count: waiting, error: waitingError } = await db
+        .from("ingestion_jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("source", "upload")
+        .in("status", ["pending", "processing"]);
+      if (waitingError) throw waitingError;
+      current += waiting ?? 0;
+    }
   } else {
     const { data, error } = await db
       .from("usage_counters")

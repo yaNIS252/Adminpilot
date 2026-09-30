@@ -12,6 +12,8 @@
   --bg: #0a0a0f;
   --bg-elevated: #0e0e15;
   --bg-overlay: rgba(20, 20, 29, 0.92);
+  /* Barre de navigation mobile, translucide sur le fond. */
+  --nav-bg: rgba(14, 14, 20, 0.92);
 
   /* Fonds de carte : dégradé subtil du haut vers le bas. */
   --surface: rgba(255, 255, 255, 0.025);
@@ -78,41 +80,69 @@
 }
 
 /**
- * Couleurs d'accent choisies dans les réglages, posées sur l'enveloppe de
- * l'espace client (`data-accent`). Le violet est la valeur de `:root`.
- * `--accent-soft` est recalculé ici : une variable définie à partir d'une
- * autre est résolue là où elle est déclarée, pas là où elle est lue.
+ * Thème choisi dans les réglages : couleur d'accent (`data-accent`) et fond
+ * (`data-bg`), posés sur l'enveloppe de l'espace client. Sélecteurs en
+ * `:root:has(…)` pour que les variables s'appliquent au document entier —
+ * y compris le fond de `body`, visible au rebond du défilement — et suivent
+ * en direct l'aperçu, qui modifie simplement ces attributs.
+ * `--accent-soft` est recalculé : une variable définie à partir d'une autre
+ * est résolue là où elle est déclarée, pas là où elle est lue.
  */
-[data-accent] {
+:root:has([data-accent]) {
   --accent-soft: rgb(var(--accent-rgb) / 0.07);
 }
-[data-accent="bleu"] {
+:root:has([data-accent="bleu"]) {
   --accent-rgb: 91 156 245;
   --accent: #5b9cf5;
   --accent-deep: #2f6fd1;
   --accent-light: #8dbaf8;
   --accent-lighter: #c3dafc;
 }
-[data-accent="sarcelle"] {
+:root:has([data-accent="sarcelle"]) {
   --accent-rgb: 60 191 199;
   --accent: #3cbfc7;
   --accent-deep: #23909a;
   --accent-light: #7ad6db;
   --accent-lighter: #b8eaec;
 }
-[data-accent="ambre"] {
+:root:has([data-accent="ambre"]) {
   --accent-rgb: 240 150 75;
   --accent: #f0964b;
   --accent-deep: #c9692a;
   --accent-light: #f5b582;
   --accent-lighter: #fad6b8;
 }
-[data-accent="rose"] {
+:root:has([data-accent="rose"]) {
   --accent-rgb: 232 114 159;
   --accent: #e8729f;
   --accent-deep: #bf4679;
   --accent-light: #f09dbd;
   --accent-lighter: #f7cadb;
+}
+
+:root:has([data-bg="charbon"]) {
+  --bg: #141414;
+  --bg-elevated: #1a1a1a;
+  --bg-overlay: rgba(32, 32, 32, 0.92);
+  --nav-bg: rgba(24, 24, 24, 0.92);
+}
+:root:has([data-bg="ardoise"]) {
+  --bg: #0c121a;
+  --bg-elevated: #111822;
+  --bg-overlay: rgba(20, 28, 38, 0.92);
+  --nav-bg: rgba(15, 21, 30, 0.92);
+}
+:root:has([data-bg="foret"]) {
+  --bg: #0a120e;
+  --bg-elevated: #0e1813;
+  --bg-overlay: rgba(18, 30, 24, 0.92);
+  --nav-bg: rgba(13, 22, 18, 0.92);
+}
+:root:has([data-bg="prune"]) {
+  --bg: #130c16;
+  --bg-elevated: #1a111d;
+  --bg-overlay: rgba(32, 21, 35, 0.92);
+  --nav-bg: rgba(24, 15, 27, 0.92);
 }
 
 /*

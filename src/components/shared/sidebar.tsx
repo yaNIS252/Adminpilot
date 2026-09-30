@@ -70,7 +70,7 @@ export function Sidebar({
     <nav
       className="
         fixed bottom-0 left-0 z-20 flex w-full justify-around border-t
-        border-[var(--border)] bg-[rgba(14,14,20,.92)] backdrop-blur-xl
+        border-[var(--border)] bg-[var(--nav-bg)] backdrop-blur-xl
         pb-[env(safe-area-inset-bottom,0px)]
         md:sticky md:top-0 md:h-dvh md:w-[252px] md:shrink-0 md:flex-col
         md:justify-start md:border-t-0 md:bg-transparent md:p-3.5

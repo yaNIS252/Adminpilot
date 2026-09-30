@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 
 import { Sidebar } from "@/components/shared/sidebar";
 import { requireUser } from "@/lib/auth/require-user";
-import { isAccentId, PLAN_LIMITS } from "@/lib/constants";
+import { PLAN_LIMITS } from "@/lib/constants";
+import { effectiveTheme } from "@/lib/profile/theme";
 import { avatarUrl } from "@/lib/profile/avatar";
 import { createClient } from "@/lib/supabase/server";
 
@@ -38,11 +39,14 @@ export default async function AppLayout({
     avatarUrl(auth.profile.avatar_path),
   ]);
 
-  // Liste fermée côté base, revérifiée ici : la valeur finit dans un attribut.
-  const accent = isAccentId(auth.profile.accent) ? auth.profile.accent : "violet";
+  const { accent, background } = effectiveTheme(auth.profile);
 
   return (
-    <div data-accent={accent} className="flex min-h-dvh flex-col md:flex-row">
+    <div
+      data-accent={accent}
+      data-bg={background}
+      className="flex min-h-dvh flex-col md:flex-row"
+    >
       <Sidebar
         plan={auth.profile.plan}
         email={auth.profile.email}

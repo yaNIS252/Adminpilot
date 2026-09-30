@@ -349,6 +349,7 @@ export type Database = {
         Row: {
           accent: string;
           avatar_path: string | null;
+          background: string;
           created_at: string;
           deleted_at: string | null;
           email: string;
@@ -366,6 +367,7 @@ export type Database = {
         Insert: {
           accent?: string;
           avatar_path?: string | null;
+          background?: string;
           created_at?: string;
           deleted_at?: string | null;
           email: string;
@@ -383,6 +385,7 @@ export type Database = {
         Update: {
           accent?: string;
           avatar_path?: string | null;
+          background?: string;
           created_at?: string;
           deleted_at?: string | null;
           email?: string;

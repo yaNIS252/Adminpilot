@@ -1,48 +1,32 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Camera, Check, Lock } from "lucide-react";
+import { Camera } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Avatar } from "@/components/shared/avatar";
-import { ACCENTS, type AccentId } from "@/lib/constants";
 
 /**
- * Personnalisation du compte : prénom, photo et couleur de l'interface.
- *
- * La couleur s'applique à l'écran avant même la réponse du serveur — un
- * sélecteur de thème qui attend un aller-retour paraît cassé. En cas d'échec,
- * on revient à l'ancienne.
+ * Personnalisation du compte : prénom et photo. Le thème a sa propre carte
+ * (`ThemePicker`).
  */
 export function ProfileEditor({
   email,
   initialName,
   avatarUrl,
-  accent,
-  paid,
 }: {
   email: string;
   initialName: string | null;
   avatarUrl: string | null;
-  accent: AccentId;
-  paid: boolean;
 }) {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(initialName ?? "");
-  const [current, setCurrent] = useState<AccentId>(accent);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
   const nameChanged = name.trim() !== (initialName ?? "");
-
-  function paint(value: AccentId) {
-    document
-      .querySelectorAll<HTMLElement>("[data-accent]")
-      .forEach((element) => element.setAttribute("data-accent", value));
-  }
 
   async function patch(body: Record<string, string>) {
     const response = await fetch("/api/profile", {
@@ -65,19 +49,6 @@ export function ProfileEditor({
     );
     setSaving(false);
     if (ok) router.refresh();
-  }
-
-  async function pickAccent(value: AccentId) {
-    if (value === current) return;
-    const previous = current;
-    setCurrent(value);
-    paint(value);
-    const ok = await patch({ accent: value }).catch(() => false);
-    if (!ok) {
-      setCurrent(previous);
-      paint(previous);
-      setMessage({ tone: "error", text: "La couleur n’a pas pu être enregistrée." });
-    }
   }
 
   async function upload(file: File) {
@@ -183,62 +154,6 @@ export function ProfileEditor({
           </button>
         </div>
       </form>
-
-      <div className="flex flex-col gap-2.5">
-        <div className="text-[13px] font-medium">Couleur de l’interface</div>
-        <div role="radiogroup" aria-label="Couleur de l’interface" className="flex flex-wrap gap-2.5">
-          {ACCENTS.map((item) => {
-            const locked = !item.free && !paid;
-            const selected = current === item.id;
-            const swatch = (
-              <span
-                className={`relative grid size-9 place-items-center rounded-full border-2 transition-transform ${
-                  selected ? "border-white" : "border-transparent group-hover:scale-105"
-                }`}
-                style={{ background: item.hex }}
-              >
-                {selected && <Check className="size-4 text-[#16141f]" />}
-                {locked && (
-                  <span className="absolute -right-1 -bottom-1 grid size-[18px] place-items-center rounded-full border border-[var(--border-strong)] bg-[var(--bg-elevated)]">
-                    <Lock className="size-2.5 text-[var(--text-dim)]" />
-                  </span>
-                )}
-              </span>
-            );
-
-            return locked ? (
-              <Link
-                key={item.id}
-                href="/reglages?formule=pro#formules"
-                title={`${item.label} — avec Pro`}
-                aria-label={`${item.label}, réservé aux formules Pro et Premium`}
-                className="group opacity-80"
-              >
-                {swatch}
-              </Link>
-            ) : (
-              <button
-                key={item.id}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                aria-label={item.label}
-                title={item.label}
-                onClick={() => pickAccent(item.id)}
-                className="group"
-              >
-                {swatch}
-              </button>
-            );
-          })}
-        </div>
-        {!paid && (
-          <p className="m-0 text-xs text-[var(--text-faint)]">
-            <Lock className="mr-1 inline size-3" />
-            Sarcelle, ambre et rose sont inclus dans Pro et Premium.
-          </p>
-        )}
-      </div>
 
       {message && (
         <p

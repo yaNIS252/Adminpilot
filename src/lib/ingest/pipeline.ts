@@ -242,6 +242,24 @@ export async function processDocumentJob(job: {
 }) {
   const db = createAdminClient();
 
+  // Seconde vérification du quota, au moment de l'analyse : des envois
+  // simultanés peuvent tous passer le contrôle de la route d'upload avant
+  // qu'aucun ne soit compté. Refuser ici évite aussi de payer l'appel au
+  // modèle pour un document qui ne serait pas conservé.
+  if (await exceedsDocumentQuota(db, job.user_id)) {
+    await db
+      .from("ingestion_jobs")
+      .update({
+        status: "failed",
+        // Au-delà du nombre d'essais : le job ne sera jamais repris.
+        attempts: MAX_ATTEMPTS,
+        error: "quota de documents atteint",
+        processed_at: new Date().toISOString(),
+      })
+      .eq("id", job.id);
+    return { documentId: null, needsReview: false, overQuota: true as const };
+  }
+
   const result = await extractFromDocument({
     base64: job.payload.base64,
     mimeType: job.mime_type,
@@ -423,6 +441,25 @@ async function exceedsSubscriptionQuota(db: Db, userId: string): Promise<boolean
     .eq("user_id", userId)
     .eq("status", "active")
     .eq("over_quota", false);
+
+  return (count ?? 0) >= limit;
+}
+
+/** Vrai si le compte a déjà autant de documents que sa formule en permet. */
+async function exceedsDocumentQuota(db: Db, userId: string): Promise<boolean> {
+  const { data: profile } = await db
+    .from("profiles")
+    .select("plan")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const limit = PLAN_LIMITS[profile?.plan ?? "free"].documents;
+  if (limit === null) return false;
+
+  const { count } = await db
+    .from("documents")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
 
   return (count ?? 0) >= limit;
 }

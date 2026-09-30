@@ -88,6 +88,27 @@ export function isAccentId(value: string): value is AccentId {
 }
 
 /**
+ * Fonds de l'interface, second volet du thème. Tous sombres : l'interface
+ * repose sur des transparences blanches (bordures, cartes) qu'un fond clair
+ * rendrait invisibles. Même règle que les couleurs : deux offerts, le reste
+ * avec Pro. Alignés sur la contrainte `profiles.background` (migration 0012)
+ * et sur les thèmes `[data-bg]` de globals.css.
+ */
+export const BACKGROUNDS = [
+  { id: "nuit", label: "Nuit", hex: "#0a0a0f", free: true },
+  { id: "charbon", label: "Charbon", hex: "#141414", free: true },
+  { id: "ardoise", label: "Ardoise", hex: "#0c121a", free: false },
+  { id: "foret", label: "Forêt", hex: "#0a120e", free: false },
+  { id: "prune", label: "Prune", hex: "#130c16", free: false },
+] as const;
+
+export type BackgroundId = (typeof BACKGROUNDS)[number]["id"];
+
+export function isBackgroundId(value: string): value is BackgroundId {
+  return BACKGROUNDS.some((background) => background.id === value);
+}
+
+/**
  * Cookie de la bannière « Passer Pro » refermée. Défini ici et non dans le
  * composant client : une valeur exportée d'un fichier « use client » arrive
  * côté serveur sous forme de référence opaque, pas de chaîne.

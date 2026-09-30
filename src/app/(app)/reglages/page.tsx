@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Inbox, Lock, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
+import { Inbox, Lock, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 
 import { ManageSubscription, PlanPicker } from "@/components/billing/plan-picker";
 import {
@@ -7,19 +7,20 @@ import {
   HouseholdMembership,
 } from "@/components/household/household-manager";
 import { ProfileEditor } from "@/components/profile/profile-editor";
+import { ThemePicker } from "@/components/profile/theme-picker";
 import { AccountActions } from "@/components/shared/account-actions";
 import { InboxAddress } from "@/components/shared/inbox-address";
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
 import { getStripe, planFromPriceId } from "@/lib/billing/stripe";
 import {
   FAMILY_SEATS,
-  isAccentId,
   PLAN_LABELS,
   PLAN_LIMITS,
   RAW_RETENTION_DAYS,
 } from "@/lib/constants";
 import { householdOf, INVITE_SLOTS, membershipOf } from "@/lib/household";
 import { avatarUrl, avatarUrls } from "@/lib/profile/avatar";
+import { effectiveTheme } from "@/lib/profile/theme";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata = { title: "Réglages — AdminPilot" };
@@ -86,7 +87,16 @@ export default async function SettingsPage({
           email={profile.email}
           initialName={profile.name}
           avatarUrl={ownAvatar}
-          accent={isAccentId(profile.accent) ? profile.accent : "violet"}
+        />
+      </Card>
+
+      <Card
+        icon={<Palette className="size-4" />}
+        title="Apparence"
+        subtitle="Fond et couleur secondaire de l’application"
+      >
+        <ThemePicker
+          initial={effectiveTheme(profile)}
           paid={profile.plan !== "free"}
         />
       </Card>
