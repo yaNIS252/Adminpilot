@@ -5,6 +5,7 @@ import type { TablesUpdate } from "@/lib/supabase/types";
 import { REVIEW_THRESHOLD } from "@/lib/ai/schemas";
 import { extractFromDocument, extractFromEmail } from "@/lib/ai/extract";
 import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
+import { matchCatalogue, senderDomain, trustedLink } from "@/lib/cancel/links";
 import { PLAN_LIMITS } from "@/lib/constants";
 
 /**
@@ -188,6 +189,18 @@ export async function processEmailJob(job: {
     ? existing.over_quota
     : await exceedsSubscriptionQuota(db, job.user_id);
 
+  // Rattachement au catalogue (base légale, lien officiel de résiliation) et
+  // lien « gérer mon abonnement » de l'e-mail, gardé seulement s'il mène au
+  // domaine du fournisseur ou de l'expéditeur.
+  const catalogue = await matchCatalogue(db, {
+    provider: data.provider,
+    from: job.payload.from,
+  });
+  const manageUrl = trustedLink(data.manage_url, [
+    catalogue?.domain,
+    senderDomain(job.payload.from),
+  ]);
+
   const inserted = existing
     ? await refreshSubscription(db, existing, {
         amount: data.amount,
@@ -208,8 +221,20 @@ export async function processEmailJob(job: {
         confidence: data.confidence,
         sourceJobId: job.id,
         overQuota,
-        metadata: { reasoning: data.reasoning, detected_type: data.type },
+        providerId: catalogue?.id ?? null,
+        metadata: {
+          reasoning: data.reasoning,
+          detected_type: data.type,
+          ...(manageUrl ? { manage_url: manageUrl } : {}),
+        },
       });
+
+  if (existing) {
+    await attachLinks(db, existing.id, {
+      providerId: catalogue?.id ?? null,
+      manageUrl,
+    });
+  }
 
   // Une échéance connue vaut une alerte, sauf si l'extraction est trop peu
   // sûre : alerter sur une date inventée est pire que ne pas alerter.
@@ -464,6 +489,39 @@ async function exceedsDocumentQuota(db: Db, userId: string): Promise<boolean> {
   return (count ?? 0) >= limit;
 }
 
+/**
+ * Complète un abonnement déjà connu : rattachement au catalogue s'il manquait,
+ * et dernier lien de gestion vu — une URL de compte peut changer d'une
+ * facture à l'autre, la plus récente est la plus sûre.
+ */
+async function attachLinks(
+  db: Db,
+  subscriptionId: string,
+  links: { providerId: string | null; manageUrl: string | null },
+) {
+  if (!links.providerId && !links.manageUrl) return;
+
+  const { data: current } = await db
+    .from("subscriptions")
+    .select("provider_id, metadata")
+    .eq("id", subscriptionId)
+    .single();
+  if (!current) return;
+
+  const patch: TablesUpdate<"subscriptions"> = {};
+  if (links.providerId && !current.provider_id) patch.provider_id = links.providerId;
+  if (links.manageUrl) {
+    const metadata =
+      current.metadata && typeof current.metadata === "object" && !Array.isArray(current.metadata)
+        ? current.metadata
+        : {};
+    patch.metadata = { ...metadata, manage_url: links.manageUrl };
+  }
+  if (Object.keys(patch).length > 0) {
+    await db.from("subscriptions").update(patch).eq("id", subscriptionId);
+  }
+}
+
 async function insertSubscription(
   db: Db,
   input: {
@@ -477,6 +535,7 @@ async function insertSubscription(
     confidence: number;
     sourceJobId: string;
     overQuota: boolean;
+    providerId: string | null;
     metadata: Record<string, unknown>;
   },
 ): Promise<{ id: string }> {
@@ -493,6 +552,7 @@ async function insertSubscription(
       confidence: input.confidence,
       source_job_id: input.sourceJobId,
       over_quota: input.overQuota,
+      provider_id: input.providerId,
       metadata: input.metadata as never,
     })
     .select("id")

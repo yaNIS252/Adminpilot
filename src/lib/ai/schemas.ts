@@ -75,6 +75,12 @@ export const EmailExtractionSchema = z.object({
   confidence,
   /** Ce sur quoi le modèle s'est appuyé — sert au débogage des faux positifs. */
   reasoning: z.string().max(300).nullable(),
+  /**
+   * Lien « gérer / résilier mon abonnement » présent dans l'e-mail. Recopié
+   * tel quel, jamais construit ; le pipeline ne le garde que s'il mène au
+   * domaine du fournisseur (voir `trustedLink`).
+   */
+  manage_url: z.string().max(500).nullable().default(null),
 });
 
 export type EmailExtraction = z.infer<typeof EmailExtractionSchema>;

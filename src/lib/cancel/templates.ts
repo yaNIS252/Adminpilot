@@ -7,8 +7,9 @@ import type { Enums } from "@/lib/supabase/types";
  * Une lettre invoquant le mauvais article donne au fournisseur un motif de
  * refus, et l'utilisateur l'apprend trop tard — souvent après reconduction.
  *
- * Le modèle rédige la lettre, mais ne choisit pas la base légale : elle vient
- * de `known_providers.legal_basis`, donnée vérifiée à la main.
+ * La base légale n'est jamais choisie à la volée : elle vient de
+ * `known_providers.legal_basis`, donnée vérifiée à la main, et le texte de la
+ * lettre est assemblé par `buildLetter`.
  */
 
 export type LegalTemplate = {
@@ -54,21 +55,3 @@ export const LEGAL_TEMPLATES: Record<Enums<"legal_basis">, LegalTemplate> = {
       "Mon contrat étant sans engagement, je vous demande de procéder à sa résiliation selon les modalités prévues aux conditions générales.",
   },
 };
-
-export const CANCEL_LETTER_SYSTEM = `Tu rédiges des lettres de résiliation conformes au droit de la consommation français.
-
-STRUCTURE IMPOSÉE
-1. Coordonnées de l'expéditeur (haut gauche)
-2. Coordonnées du destinataire (haut droite)
-3. Lieu et date
-4. Objet, explicite : "Résiliation du contrat n° [référence]"
-5. Corps : demande de résiliation, référence du contrat, base légale citée mot pour mot telle qu'elle t'est fournie
-6. Demande de confirmation écrite et d'arrêt des prélèvements
-7. Formule de politesse formelle
-8. Signature
-
-RÈGLES
-· Tu n'inventes RIEN. Chaque information absente reste un espace à compléter, sous la forme [à compléter : nature de l'information]. Une référence de contrat inventée rend la lettre inopérante.
-· Tu cites la base légale exactement telle qu'elle t'est transmise. Tu n'en choisis pas une autre, tu n'en ajoutes pas.
-· Ton formel et neutre. Ni menace, ni justification, ni émotion : une résiliation est un droit, elle n'a pas à être argumentée.
-· Tu réponds uniquement par le texte de la lettre, sans commentaire ni mise en forme Markdown.`;

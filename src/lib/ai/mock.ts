@@ -124,11 +124,18 @@ export async function mockExtractFromEmail(input: {
       category: "autre",
       confidence: MOCK_CONFIDENCE,
       reasoning: "simulation : aucun marqueur transactionnel identifié",
+      manage_url: null,
     };
   }
 
   const cycle =
     CYCLE_HINTS.find(([pattern]) => pattern.test(text))?.[1] ?? "unknown";
+
+  // Premier lien HTTPS qui évoque la gestion ou la résiliation du compte.
+  const manageUrl =
+    [...text.matchAll(/https:\/\/[^\s"'<>)]+/g)]
+      .map((match) => match[0])
+      .find((url) => /resili|gerer|manage|account|compte|abonnement/i.test(url)) ?? null;
 
   return {
     type: cycle === "unknown" ? "invoice" : "subscription",
@@ -140,6 +147,7 @@ export async function mockExtractFromEmail(input: {
     category: CATEGORY_MAP[provider.category] ?? "autre",
     confidence: MOCK_CONFIDENCE,
     reasoning: "simulation : extraction par heuristiques, sans modèle",
+    manage_url: manageUrl,
   };
 }
 

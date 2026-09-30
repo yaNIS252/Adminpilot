@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Pencil, Trash2, X } from "lucide-react";
+import Link from "next/link";
+import { Check, LogOut, Pencil, Trash2, X } from "lucide-react";
 import { useState } from "react";
 
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
@@ -153,6 +154,15 @@ export function SubscriptionList({
                     >
                       Modifier
                     </Action>
+                    {!reviewMode && (
+                      <Link
+                        href={`/abonnements/${sub.id}/resilier`}
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3 py-2 text-sm text-[var(--text-muted)] no-underline transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-white sm:flex-none"
+                      >
+                        <LogOut className="size-4" />
+                        Résilier
+                      </Link>
+                    )}
                     <Action
                       onClick={() => remove(sub.id)}
                       disabled={busy === sub.id}

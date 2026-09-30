@@ -32,6 +32,8 @@ confidence — Ta certitude réelle sur l'ensemble de l'extraction, de 0 à 1. S
 
 reasoning — En une phrase, ce sur quoi tu t'es appuyé. Sert au débogage, pas à l'utilisateur.
 
+manage_url — L'adresse exacte d'un lien de l'email permettant de gérer, modifier ou résilier l'abonnement ("Gérer mon abonnement", "Résilier", "Mon compte > Abonnement"). Recopie-la caractère pour caractère depuis l'email, ne la construis jamais et ne la complète pas. Ignore les liens de désinscription à la newsletter, les liens de suivi publicitaire et les pages d'aide génériques. Sans lien de ce type, null.
+
 Les montants sont en euros sauf mention contraire explicite.`;
 
 export function buildEmailUserMessage(input: {

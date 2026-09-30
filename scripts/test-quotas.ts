@@ -11,6 +11,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { checkLimit } from "../src/lib/billing/quotas";
+import { trustedLink } from "../src/lib/cancel/links";
 import { PLAN_LIMITS } from "../src/lib/constants";
 import { processDocumentJob, processEmailJob } from "../src/lib/ingest/pipeline";
 import type { Database } from "../src/lib/supabase/types";
@@ -146,6 +147,33 @@ async function main() {
   console.log("\n— Périodiques (recherche, résiliation)");
   check("recherche en gratuit", (await checkLimit(userId, "free", "searches")).allowed, false);
   check("résiliation en gratuit", (await checkLimit(userId, "free", "cancellations")).allowed, false);
+
+  console.log("\n— Liens de résiliation trouvés dans les e-mails");
+  check("lien du domaine du fournisseur accepté", trustedLink("https://www.netflix.com/cancelplan", ["netflix.com"]), "https://www.netflix.com/cancelplan");
+  check("domaine piégé refusé (netflix.com.evil.io)", trustedLink("https://netflix.com.evil.io/resilier", ["netflix.com"]), null);
+  check("domaine voisin refusé (netflix-compte.xyz)", trustedLink("https://netflix-compte.xyz/resilier", ["netflix.com"]), null);
+  check("http non chiffré refusé", trustedLink("http://www.netflix.com/cancelplan", ["netflix.com"]), null);
+  check("identifiants dans l'URL refusés", trustedLink("https://user:pass@www.netflix.com/x", ["netflix.com"]), null);
+
+  await reset(userId);
+  const { data: netflix } = await db.from("known_providers").select("id, name, domain").eq("name", "Netflix").single();
+  const phishing = {
+    from: "Netflix <info@account.netflix.com>",
+    subject: "Votre facture Netflix",
+    date: new Date().toISOString(),
+    body: "Montant prélevé : 13,49 € par mois. Gérer : https://netflix-compte.xyz/abonnement/resilier",
+  };
+  await processEmailJob({ id: await job(userId, "email"), user_id: userId, attempts: 0, payload: phishing });
+  let { data: sub } = await db.from("subscriptions").select("provider_id, metadata").eq("user_id", userId).single();
+  check("abonnement rattaché au catalogue", sub?.provider_id, netflix!.id);
+  check("lien d'hameçonnage non enregistré", (sub?.metadata as Record<string, unknown>)?.manage_url ?? null, null);
+
+  await processEmailJob({
+    id: await job(userId, "email"), user_id: userId, attempts: 0,
+    payload: { ...phishing, body: "Montant prélevé : 13,49 € par mois. Gérer mon abonnement : https://www.netflix.com/account/cancel" },
+  });
+  ({ data: sub } = await db.from("subscriptions").select("provider_id, metadata").eq("user_id", userId).single());
+  check("lien officiel ajouté à la facture suivante", (sub?.metadata as Record<string, unknown>)?.manage_url ?? null, "https://www.netflix.com/account/cancel");
 
   await reset(userId);
   console.log(failures === 0 ? "\nTout est conforme." : `\n${failures} échec(s).`);
