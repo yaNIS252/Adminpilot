@@ -120,3 +120,33 @@ export function buildDeadlineEmail(input: {
     text: `${input.title} — échéance ${when} (${formatDate(input.deadline)})\n\n${input.dashboardUrl}`,
   };
 }
+
+/**
+ * Hausse de prix détectée. Le titre et le message sont composés à la
+ * détection, avec les montants exacts : le gabarit ne fait que les mettre en
+ * page, et ne recalcule rien.
+ */
+export function buildPriceChangeEmail(input: {
+  title: string;
+  message: string;
+  cancelUrl: string;
+}): AlertEmail {
+  const html = `<!doctype html>
+<html lang="fr"><body style="margin:0;padding:24px;background:#f5f5fa;font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1a1a2e">
+  <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:10px;padding:28px">
+    <p style="margin:0 0 8px;font-size:13px;color:#b45309">Hausse de prix</p>
+    <h1 style="margin:0 0 16px;font-size:22px;font-weight:700">${escapeHtml(input.title)}</h1>
+    <p style="margin:0;font-size:15px;line-height:1.6">${escapeHtml(input.message)}</p>
+    <p style="margin:12px 0 0;font-size:13px;line-height:1.6;color:#6b6b80">Un changement de tarif ouvre souvent le droit de résilier sans frais. Vérifie tes conditions avant la date d’effet.</p>
+    <p style="margin:24px 0 0">
+      <a href="${input.cancelUrl}" style="display:inline-block;background:#6c5ce7;color:#fff;text-decoration:none;padding:11px 20px;border-radius:7px;font-size:14px;font-weight:600">Voir mes options</a>
+    </p>
+  </div>
+</body></html>`;
+
+  return {
+    subject: input.title,
+    html,
+    text: `${input.title}\n${input.message}\n\n${input.cancelUrl}`,
+  };
+}

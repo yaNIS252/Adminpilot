@@ -24,6 +24,8 @@ export type Database = {
           created_at: string;
           dedup_key: string;
           id: string;
+          kind: string;
+          price_change_id: string | null;
           message: string;
           ref_id: string;
           ref_type: string;
@@ -37,6 +39,8 @@ export type Database = {
           created_at?: string;
           dedup_key: string;
           id?: string;
+          kind?: string;
+          price_change_id?: string | null;
           message: string;
           ref_id: string;
           ref_type: string;
@@ -50,6 +54,8 @@ export type Database = {
           created_at?: string;
           dedup_key?: string;
           id?: string;
+          kind?: string;
+          price_change_id?: string | null;
           message?: string;
           ref_id?: string;
           ref_type?: string;
@@ -344,6 +350,66 @@ export type Database = {
           seo_slug?: string;
         };
         Relationships: [];
+      };
+      price_changes: {
+        Row: {
+          created_at: string;
+          currency: string;
+          cycle: Database["public"]["Enums"]["billing_cycle"];
+          dedup_key: string;
+          effective_date: string | null;
+          id: string;
+          kind: string;
+          new_amount: number;
+          old_amount: number;
+          source: string;
+          subscription_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          currency?: string;
+          cycle: Database["public"]["Enums"]["billing_cycle"];
+          dedup_key: string;
+          effective_date?: string | null;
+          id?: string;
+          kind: string;
+          new_amount: number;
+          old_amount: number;
+          source: string;
+          subscription_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          currency?: string;
+          cycle?: Database["public"]["Enums"]["billing_cycle"];
+          dedup_key?: string;
+          effective_date?: string | null;
+          id?: string;
+          kind?: string;
+          new_amount?: number;
+          old_amount?: number;
+          source?: string;
+          subscription_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "price_changes_subscription_id_fkey";
+            columns: ["subscription_id"];
+            isOneToOne: false;
+            referencedRelation: "subscriptions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "price_changes_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       profiles: {
         Row: {

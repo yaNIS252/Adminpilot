@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { FileText } from "lucide-react";
 
-import { SubscriptionList } from "@/components/dashboard/subscription-list";
+import { isoDaysAgo } from "@/lib/format";
+
+import {
+  SubscriptionList,
+  type RecentPriceChange,
+} from "@/components/dashboard/subscription-list";
 import { createClient } from "@/lib/supabase/server";
 import {
   UpgradeNotice,
@@ -44,7 +49,7 @@ export default async function SubscriptionsPage({
     ? query.eq("confirmed_by_user", false).lt("confidence", 0.7)
     : query.eq("status", "active");
 
-  const [{ data }, { count: hiddenCount }, { data: letters }] = await Promise.all([
+  const [{ data }, { count: hiddenCount }, { data: letters }, { data: changes }] = await Promise.all([
     query,
     supabase
       .from("subscriptions")
@@ -54,7 +59,19 @@ export default async function SubscriptionsPage({
       .from("cancellations")
       .select("id, status, created_at, sent_at, subscription_id, subscriptions(provider)")
       .order("created_at", { ascending: false }),
+    // Changements des 90 derniers jours, du plus récent au plus ancien.
+    supabase
+      .from("price_changes")
+      .select("subscription_id, kind, old_amount, new_amount")
+      .gte("created_at", isoDaysAgo(90))
+      .order("created_at", { ascending: false }),
   ]);
+
+  // Le premier rencontré par abonnement est le plus récent.
+  const latestChange: Record<string, RecentPriceChange> = {};
+  for (const change of changes ?? []) {
+    latestChange[change.subscription_id] ??= change;
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -82,7 +99,11 @@ export default async function SubscriptionsPage({
         <UpgradeNotice {...hiddenSubscriptionsCopy(hiddenCount)} />
       ) : null}
 
-      <SubscriptionList initial={data ?? []} reviewMode={reviewMode} />
+      <SubscriptionList
+        initial={data ?? []}
+        reviewMode={reviewMode}
+        priceChanges={latestChange}
+      />
 
       {!reviewMode && (letters ?? []).length > 0 && (
         <section className="card-sheen anim-up rounded-[var(--radius-xl)] border border-[var(--border)] p-5">

@@ -78,3 +78,8 @@ export function monthlyEquivalent(
       return 0;
   }
 }
+
+/** Horodatage ISO d'il y a `days` jours, pour borner une requête. */
+export function isoDaysAgo(days: number): string {
+  return new Date(Date.now() - days * 86_400_000).toISOString();
+}

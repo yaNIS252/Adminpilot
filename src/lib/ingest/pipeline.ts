@@ -6,6 +6,7 @@ import { REVIEW_THRESHOLD } from "@/lib/ai/schemas";
 import { extractFromDocument, extractFromEmail } from "@/lib/ai/extract";
 import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
 import { matchCatalogue, senderDomain, trustedLink } from "@/lib/cancel/links";
+import { trackPriceChange } from "@/lib/ingest/price-tracker";
 import { PLAN_LIMITS } from "@/lib/constants";
 
 /**
@@ -34,8 +35,7 @@ export type EnqueueInput = {
 };
 
 export type EnqueueResult =
-  | { status: "queued"; jobId: string }
-  | { status: "duplicate"; jobId: string };
+  { status: "queued"; jobId: string } | { status: "duplicate"; jobId: string };
 
 /**
  * Dépose un job et rend la main immédiatement — l'appelant répond 202.
@@ -201,9 +201,34 @@ export async function processEmailJob(job: {
     senderDomain(job.payload.from),
   ]);
 
+  // Changement de prix, comparé AVANT la mise à jour : c'est l'ancien montant
+  // qui sert de référence. Seulement sur une extraction assez sûre — alerter
+  // d'une hausse lue de travers ferait perdre confiance dans toutes les autres.
+  const announcement = data.type === "price_change";
+  const priceCheck =
+    existing && !needsReview
+      ? await trackPriceChange(db, {
+          userId: job.user_id,
+          subscription: existing,
+          newAmount: data.amount,
+          currency: data.currency,
+          cycle: data.billing_cycle,
+          source: announcement ? "announcement" : "invoice",
+          previousAmount: data.previous_amount,
+          effectiveDate: data.effective_date,
+        })
+      : null;
+  // Montant jugé invraisemblable (un total annuel lu comme un mensuel…) :
+  // il ne remplace pas le prix connu, qui reste le plus fiable des deux.
+  const implausible =
+    priceCheck?.recorded === false &&
+    priceCheck.reason === "écart invraisemblable";
+
   const inserted = existing
     ? await refreshSubscription(db, existing, {
-        amount: data.amount,
+        // Un tarif annoncé ne s'applique qu'à sa date d'effet : le montant
+        // connu ne change pas avant la première facture au nouveau prix.
+        amount: announcement || implausible ? null : data.amount,
         currency: data.currency,
         cycle: data.billing_cycle,
         category: data.category,
@@ -360,7 +385,10 @@ function normalizeProvider(name: string): string {
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
-    .replace(/\b(sas|sasu|sa|sarl|bv|b\.v\.|inc|ltd|llc|gmbh|international)\b/g, "")
+    .replace(
+      /\b(sas|sasu|sa|sarl|bv|b\.v\.|inc|ltd|llc|gmbh|international)\b/g,
+      "",
+    )
     .replace(/[^a-z0-9]/g, "")
     .trim();
 }
@@ -374,7 +402,7 @@ async function findExistingSubscription(
   const { data } = await db
     .from("subscriptions")
     .select(
-      "id, provider, amount, cycle, next_renewal, confidence, confirmed_by_user, over_quota",
+      "id, provider, amount, cycle, category, next_renewal, confidence, confirmed_by_user, over_quota",
     )
     .eq("user_id", userId)
     .eq("status", "active");
@@ -432,7 +460,8 @@ async function refreshSubscription(
   if (!existing.confirmed_by_user && next.confidence >= existing.confidence) {
     if (next.amount !== null) patch.amount = next.amount;
     if (next.currency) patch.currency = next.currency;
-    if (next.cycle) patch.cycle = next.cycle as TablesUpdate<"subscriptions">["cycle"];
+    if (next.cycle)
+      patch.cycle = next.cycle as TablesUpdate<"subscriptions">["cycle"];
     if (next.category) patch.category = next.category;
     patch.confidence = next.confidence;
   }
@@ -450,7 +479,10 @@ async function refreshSubscription(
  * Seuls les abonnements VISIBLES comptent : ceux déjà en réserve ne doivent
  * pas empêcher l'utilisateur de retrouver sa place s'il en supprime un.
  */
-async function exceedsSubscriptionQuota(db: Db, userId: string): Promise<boolean> {
+async function exceedsSubscriptionQuota(
+  db: Db,
+  userId: string,
+): Promise<boolean> {
   const { data: profile } = await db
     .from("profiles")
     .select("plan")
@@ -509,10 +541,13 @@ async function attachLinks(
   if (!current) return;
 
   const patch: TablesUpdate<"subscriptions"> = {};
-  if (links.providerId && !current.provider_id) patch.provider_id = links.providerId;
+  if (links.providerId && !current.provider_id)
+    patch.provider_id = links.providerId;
   if (links.manageUrl) {
     const metadata =
-      current.metadata && typeof current.metadata === "object" && !Array.isArray(current.metadata)
+      current.metadata &&
+      typeof current.metadata === "object" &&
+      !Array.isArray(current.metadata)
         ? current.metadata
         : {};
     patch.metadata = { ...metadata, manage_url: links.manageUrl };

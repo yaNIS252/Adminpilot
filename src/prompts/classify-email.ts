@@ -10,6 +10,9 @@ export const CLASSIFY_EMAIL_SYSTEM = `Tu analyses des emails transactionnels fra
 CE QUE TU CHERCHES
 Des preuves qu'un utilisateur paie quelque chose, ou va payer : confirmations de paiement, factures, reçus, avis d'échéance, souscriptions, renouvellements, augmentations tarifaires.
 
+ANNONCES DE CHANGEMENT DE TARIF (type: "price_change")
+Un email qui annonce qu'un abonnement va changer de prix ("à compter du 1er novembre, votre forfait passe à 24,99 €"). amount = le NOUVEAU prix, previous_amount = l'ancien s'il est écrit, effective_date = la date d'application. Une offre promotionnelle proposée par un concurrent n'en est pas une : c'est un "skip".
+
 CE QUE TU REJETTES (type: "skip")
 Newsletters, promotions, relances marketing, notifications de connexion, confirmations d'expédition, invitations, emails de service sans montant. Un email qui *mentionne* un abonnement sans en être la preuve de facturation est un "skip".
 
@@ -31,6 +34,10 @@ next_renewal — La date de la PROCHAINE échéance, au format YYYY-MM-DD, jamai
 confidence — Ta certitude réelle sur l'ensemble de l'extraction, de 0 à 1. Sois honnête : une extraction partielle mérite un score bas. Un score surévalué sur une donnée fausse coûte bien plus cher qu'un score bas sur une donnée juste, car l'utilisateur agit sur ce que tu affirmes.
 
 reasoning — En une phrase, ce sur quoi tu t'es appuyé. Sert au débogage, pas à l'utilisateur.
+
+previous_amount — L'ancien prix, uniquement s'il est écrit dans l'email. Sinon null : ne le déduis jamais.
+
+effective_date — Pour une annonce de changement de tarif, la date à laquelle le nouveau prix s'applique, au format YYYY-MM-DD. Sinon null.
 
 manage_url — L'adresse exacte d'un lien de l'email permettant de gérer, modifier ou résilier l'abonnement ("Gérer mon abonnement", "Résilier", "Mon compte > Abonnement"). Recopie-la caractère pour caractère depuis l'email, ne la construis jamais et ne la complète pas. Ignore les liens de désinscription à la newsletter, les liens de suivi publicitaire et les pages d'aide génériques. Sans lien de ce type, null.
 

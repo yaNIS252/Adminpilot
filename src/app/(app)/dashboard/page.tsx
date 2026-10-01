@@ -7,6 +7,8 @@ import {
   FileText,
   Layers,
   ScanEye,
+  TrendingDown,
+  TrendingUp,
   Wallet,
 } from "lucide-react";
 
@@ -19,10 +21,13 @@ import { UpsellBanner } from "@/components/billing/upsell-banner";
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { requireUser } from "@/lib/auth/require-user";
 import { PLAN_LABELS, UPSELL_COOKIE } from "@/lib/constants";
+import { periodsPerYear } from "@/lib/ingest/price-tracker";
 import {
   daysUntil,
   formatAmount,
   formatCycle,
+  formatDate,
+  isoDaysAgo,
   formatRelativeDeadline,
   monthlyEquivalent,
 } from "@/lib/format";
@@ -70,6 +75,7 @@ export default async function DashboardPage({
     { data: documents },
     { count: reviewCount },
     { count: hiddenCount },
+    { data: priceChanges },
   ] =
     await Promise.all([
       supabase
@@ -93,7 +99,27 @@ export default async function DashboardPage({
         .from("subscriptions")
         .select("id", { count: "exact", head: true })
         .eq("over_quota", true),
+      // Douze derniers mois : c'est l'horizon du « combien de plus cette année ».
+      supabase
+        .from("price_changes")
+        .select("id, old_amount, new_amount, cycle, kind, source, effective_date, created_at, subscription_id, subscriptions!inner(provider, over_quota)")
+        .eq("subscriptions.over_quota", false)
+        .gte("created_at", isoDaysAgo(365))
+        .order("created_at", { ascending: false }),
     ]);
+
+  // Impact annuel de chaque changement, puis bilan des hausses et des baisses.
+  const changes = (priceChanges ?? []).map((change) => ({
+    ...change,
+    provider: (change.subscriptions as unknown as { provider: string }).provider,
+    yearly: (change.new_amount - change.old_amount) * periodsPerYear(change.cycle),
+  }));
+  const yearlyIncrease = changes
+    .filter((change) => change.kind === "increase")
+    .reduce((sum, change) => sum + change.yearly, 0);
+  const yearlyDecrease = changes
+    .filter((change) => change.kind === "decrease")
+    .reduce((sum, change) => sum + change.yearly, 0);
 
   const subs = subscriptions ?? [];
 
@@ -259,6 +285,70 @@ export default async function DashboardPage({
           }
         />
       </section>
+
+      {changes.length > 0 && (
+        <Card
+          title="Évolution des prix"
+          subtitle={[
+            yearlyIncrease > 0 ? `+${formatAmount(yearlyIncrease)} par an de hausses` : null,
+            yearlyDecrease < 0 ? `${formatAmount(yearlyDecrease)} par an de baisses` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+          icon={<TrendingUp className="size-4" />}
+        >
+          <ul className="m-0 mt-3 list-none p-0">
+            {changes.slice(0, 5).map((change) => {
+              const up = change.kind === "increase";
+              const future =
+                change.effective_date && change.effective_date > new Date().toISOString().slice(0, 10);
+              return (
+                <li
+                  key={change.id}
+                  className="flex flex-wrap items-center gap-3 border-b border-[var(--border-soft)] py-2.5 last:border-b-0"
+                >
+                  <span
+                    className={`grid size-7 shrink-0 place-items-center rounded-full ${
+                      up
+                        ? "bg-[rgba(224,161,56,.14)] text-[var(--warning-light)]"
+                        : "bg-[rgba(63,207,149,.12)] text-[var(--positive-light)]"
+                    }`}
+                  >
+                    {up ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
+                  </span>
+                  <div className="min-w-[10rem] flex-1">
+                    <div className="text-sm font-medium">{change.provider}</div>
+                    <div className="text-xs text-[var(--text-faint)]">
+                      {future
+                        ? `annoncé, à partir du ${formatDate(change.effective_date)}`
+                        : `constaté le ${formatDate(change.created_at.slice(0, 10))}`}
+                    </div>
+                  </div>
+                  <span className="mono text-[13px] text-[var(--text-dim)]">
+                    {formatAmount(change.old_amount)} → {formatAmount(change.new_amount)}
+                  </span>
+                  <span
+                    className={`mono min-w-[6.5rem] text-right text-[13px] font-semibold ${
+                      up ? "text-[var(--warning-light)]" : "text-[var(--positive-light)]"
+                    }`}
+                  >
+                    {up ? "+" : ""}
+                    {formatAmount(change.yearly)}/an
+                  </span>
+                  {up && (
+                    <Link
+                      href={`/abonnements/${change.subscription_id}/resilier`}
+                      className="text-xs"
+                    >
+                      Résilier
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
 
       <section className="flex flex-wrap items-stretch gap-3.5">
         <Card

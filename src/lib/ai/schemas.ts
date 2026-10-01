@@ -65,7 +65,11 @@ const confidence = z.number().min(0).max(1);
 
 export const EmailExtractionSchema = z.object({
   /** `skip` couvre tout ce qui n'est pas transactionnel (newsletters, pubs...). */
-  type: z.enum(["subscription", "invoice", "contract", "receipt", "skip"]),
+  /**
+   * `price_change` : annonce d'un changement de tarif à venir. `amount` porte
+   * alors le NOUVEAU prix et `previous_amount` l'ancien, s'il est cité.
+   */
+  type: z.enum(["subscription", "invoice", "contract", "receipt", "price_change", "skip"]),
   provider: z.string().nullable(),
   amount: z.number().nullable(),
   currency: z.string().default("EUR"),
@@ -81,6 +85,10 @@ export const EmailExtractionSchema = z.object({
    * domaine du fournisseur (voir `trustedLink`).
    */
   manage_url: z.string().max(500).nullable().default(null),
+  /** Ancien prix, quand l'e-mail l'indique (annonce de hausse surtout). */
+  previous_amount: z.number().nullable().default(null),
+  /** Date d'application d'un nouveau tarif annoncé. */
+  effective_date: isoDate.default(null),
 });
 
 export type EmailExtraction = z.infer<typeof EmailExtractionSchema>;

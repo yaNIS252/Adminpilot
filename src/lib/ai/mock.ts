@@ -125,8 +125,14 @@ export async function mockExtractFromEmail(input: {
       confidence: MOCK_CONFIDENCE,
       reasoning: "simulation : aucun marqueur transactionnel identifié",
       manage_url: null,
+      previous_amount: null,
+      effective_date: null,
     };
   }
+
+  // Annonce de changement de tarif : « passe de 13,49 € à 15,49 € ».
+  const change = /pass\w*\s+de\s+(\d{1,6},\d{2})\s*€?\s+à\s+(\d{1,6},\d{2})/i.exec(text);
+  const effective = /(?:à compter du|à partir du)\s+(\d{2})\/(\d{2})\/(\d{4})/i.exec(text);
 
   const cycle =
     CYCLE_HINTS.find(([pattern]) => pattern.test(text))?.[1] ?? "unknown";
@@ -138,9 +144,11 @@ export async function mockExtractFromEmail(input: {
       .find((url) => /resili|gerer|manage|account|compte|abonnement/i.test(url)) ?? null;
 
   return {
-    type: cycle === "unknown" ? "invoice" : "subscription",
+    type: change ? "price_change" : cycle === "unknown" ? "invoice" : "subscription",
     provider: provider.name,
-    amount,
+    amount: change ? Number(change[2].replace(",", ".")) : amount,
+    previous_amount: change ? Number(change[1].replace(",", ".")) : null,
+    effective_date: effective ? `${effective[3]}-${effective[2]}-${effective[1]}` : null,
     currency: "EUR",
     billing_cycle: cycle,
     next_renewal: findNextRenewal(text),

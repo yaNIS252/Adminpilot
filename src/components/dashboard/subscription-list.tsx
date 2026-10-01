@@ -16,12 +16,21 @@ import type { Subscription } from "@/lib/supabase/types";
  * l'interface ne fait jamais autorité sur ce que l'utilisateur a le droit de
  * toucher.
  */
+/** Dernier changement de prix d'un abonnement, s'il est récent. */
+export type RecentPriceChange = {
+  kind: string;
+  old_amount: number;
+  new_amount: number;
+};
+
 export function SubscriptionList({
   initial,
   reviewMode,
+  priceChanges = {},
 }: {
   initial: Subscription[];
   reviewMode: boolean;
+  priceChanges?: Record<string, RecentPriceChange>;
 }) {
   const [items, setItems] = useState(initial);
   const [editing, setEditing] = useState<string | null>(null);
@@ -114,6 +123,9 @@ export function SubscriptionList({
                   <div className="min-w-[8rem] flex-1">
                     <div className="flex items-center gap-1.5 font-medium">
                       {sub.provider}
+                      {priceChanges[sub.id] && (
+                        <PriceBadge change={priceChanges[sub.id]} currency={sub.currency} />
+                      )}
                       {uncertain && (
                         <span
                           title="Détecté automatiquement, non vérifié"
@@ -178,6 +190,30 @@ export function SubscriptionList({
         })}
       </ul>
     </>
+  );
+}
+
+function PriceBadge({
+  change,
+  currency,
+}: {
+  change: RecentPriceChange;
+  currency: string;
+}) {
+  const up = change.kind === "increase";
+  const diff = change.new_amount - change.old_amount;
+  return (
+    <span
+      title={`${formatAmount(change.old_amount, currency)} → ${formatAmount(change.new_amount, currency)}`}
+      className={`rounded-full px-1.5 text-[10px] font-semibold ${
+        up
+          ? "bg-[rgba(224,161,56,.15)] text-[var(--warning-light)]"
+          : "bg-[rgba(63,207,149,.12)] text-[var(--positive-light)]"
+      }`}
+    >
+      {up ? "↑ +" : "↓ "}
+      {formatAmount(diff, currency)}
+    </span>
   );
 }
 

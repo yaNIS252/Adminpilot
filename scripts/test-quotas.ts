@@ -175,6 +175,60 @@ async function main() {
   ({ data: sub } = await db.from("subscriptions").select("provider_id, metadata").eq("user_id", userId).single());
   check("lien officiel ajouté à la facture suivante", (sub?.metadata as Record<string, unknown>)?.manage_url ?? null, "https://www.netflix.com/account/cancel");
 
+  console.log("\n— Surveillance des prix");
+  await reset(userId);
+  await db.from("profiles").update({ plan: "pro" }).eq("id", userId);
+  const bill = (body: string, from = "Netflix <info@account.netflix.com>") => ({
+    from,
+    subject: "Votre facture",
+    date: new Date().toISOString(),
+    body,
+  });
+  const send = async (payload: ReturnType<typeof bill>) =>
+    processEmailJob({ id: await job(userId, "email"), user_id: userId, attempts: 0, payload });
+  const state = async () => {
+    const { data: s } = await db.from("subscriptions").select("id, amount").eq("user_id", userId).eq("provider", "Netflix").single();
+    const { data: c } = await db.from("price_changes").select("kind, source, old_amount, new_amount").eq("subscription_id", s!.id).order("created_at");
+    const { count: a } = await db.from("alerts").select("id", { count: "exact", head: true }).eq("ref_id", s!.id).eq("kind", "price_change");
+    return { amount: Number(s!.amount), changes: (c ?? []).map((x) => `${x.kind}:${x.source}:${x.old_amount}->${x.new_amount}`), alerts: a };
+  };
+
+  await send(bill("Montant prélevé : 13,49 € par mois."));
+  await send(bill("Montant prélevé : 13,49 € par mois."));
+  check("même prix deux fois → rien", await state(), { amount: 13.49, changes: [], alerts: 0 });
+
+  await send(bill("Montant prélevé : 15,49 € par mois."));
+  check("facture plus chère → hausse + alerte, nouveau prix retenu", await state(), {
+    amount: 15.49, changes: ["increase:invoice:13.49->15.49"], alerts: 1,
+  });
+
+  await send(bill("Montant prélevé : 14,49 € par mois."));
+  check("facture moins chère → baisse enregistrée, sans alerte", (await state()).changes.at(-1), "decrease:invoice:15.49->14.49");
+  check("toujours une seule alerte", (await state()).alerts, 1);
+
+  await send(bill("Votre abonnement par mois passe de 14,49 € à 16,99 € à compter du 01/12/2026."));
+  let st = await state();
+  check("annonce de hausse → alerte avant la facture", { last: st.changes.at(-1), alerts: st.alerts }, { last: "increase:announcement:14.49->16.99", alerts: 2 });
+  check("annonce → prix actuel inchangé jusqu'à la date d'effet", st.amount, 14.49);
+
+  await send(bill("Montant prélevé : 16,99 € par mois."));
+  st = await state();
+  check("1re facture au prix annoncé → pas de doublon, prix mis à jour", { amount: st.amount, n: st.changes.length, alerts: st.alerts }, { amount: 16.99, n: 3, alerts: 2 });
+
+  await send(bill("Montant prélevé : 169,90 € par mois."));
+  st = await state();
+  check("écart invraisemblable (×10) → ignoré, prix connu conservé", { n: st.changes.length, amount: st.amount }, { n: 3, amount: 16.99 });
+
+  await send(bill("Montant prélevé : 199,00 € par an."));
+  check("autre périodicité (annuel) → pas une hausse", (await state()).changes.length, 3);
+
+  const { data: edf } = await db.from("known_providers").select("name, domain, category").eq("name", "EDF").single();
+  const edfBill = (amount: string) => bill(`Montant prélevé : ${amount} € par mois.`, `EDF <factures@${edf!.domain}>`);
+  await send(edfBill("80,00"));
+  await send(edfBill("95,00"));
+  const { count: edfChanges } = await db.from("price_changes").select("id", { count: "exact", head: true }).eq("user_id", userId).neq("subscription_id", (await db.from("subscriptions").select("id").eq("user_id", userId).eq("provider", "Netflix").single()).data!.id);
+  check(`électricité (catégorie ${edf!.category}) : consommation variable → pas une hausse`, edfChanges, 0);
+
   await reset(userId);
   console.log(failures === 0 ? "\nTout est conforme." : `\n${failures} échec(s).`);
   process.exit(failures === 0 ? 0 : 1);

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
-import { buildDeadlineEmail, buildRenewalEmail } from "@/lib/alerts/email";
+import {
+  buildDeadlineEmail,
+  buildPriceChangeEmail,
+  buildRenewalEmail,
+} from "@/lib/alerts/email";
 import { currentPeriod, incrementUsage } from "@/lib/billing/quotas";
 import { PLAN_LIMITS } from "@/lib/constants";
 import { siteUrl } from "@/lib/site-url";
@@ -147,19 +151,29 @@ export async function GET(request: Request) {
           continue;
         }
 
-        // L'abonnement a pu être supprimé ou résilié depuis : plus d'objet,
-        // plus d'alerte.
-        if (!sub?.next_renewal) continue;
+        if (alert.kind === "price_change") {
+          // Abonnement supprimé depuis la détection : l'alerte n'a plus d'objet.
+          if (!sub) continue;
+          email = buildPriceChangeEmail({
+            title: alert.title,
+            message: alert.message,
+            cancelUrl: `${base}/abonnements/${sub.id}/resilier`,
+          });
+        } else {
+          // L'abonnement a pu être supprimé ou résilié depuis : plus d'objet,
+          // plus d'alerte.
+          if (!sub?.next_renewal) continue;
 
-        email = buildRenewalEmail({
-          provider: sub.provider,
-          amount: sub.amount,
-          currency: sub.currency,
-          renewalDate: sub.next_renewal,
-          daysLeft: Math.max(0, daysUntil(sub.next_renewal)),
-          dashboardUrl,
-          confirmed: sub.confirmed_by_user,
-        });
+          email = buildRenewalEmail({
+            provider: sub.provider,
+            amount: sub.amount,
+            currency: sub.currency,
+            renewalDate: sub.next_renewal,
+            daysLeft: Math.max(0, daysUntil(sub.next_renewal)),
+            dashboardUrl,
+            confirmed: sub.confirmed_by_user,
+          });
+        }
       } else {
         const doc = docById.get(alert.ref_id);
 
