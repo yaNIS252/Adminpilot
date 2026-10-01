@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Inbox, Lock, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
+import { Forward, Inbox, Lock, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 
 import { ManageSubscription, PlanPicker } from "@/components/billing/plan-picker";
 import {
@@ -9,6 +9,7 @@ import {
 import { ProfileEditor } from "@/components/profile/profile-editor";
 import { ThemePicker } from "@/components/profile/theme-picker";
 import { AccountActions } from "@/components/shared/account-actions";
+import { ForwardingSetup } from "@/components/shared/forwarding-setup";
 import { InboxAddress } from "@/components/shared/inbox-address";
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
 import { getStripe, planFromPriceId } from "@/lib/billing/stripe";
@@ -18,6 +19,7 @@ import {
   PLAN_LIMITS,
   RAW_RETENTION_DAYS,
 } from "@/lib/constants";
+import { forwardingDomains } from "@/lib/forwarding-domains";
 import { householdOf, INVITE_SLOTS, membershipOf } from "@/lib/household";
 import { avatarUrl, avatarUrls } from "@/lib/profile/avatar";
 import { effectiveTheme } from "@/lib/profile/theme";
@@ -62,10 +64,11 @@ export default async function SettingsPage({
   const isMember = Boolean(membership) && profile.plan === "family";
   const householdOwner = subscriber && profile.plan === "family";
 
-  const [billing, ownAvatar, household] = await Promise.all([
+  const [billing, ownAvatar, household, domains] = await Promise.all([
     subscriber && profile.stripe_sub_id ? currentBilling(profile.stripe_sub_id) : null,
     avatarUrl(profile.avatar_path),
     householdOwner ? householdOf(db, auth.userId) : Promise.resolve([]),
+    forwardingDomains(),
   ]);
   const memberAvatars = await avatarUrls(household.map((row) => row.member?.avatar_path ?? null));
 
@@ -111,6 +114,14 @@ export default async function SettingsPage({
           Garde-la pour toi : quiconque la connaît peut y envoyer des documents
           qui apparaîtront dans ton compte.
         </p>
+      </Card>
+
+      <Card
+        icon={<Forward className="size-4" />}
+        title="Transfert automatique"
+        subtitle="Pour que chaque nouvelle facture arrive sans y penser"
+      >
+        <ForwardingSetup address={inboxAddress(profile)} domains={domains} />
       </Card>
 
       <Card

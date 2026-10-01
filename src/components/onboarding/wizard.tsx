@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { ForwardingSetup } from "@/components/shared/forwarding-setup";
 import { InboxAddress } from "@/components/shared/inbox-address";
 import { createClient } from "@/lib/supabase/client";
 
@@ -22,10 +23,13 @@ type Confirmation = { code: string; url: string | null };
 export function OnboardingWizard({
   userId,
   address,
+  domains,
   initialConfirmation,
 }: {
   userId: string;
   address: string;
+  /** Expéditeurs connus, pour les règles des messageries autres que Gmail. */
+  domains: string[];
   initialConfirmation: Confirmation | null;
 }) {
   const router = useRouter();
@@ -131,24 +135,13 @@ export function OnboardingWizard({
           )}
         </Step>
 
-        <Step number={4} title="Crée le filtre" hint="recommandé" last>
-          <p className="m-0 text-sm leading-[1.7] text-[var(--text-dim)]">
-            Pour que tout soit automatique : Gmail →{" "}
-            <strong className="text-[var(--text)]">
-              Filtres et adresses bloquées
-            </strong>{" "}
-            → <strong className="text-[var(--text)]">Créer un filtre</strong>,
-            avec comme critère :
+        <Step number={4} title="Rends le transfert automatique" hint="recommandé" last>
+          <p className="m-0 mb-4 text-sm leading-[1.7] text-[var(--text-dim)]">
+            Un filtre transfère tout seul tes futures factures. Deux minutes
+            une fois, puis plus rien à faire. Tu peux aussi sauter cette étape
+            et transférer tes e-mails à la main.
           </p>
-          <code className="mono my-3 block overflow-x-auto rounded-[8px] border border-[var(--border)] bg-[var(--surface-alt)] px-3.5 py-2.5 text-[12px] whitespace-nowrap">
-            facture OR abonnement OR prélèvement OR renouvellement
-          </code>
-          <p className="m-0 text-sm leading-[1.7] text-[var(--text-dim)]">
-            puis coche{" "}
-            <strong className="text-[var(--text)]">Transférer à</strong> ton
-            adresse AdminPilot. Tu peux aussi sauter cette étape et transférer
-            tes emails à la main.
-          </p>
+          <ForwardingSetup address={address} domains={domains} />
         </Step>
       </ol>
 

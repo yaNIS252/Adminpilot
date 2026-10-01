@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { LogoMark } from "@/components/marketing/logo-mark";
 import { OnboardingWizard } from "@/components/onboarding/wizard";
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
+import { forwardingDomains } from "@/lib/forwarding-domains";
 
 export const metadata = { title: "Configuration — AdminPilot" };
 
@@ -32,6 +33,7 @@ export default async function OnboardingPage() {
         <OnboardingWizard
         userId={auth.userId}
         address={inboxAddress(auth.profile)}
+        domains={await forwardingDomains()}
         initialConfirmation={
           auth.profile.gmail_confirmation as {
             code: string;
