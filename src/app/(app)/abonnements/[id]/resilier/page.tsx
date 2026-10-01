@@ -2,15 +2,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, FileText, Globe, Lock, Scale } from "lucide-react";
 
+import { CategoryTip, GuideSteps } from "@/components/cancel/cancel-guide";
 import { LetterForm } from "@/components/cancel/letter-form";
 import { LetterTracker } from "@/components/cancel/letter-tracker";
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { requireUser } from "@/lib/auth/require-user";
+import { parseGuide } from "@/lib/cancel/guides";
 import { trustedLink } from "@/lib/cancel/links";
 import { LEGAL_TEMPLATES } from "@/lib/cancel/templates";
 import { readUuid } from "@/lib/http/request";
 import { formatAmount, formatCycle, formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
+import type { Json } from "@/lib/supabase/types";
 
 export const metadata = { title: "Résilier — AdminPilot" };
 
@@ -36,7 +39,7 @@ export default async function CancelPage({
     supabase
       .from("subscriptions")
       .select(
-        "id, provider, amount, currency, cycle, next_renewal, status, metadata, known_providers(name, domain, seo_slug, cancel_method, cancel_url, cancel_address, legal_basis)",
+        "id, provider, amount, currency, cycle, category, next_renewal, status, metadata, known_providers(name, domain, category, seo_slug, cancel_method, cancel_url, cancel_address, cancel_guide, legal_basis)",
       )
       .eq("id", id)
       .eq("over_quota", false)
@@ -56,6 +59,8 @@ export default async function CancelPage({
     cancel_method: "courrier" | "email" | "en_ligne" | null;
     cancel_url: string | null;
     cancel_address: string | null;
+    category: string;
+    cancel_guide: Json | null;
     legal_basis: keyof typeof LEGAL_TEMPLATES;
   } | null;
 
@@ -80,6 +85,7 @@ export default async function CancelPage({
   const onlineHost = onlineUrl ? new URL(onlineUrl).hostname.replace(/^www\./, "") : null;
   const fromEmail = !catalogue?.cancel_url && Boolean(onlineUrl);
 
+  const guide = parseGuide(catalogue?.cancel_guide);
   const paid = auth.profile.plan !== "free";
   const cancelled = sub.status === "cancelled";
 
@@ -123,6 +129,8 @@ export default async function CancelPage({
         </p>
       )}
 
+      {!cancelled && <CategoryTip category={catalogue?.category ?? sub.category} />}
+
       <Card icon={<Globe className="size-4" />} title="En ligne, le plus rapide">
         {onlineUrl ? (
           <div className="flex flex-col gap-3">
@@ -148,7 +156,15 @@ export default async function CancelPage({
               avant de saisir tes identifiants. Garde une capture de la
               confirmation : c’est ta preuve.
             </p>
+            {guide && (
+              <div className="mt-1 border-t border-[var(--border-soft)] pt-3.5">
+                <div className="mb-2 text-[13px] font-medium">Étape par étape</div>
+                <GuideSteps guide={guide} />
+              </div>
+            )}
           </div>
+        ) : guide ? (
+          <GuideSteps guide={guide} />
         ) : (
           <p className="m-0 text-sm text-[var(--text-dim)]">
             Pas de lien de résiliation connu pour {name}.

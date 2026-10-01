@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { CategoryTip, GuideSteps } from "@/components/cancel/cancel-guide";
+import { parseGuide } from "@/lib/cancel/guides";
 import { LEGAL_TEMPLATES } from "@/lib/cancel/templates";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -65,6 +67,7 @@ export default async function CancelGuidePage({
   if (!provider) notFound();
 
   const legal = LEGAL_TEMPLATES[provider.legal_basis];
+  const guide = parseGuide(provider.cancel_guide);
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-10">
@@ -85,33 +88,43 @@ export default async function CancelGuidePage({
           <p className="m-0 text-[var(--text-dim)]">{legal.timing}</p>
         </Block>
 
-        <Block title="La marche à suivre">
-          <ol className="m-0 list-decimal space-y-2.5 pl-6 marker:font-mono marker:text-[13px] marker:text-[var(--accent-light)]">
-            <li>
-              Rassemble ta référence de contrat : elle figure sur tes factures
-              et sur ton espace client.
-            </li>
-            <li>
-              Rédige ta demande en citant la base légale ci-dessus. C’est ce qui
-              distingue une résiliation opposable d’une simple demande.
-            </li>
-            {provider.cancel_method === "courrier" ? (
+        <div className="my-8">
+          <CategoryTip category={provider.category} />
+        </div>
+
+        {guide ? (
+          <Block title="La marche à suivre">
+            <GuideSteps guide={guide} />
+          </Block>
+        ) : (
+          <Block title="La marche à suivre">
+            <ol className="m-0 list-decimal space-y-2.5 pl-6 marker:font-mono marker:text-[13px] marker:text-[var(--accent-light)]">
               <li>
-                Envoie-la en recommandé avec accusé de réception. Sans preuve de
-                réception, la date de résiliation est contestable.
+                Rassemble ta référence de contrat : elle figure sur tes factures
+                et sur ton espace client.
               </li>
-            ) : (
               <li>
-                Conserve une preuve horodatée : capture d’écran, accusé de
-                réception ou copie de l’email envoyé.
+                Rédige ta demande en citant la base légale ci-dessus. C’est ce
+                qui distingue une résiliation opposable d’une simple demande.
               </li>
-            )}
-            <li>
-              Vérifie l’arrêt effectif des prélèvements sur les deux mois
-              suivants. C’est l’étape que tout le monde oublie.
-            </li>
-          </ol>
-        </Block>
+              {provider.cancel_method === "courrier" ? (
+                <li>
+                  Envoie-la en recommandé avec accusé de réception. Sans preuve
+                  de réception, la date de résiliation est contestable.
+                </li>
+              ) : (
+                <li>
+                  Conserve une preuve horodatée : capture d’écran, accusé de
+                  réception ou copie de l’email envoyé.
+                </li>
+              )}
+              <li>
+                Vérifie l’arrêt effectif des prélèvements sur les deux mois
+                suivants. C’est l’étape que tout le monde oublie.
+              </li>
+            </ol>
+          </Block>
+        )}
 
         {provider.cancel_url && (
           <Block title="Résiliation en ligne">
@@ -134,10 +147,7 @@ export default async function CancelGuidePage({
             AdminPilot repère tes abonnements dans tes emails, t’alerte avant
             chaque reconduction et génère la lettre conforme à ta place.
           </p>
-          <Link
-            href="/login"
-            className="btn-primary h-10 px-4 text-sm"
-          >
+          <Link href="/login" className="btn-primary h-10 px-4 text-sm">
             Essayer gratuitement
           </Link>
         </div>

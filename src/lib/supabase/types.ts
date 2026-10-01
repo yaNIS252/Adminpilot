@@ -310,6 +310,7 @@ export type Database = {
         Row: {
           cancel_address: string | null;
           cancel_email: string | null;
+          cancel_guide: Json | null;
           cancel_method: Database["public"]["Enums"]["cancel_method"] | null;
           cancel_url: string | null;
           category: string;
@@ -324,6 +325,7 @@ export type Database = {
         Insert: {
           cancel_address?: string | null;
           cancel_email?: string | null;
+          cancel_guide?: Json | null;
           cancel_method?: Database["public"]["Enums"]["cancel_method"] | null;
           cancel_url?: string | null;
           category: string;
@@ -338,6 +340,7 @@ export type Database = {
         Update: {
           cancel_address?: string | null;
           cancel_email?: string | null;
+          cancel_guide?: Json | null;
           cancel_method?: Database["public"]["Enums"]["cancel_method"] | null;
           cancel_url?: string | null;
           category?: string;
