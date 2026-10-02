@@ -39,7 +39,7 @@ des contrats ou des achats à ton nom.
 - [ ] **Stripe, informations publiques** : liens vers les CGU et la politique de
       confidentialité (affichés dans le portail client).
 - [ ] **Sentry** : créer le projet (région UE), ajouter `NEXT_PUBLIC_SENTRY_DSN`.
-- [ ] **Anthropic** : plafond de dépense mensuel réglé, rechargement auto coupé.
+- [ ] **Mistral** : offre « Pay-as-you-go », plafond de dépense mensuel réglé, entraînement sur les données désactivé.
 - [ ] **Connexion Google** (facultatif) : client OAuth Google Cloud, activer le
       fournisseur dans Supabase, puis `NEXT_PUBLIC_GOOGLE_AUTH=1`.
 
