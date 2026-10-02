@@ -102,9 +102,10 @@ export default function PrivacyPage() {
             l’Union européenne.
           </li>
           <li>
-            <strong className="text-[var(--text)]">Anthropic</strong> — analyse
-            du contenu des messages et documents. Les données ne sont pas
-            utilisées pour entraîner de modèle.
+            <strong className="text-[var(--text)]">Mistral AI</strong> (France)
+            — analyse du contenu des messages et documents, hébergement dans
+            l’Union européenne. Les données ne sont pas utilisées pour
+            entraîner de modèle.
           </li>
           <li>
             <strong className="text-[var(--text)]">Vercel</strong> — hébergement

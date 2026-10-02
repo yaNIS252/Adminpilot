@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 
-import { MODEL_FAST, getAnthropic, isAiConfigured } from "@/lib/ai/client";
+import { MODELS, aiProvider, getAnthropic, isAiConfigured } from "@/lib/ai/client";
+import { mistralJson } from "@/lib/ai/mistral";
 import { SearchFiltersSchema, type SearchFilters } from "@/lib/ai/schemas";
 import { requireUser } from "@/lib/auth/require-user";
 import { checkLimit, incrementUsage } from "@/lib/billing/quotas";
@@ -30,9 +31,22 @@ const BodySchema = z.object({ query: z.string().trim().min(1).max(300) });
 const CANDIDATES = 300;
 
 async function filtersFromModel(query: string): Promise<SearchFilters | null> {
+  const content = `Date du jour : ${new Date().toISOString().slice(0, 10)}
+Recherche : ${query}`;
   try {
+    if (aiProvider() === "mistral") {
+      const { data } = await mistralJson({
+        model: MODELS.mistral.fast,
+        schema: SearchFiltersSchema,
+        schemaName: "filtres_recherche",
+        system: SEARCH_QUERY_SYSTEM,
+        content,
+        maxTokens: 512,
+      });
+      return data;
+    }
     const response = await getAnthropic().messages.parse({
-      model: MODEL_FAST,
+      model: MODELS.anthropic.fast,
       max_tokens: 512,
       system: [{ type: "text", text: SEARCH_QUERY_SYSTEM, cache_control: { type: "ephemeral" } }],
       messages: [

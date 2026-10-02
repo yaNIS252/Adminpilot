@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { aiProvider, isAiConfigured } from "@/lib/ai/client";
 import { missingLegalFields } from "@/lib/legal";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -21,7 +22,8 @@ export async function GET(request: Request) {
   }
 
   const configured = {
-    ai: Boolean(process.env.ANTHROPIC_API_KEY) || process.env.ADMINPILOT_AI_MODE === "mock",
+    ai: isAiConfigured() || process.env.ADMINPILOT_AI_MODE === "mock",
+    ai_provider: aiProvider(),
     email_sending: Boolean(process.env.RESEND_API_KEY),
     inbound_webhook_secret: Boolean(process.env.RESEND_WEBHOOK_SECRET),
     stripe: Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET),
@@ -53,7 +55,7 @@ export async function GET(request: Request) {
 
   const database = !pending.error;
   const problems = [
-    !configured.ai && "clé d'IA absente : les e-mails reçus restent en attente",
+    !configured.ai && "clé d'IA absente (MISTRAL_API_KEY) : les e-mails reçus restent en attente",
     !configured.email_sending && "clé Resend absente : aucune alerte ne part",
     !configured.stripe && "Stripe incomplet : paiement impossible",
     !database && "base de données injoignable",

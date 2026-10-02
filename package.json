@@ -14,10 +14,12 @@
     "seed:demo": "tsx --conditions=react-server --env-file=.env.local scripts/seed-demo.ts",
     "login:link": "tsx --conditions=react-server --env-file=.env.local scripts/login-link.ts",
     "preview:recap": "tsx --conditions=react-server --env-file=.env.local scripts/preview-recap.ts",
+    "check:ai-schemas": "tsx --conditions=react-server scripts/check-ai-schemas.ts",
     "test:quotas": "cross-env ADMINPILOT_AI_MODE=mock tsx --conditions=react-server --env-file=.env.local scripts/test-quotas.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
+    "@mistralai/mistralai": "^2.7.0",
     "@react-pdf/renderer": "^4.9.0",
     "@sentry/nextjs": "^11.2.0",
     "@supabase/ssr": "^0.12.7",

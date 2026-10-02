@@ -11,7 +11,8 @@ import {
   buildEmailUserMessage,
 } from "@/prompts/classify-email";
 
-import { MODEL_ACCURATE, MODEL_FAST, getAnthropic } from "./client";
+import { MODELS, aiProvider, getAnthropic, type AiProvider } from "./client";
+import { mistralJson, mistralOcrText } from "./mistral";
 import { isMockMode, mockExtractFromDocument, mockExtractFromEmail } from "./mock";
 import {
   DocumentExtractionSchema,
@@ -27,22 +28,30 @@ export type ExtractionResult<T> = {
   model: string;
   tokensIn: number;
   tokensOut: number;
-  /** Vrai si le modèle rapide a été jugé insuffisant et rejoué sur Sonnet. */
+  /** Vrai si le modèle rapide a été jugé insuffisant et rejoué sur le plus capable. */
   escalated: boolean;
 };
 
+/** Fournisseur actif ; une absence de clé doit échouer bruyamment. */
+function requireProvider(): AiProvider {
+  const provider = aiProvider();
+  if (!provider) throw new Error("Aucune clé d'IA configurée (MISTRAL_API_KEY)");
+  return provider;
+}
+
 /**
- * Deux passages au maximum : Haiku d'abord, Sonnet seulement si la confiance
- * est sous le seuil. On garde le meilleur des deux résultats, jamais le dernier
+ * Deux passages au maximum : le modèle rapide d'abord, le plus capable
+ * seulement si la confiance est sous le seuil. On garde le meilleur des deux résultats, jamais le dernier
  * par défaut — il arrive que l'escalade soit elle aussi peu sûre.
  */
 async function withEscalation<T extends { confidence: number }>(
+  provider: AiProvider,
   run: (model: string) => Promise<ExtractionResult<T>>,
 ): Promise<ExtractionResult<T>> {
-  const first = await run(MODEL_FAST);
+  const first = await run(MODELS[provider].fast);
   if (first.data.confidence >= ESCALATION_THRESHOLD) return first;
 
-  const second = await run(MODEL_ACCURATE);
+  const second = await run(MODELS[provider].accurate);
   const best = second.data.confidence > first.data.confidence ? second : first;
 
   return {
@@ -75,10 +84,24 @@ export async function extractFromEmail(input: {
     };
   }
 
-  const client = getAnthropic();
+  const provider = requireProvider();
   const userMessage = buildEmailUserMessage(input);
 
-  return withEscalation(async (model) => {
+  if (provider === "mistral") {
+    return withEscalation(provider, async (model) => {
+      const result = await mistralJson({
+        model,
+        schema: EmailExtractionSchema,
+        schemaName: "extraction_email",
+        system: CLASSIFY_EMAIL_SYSTEM,
+        content: userMessage,
+      });
+      return { ...result, model, escalated: false };
+    });
+  }
+
+  const client = getAnthropic();
+  return withEscalation(provider, async (model) => {
     const response = await client.messages.parse({
       model,
       max_tokens: 1024,
@@ -141,6 +164,62 @@ export async function extractFromDocument(input: {
     };
   }
 
+  const provider = requireProvider();
+  const instruction = `${DOCUMENT_USER_PROMPT}
+Nom du fichier d'origine : ${input.filename}`;
+
+  if (provider === "mistral") {
+    // PDF envoyé tel quel ; si le modèle le refuse, repli sur Mistral OCR
+    // puis analyse du texte extrait. Images : envoyées telles quelles.
+    let ocrText: string | null = null;
+    let direct = true;
+    const contentFor = async () => {
+      if (input.mimeType !== PDF) {
+        return [
+          { type: "image_url" as const, imageUrl: `data:${input.mimeType};base64,${input.base64}` },
+          { type: "text" as const, text: instruction },
+        ];
+      }
+      if (direct) {
+        return [
+          {
+            type: "document_url" as const,
+            documentUrl: `data:application/pdf;base64,${input.base64}`,
+            documentName: input.filename,
+          },
+          { type: "text" as const, text: instruction },
+        ];
+      }
+      ocrText ??= await mistralOcrText(input.base64);
+      // Borne de taille : une facture tient en quelques pages ; au-delà, le
+      // début suffit à classer et évite une requête démesurée.
+      return `${instruction}
+
+Contenu du document (texte extrait) :
+${ocrText.slice(0, 60_000)}`;
+    };
+
+    return withEscalation(provider, async (model) => {
+      const call = async () =>
+        mistralJson({
+          model,
+          schema: DocumentExtractionSchema,
+          schemaName: "extraction_document",
+          system: CLASSIFY_DOCUMENT_SYSTEM,
+          content: await contentFor(),
+        });
+      try {
+        const result = await call();
+        return { ...result, model: direct ? model : `${model}+ocr`, escalated: false };
+      } catch (error) {
+        if (input.mimeType !== PDF || !direct) throw error;
+        direct = false;
+        const result = await call();
+        return { ...result, model: `${model}+ocr`, escalated: false };
+      }
+    });
+  }
+
   const client = getAnthropic();
 
   const fileBlock =
@@ -162,7 +241,7 @@ export async function extractFromDocument(input: {
           },
         } as const);
 
-  return withEscalation(async (model) => {
+  return withEscalation(provider, async (model) => {
     const response = await client.messages.parse({
       model,
       max_tokens: 1024,
