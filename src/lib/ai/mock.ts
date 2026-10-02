@@ -111,6 +111,29 @@ export async function mockExtractFromEmail(input: {
   const provider = await findProvider(input.from, text);
   const amount = findAmount(text);
 
+  // Confirmation de résiliation : pas de montant, mais une information clé.
+  if (
+    provider &&
+    /r[ée]sili|prendra fin/i.test(text) &&
+    /(a bien [ée]t[ée]|prise en compte|confirm|prendra fin)/i.test(text)
+  ) {
+    const end = /(?:prendra fin|jusqu'au|fin le)\D{0,12}(\d{2})\/(\d{2})\/(\d{4})/i.exec(text);
+    return {
+      type: "cancellation",
+      provider: provider.name,
+      amount: null,
+      currency: "EUR",
+      billing_cycle: "unknown",
+      next_renewal: null,
+      category: CATEGORY_MAP[provider.category] ?? "autre",
+      confidence: MOCK_CONFIDENCE,
+      reasoning: "simulation : confirmation de résiliation",
+      manage_url: null,
+      previous_amount: null,
+      effective_date: end ? `${end[3]}-${end[2]}-${end[1]}` : null,
+    };
+  }
+
   // Sans montant, ou avec des marqueurs de newsletter, on rejette — c'est le
   // comportement attendu du vrai extracteur.
   if (!provider || amount === null || SKIP_HINTS.some((h) => lower.includes(h))) {

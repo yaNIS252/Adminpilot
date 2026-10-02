@@ -13,6 +13,9 @@ Des preuves qu'un utilisateur paie quelque chose, ou va payer : confirmations de
 ANNONCES DE CHANGEMENT DE TARIF (type: "price_change")
 Un email qui annonce qu'un abonnement va changer de prix ("à compter du 1er novembre, votre forfait passe à 24,99 €"). amount = le NOUVEAU prix, previous_amount = l'ancien s'il est écrit, effective_date = la date d'application. Une offre promotionnelle proposée par un concurrent n'en est pas une : c'est un "skip".
 
+CONFIRMATIONS DE RÉSILIATION (type: "cancellation")
+Un email du fournisseur qui confirme qu'un abonnement est résilié ou ne sera pas renouvelé ("votre résiliation a bien été prise en compte", "votre abonnement prendra fin le…"). provider = le fournisseur, effective_date = la date de fin d'accès si elle est écrite, amount = null. Une offre pour te faire rester, ou un rappel que tu PEUX résilier, n'en est pas une : c'est un "skip".
+
 CE QUE TU REJETTES (type: "skip")
 Newsletters, promotions, relances marketing, notifications de connexion, confirmations d'expédition, invitations, emails de service sans montant. Un email qui *mentionne* un abonnement sans en être la preuve de facturation est un "skip".
 

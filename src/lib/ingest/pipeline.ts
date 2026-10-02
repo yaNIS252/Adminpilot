@@ -168,6 +168,27 @@ export async function processEmailJob(job: {
 
   const needsReview = data.confidence < REVIEW_THRESHOLD;
 
+  // Confirmation de résiliation envoyée par le fournisseur : l'abonnement
+  // passe en « résilié » sans que l'utilisateur ait rien à faire. Seulement
+  // sur une lecture assez sûre — retirer à tort un abonnement du suivi
+  // ferait manquer ses prochains rappels.
+  if (data.type === "cancellation") {
+    const target = needsReview
+      ? null
+      : await findExistingSubscription(db, job.user_id, data.provider);
+    if (target) {
+      await markCancelled(db, job.user_id, target.id, {
+        effectiveDate: data.effective_date,
+        via: "email",
+      });
+    }
+    await db
+      .from("ingestion_jobs")
+      .update({ status: needsReview ? "needs_review" : "done", ...common })
+      .eq("id", job.id);
+    return { created: false as const, cancelled: Boolean(target) };
+  }
+
   // Rapprochement avec un abonnement déjà connu du même fournisseur.
   //
   // Sans lui, chaque facture mensuelle transférée créait une ligne de plus :
@@ -176,11 +197,26 @@ export async function processEmailJob(job: {
   // gens installent ce produit — triplait. La déduplication par hash de contenu
   // ne protège que du même email renvoyé deux fois, pas de deux factures
   // successives.
-  const existing = await findExistingSubscription(
+  let existing = await findExistingSubscription(
     db,
     job.user_id,
     data.provider,
   );
+
+  // Facture d'un fournisseur dont l'abonnement est marqué résilié.
+  if (!existing && !needsReview) {
+    const outcome = await chargeAfterCancellation(db, job.user_id, data.provider, job.payload.date);
+    if (outcome === "final_invoice") {
+      await db
+        .from("ingestion_jobs")
+        .update({ status: "done", ...common })
+        .eq("id", job.id);
+      return { created: false as const };
+    }
+    if (outcome === "reactivated") {
+      existing = await findExistingSubscription(db, job.user_id, data.provider);
+    }
+  }
 
   // Au-delà du quota de la formule, l'abonnement est enregistré mais masqué.
   // Une mise à jour d'un abonnement déjà connu ne change jamais ce statut : un
@@ -519,6 +555,129 @@ async function exceedsDocumentQuota(db: Db, userId: string): Promise<boolean> {
     .eq("user_id", userId);
 
   return (count ?? 0) >= limit;
+}
+
+/**
+ * Passe un abonnement en « résilié » : il sort du total, ses rappels
+ * d'échéance automatiques disparaissent (les rappels créés à la main restent),
+ * et une lettre en cours de suivi est marquée confirmée.
+ */
+export async function markCancelled(
+  db: Db,
+  userId: string,
+  subscriptionId: string,
+  input: { effectiveDate: string | null; via: "email" | "user" },
+) {
+  const { data: current } = await db
+    .from("subscriptions")
+    .select("metadata")
+    .eq("id", subscriptionId)
+    .eq("user_id", userId)
+    .single();
+  const metadata =
+    current?.metadata && typeof current.metadata === "object" && !Array.isArray(current.metadata)
+      ? current.metadata
+      : {};
+
+  await db
+    .from("subscriptions")
+    .update({
+      status: "cancelled",
+      cancelled_at: new Date().toISOString(),
+      metadata: {
+        ...metadata,
+        cancelled_via: input.via,
+        ...(input.effectiveDate ? { cancel_effective_date: input.effectiveDate } : {}),
+      },
+    })
+    .eq("id", subscriptionId)
+    .eq("user_id", userId);
+
+  await db
+    .from("alerts")
+    .delete()
+    .eq("user_id", userId)
+    .eq("ref_id", subscriptionId)
+    .eq("kind", "deadline")
+    .is("sent_at", null);
+
+  await db
+    .from("cancellations")
+    .update({ status: "confirmed" })
+    .eq("subscription_id", subscriptionId)
+    .eq("user_id", userId);
+}
+
+/** Délai pendant lequel une facture après résiliation est tenue pour la dernière. */
+const FINAL_INVOICE_DAYS = 35;
+
+/**
+ * Une facture arrive pour un abonnement résilié. Deux cas :
+ *  · c'est la dernière facture de la période déjà due — elle date d'avant la
+ *    fin d'accès (ou, à défaut de date connue, d'au plus 35 jours après la
+ *    résiliation) : on l'ignore ;
+ *  · elle est postérieure : la résiliation n'a pas pris, ou l'utilisateur
+ *    s'est réabonné. L'abonnement revient dans le suivi et l'utilisateur est
+ *    prévenu — être prélevé après avoir résilié est exactement ce qu'il
+ *    voulait éviter.
+ */
+async function chargeAfterCancellation(
+  db: Db,
+  userId: string,
+  provider: string,
+  emailDate: string,
+): Promise<"none" | "final_invoice" | "reactivated"> {
+  const { data } = await db
+    .from("subscriptions")
+    .select("id, provider, cancelled_at, metadata")
+    .eq("user_id", userId)
+    .eq("status", "cancelled")
+    .order("cancelled_at", { ascending: false });
+
+  const target = normalizeProvider(provider);
+  const sub = (data ?? []).find((row) => normalizeProvider(row.provider) === target);
+  if (!sub?.cancelled_at) return "none";
+
+  const metadata =
+    sub.metadata && typeof sub.metadata === "object" && !Array.isArray(sub.metadata)
+      ? (sub.metadata as Record<string, unknown>)
+      : {};
+  const parsed = new Date(emailDate);
+  const received = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  const effective =
+    typeof metadata.cancel_effective_date === "string"
+      ? new Date(`${metadata.cancel_effective_date}T23:59:59Z`)
+      : new Date(new Date(sub.cancelled_at).getTime() + FINAL_INVOICE_DAYS * 86_400_000);
+
+  if (received <= effective) return "final_invoice";
+
+  const today = new Date().toISOString().slice(0, 10);
+  await db
+    .from("subscriptions")
+    .update({
+      status: "active",
+      cancelled_at: null,
+      metadata: { ...metadata, reactivated_at: new Date().toISOString() },
+    })
+    .eq("id", sub.id)
+    .eq("user_id", userId);
+
+  await db.from("alerts").upsert(
+    {
+      user_id: userId,
+      ref_type: "subscription",
+      ref_id: sub.id,
+      kind: "manual",
+      title: `${sub.provider} t’a facturé après la résiliation`,
+      message:
+        "Une nouvelle facture est arrivée alors que cet abonnement était résilié. Si tu ne t’es pas réabonné, la résiliation n’a pas été prise en compte : contacte le fournisseur avec ta confirmation de résiliation.",
+      alert_date: today,
+      dedup_key: `reprise:${sub.id}:${today}`,
+    },
+    { onConflict: "dedup_key", ignoreDuplicates: true },
+  );
+
+  return "reactivated";
 }
 
 /**

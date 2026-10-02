@@ -69,7 +69,16 @@ export const EmailExtractionSchema = z.object({
    * `price_change` : annonce d'un changement de tarif à venir. `amount` porte
    * alors le NOUVEAU prix et `previous_amount` l'ancien, s'il est cité.
    */
-  type: z.enum(["subscription", "invoice", "contract", "receipt", "price_change", "skip"]),
+  type: z.enum([
+    "subscription",
+    "invoice",
+    "contract",
+    "receipt",
+    "price_change",
+    /** Confirmation qu'un abonnement est résilié ; `effective_date` = fin d'accès. */
+    "cancellation",
+    "skip",
+  ]),
   provider: z.string().nullable(),
   amount: z.number().nullable(),
   currency: z.string().default("EUR"),

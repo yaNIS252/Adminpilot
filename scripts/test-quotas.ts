@@ -246,6 +246,37 @@ async function main() {
   const { count: edfChanges } = await db.from("price_changes").select("id", { count: "exact", head: true }).eq("user_id", userId).neq("subscription_id", (await db.from("subscriptions").select("id").eq("user_id", userId).eq("provider", "Netflix").single()).data!.id);
   check(`électricité (catégorie ${edf!.category}) : consommation variable → pas une hausse`, edfChanges, 0);
 
+  console.log("\n— Résiliation détectée dans les e-mails");
+  await reset(userId);
+  await db.from("profiles").update({ plan: "pro" }).eq("id", userId);
+  const dated = (body: string, date: string) => ({ ...bill(body), date });
+  const netflixState = async () => {
+    const { data: rows } = await db.from("subscriptions").select("id, status, metadata").eq("user_id", userId).eq("provider", "Netflix");
+    const row = rows?.[0];
+    const { count: deadlines } = await db.from("alerts").select("id", { count: "exact", head: true }).eq("ref_id", row?.id ?? "").eq("kind", "deadline").is("sent_at", null);
+    const { count: warnings } = await db.from("alerts").select("id", { count: "exact", head: true }).eq("ref_id", row?.id ?? "").eq("kind", "manual");
+    return {
+      rows: rows?.length ?? 0,
+      status: row?.status,
+      end: (row?.metadata as Record<string, unknown> | null)?.cancel_effective_date ?? null,
+      deadlines,
+      warnings,
+    };
+  };
+
+  await send(dated("Montant prélevé : 13,49 € par mois. Prochain prélèvement le 15/11/2026.", "2026-10-01T09:00:00Z"));
+  check("abonnement actif, rappels programmés", await netflixState(), { rows: 1, status: "active", end: null, deadlines: 2, warnings: 0 });
+
+  await send(dated("Votre résiliation a bien été prise en compte. Votre abonnement prendra fin le 15/11/2026.", "2026-10-03T09:00:00Z"));
+  check("confirmation de résiliation → résilié, rappels retirés", await netflixState(), { rows: 1, status: "cancelled", end: "2026-11-15", deadlines: 0, warnings: 0 });
+
+  await send(dated("Montant prélevé : 13,49 € par mois.", "2026-11-10T09:00:00Z"));
+  check("dernière facture avant la fin d'accès → ignorée", await netflixState(), { rows: 1, status: "cancelled", end: "2026-11-15", deadlines: 0, warnings: 0 });
+
+  await send(dated("Montant prélevé : 13,49 € par mois.", "2026-12-15T09:00:00Z"));
+  const after = await netflixState();
+  check("facture après la fin d'accès → suivi repris + alerte, sans doublon", { rows: after.rows, status: after.status, warnings: after.warnings }, { rows: 1, status: "active", warnings: 1 });
+
   await reset(userId);
   console.log(failures === 0 ? "\nTout est conforme." : `\n${failures} échec(s).`);
   process.exit(failures === 0 ? 0 : 1);

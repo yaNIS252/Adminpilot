@@ -1,7 +1,11 @@
 import Link from "next/link";
-import { FileText } from "lucide-react";
+import { CircleCheck, FileText } from "lucide-react";
 
-import { isoDaysAgo } from "@/lib/format";
+import {
+  CancelledList,
+  type CancelledSubscription,
+} from "@/components/dashboard/cancelled-list";
+import { formatAmount, isoDaysAgo, monthlyEquivalent } from "@/lib/format";
 
 import {
   SubscriptionList,
@@ -49,7 +53,13 @@ export default async function SubscriptionsPage({
     ? query.eq("confirmed_by_user", false).lt("confidence", 0.7)
     : query.eq("status", "active");
 
-  const [{ data }, { count: hiddenCount }, { data: letters }, { data: changes }] = await Promise.all([
+  const [
+    { data },
+    { count: hiddenCount },
+    { data: letters },
+    { data: changes },
+    { data: cancelledRows },
+  ] = await Promise.all([
     query,
     supabase
       .from("subscriptions")
@@ -65,7 +75,29 @@ export default async function SubscriptionsPage({
       .select("subscription_id, kind, old_amount, new_amount")
       .gte("created_at", isoDaysAgo(90))
       .order("created_at", { ascending: false }),
+    supabase
+      .from("subscriptions")
+      .select("id, provider, amount, cycle, cancelled_at, metadata")
+      .eq("status", "cancelled")
+      .order("cancelled_at", { ascending: false, nullsFirst: false })
+      .limit(50),
   ]);
+
+  const cancelled: CancelledSubscription[] = (cancelledRows ?? []).map((row) => {
+    const meta =
+      row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+        ? (row.metadata as Record<string, unknown>)
+        : {};
+    return {
+      id: row.id,
+      provider: row.provider,
+      monthly: monthlyEquivalent(row.amount, row.cycle),
+      cancelledAt: row.cancelled_at,
+      effectiveDate: typeof meta.cancel_effective_date === "string" ? meta.cancel_effective_date : null,
+      viaEmail: meta.cancelled_via === "email",
+    };
+  });
+  const monthlySaved = cancelled.reduce((sum, item) => sum + item.monthly, 0);
 
   // Le premier rencontré par abonnement est le plus récent.
   const latestChange: Record<string, RecentPriceChange> = {};
@@ -104,6 +136,23 @@ export default async function SubscriptionsPage({
         reviewMode={reviewMode}
         priceChanges={latestChange}
       />
+
+      {!reviewMode && cancelled.length > 0 && (
+        <section className="card-sheen anim-up rounded-[var(--radius-xl)] border border-[var(--border)] p-5">
+          <h2 className="mt-0 mb-1 flex items-center gap-2 text-[15px] font-semibold">
+            <CircleCheck className="size-4 text-[var(--positive)]" />
+            Résiliés
+          </h2>
+          <p className="m-0 mb-3 text-xs text-[var(--text-faint)]">
+            {monthlySaved > 0
+              ? `${formatAmount(monthlySaved)} de moins chaque mois, soit ${formatAmount(monthlySaved * 12)} par an.`
+              : "Ils ne comptent plus dans tes dépenses."}{" "}
+            Si une facture arrive encore après la résiliation, l’abonnement revient
+            ici dans le suivi et tu es prévenu.
+          </p>
+          <CancelledList items={cancelled} />
+        </section>
+      )}
 
       {!reviewMode && (letters ?? []).length > 0 && (
         <section className="card-sheen anim-up rounded-[var(--radius-xl)] border border-[var(--border)] p-5">

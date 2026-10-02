@@ -5,6 +5,8 @@ import { BILLING_CYCLES, SUB_CATEGORIES } from "@/lib/ai/schemas";
 import { requireUser } from "@/lib/auth/require-user";
 import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
 import { invalidId, readJson, readUuid } from "@/lib/http/request";
+import { markCancelled } from "@/lib/ingest/pipeline";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -98,6 +100,32 @@ export async function PATCH(request: Request) {
   if (error) throw error;
   if (!data) {
     return NextResponse.json({ error: "introuvable" }, { status: 404 });
+  }
+
+  // Résiliation déclarée à la main, ou reprise du suivi d'un abonnement
+  // résilié. `cancelled_at` n'est pas modifiable depuis le navigateur
+  // (migration 0010) : il est tenu ici, avec la clé de service.
+  if (changes.status === "cancelled") {
+    await markCancelled(createAdminClient(), auth.userId, id, {
+      effectiveDate: null,
+      via: "user",
+    });
+  } else if (changes.status === "active") {
+    await createAdminClient()
+      .from("subscriptions")
+      .update({ cancelled_at: null })
+      .eq("id", id)
+      .eq("user_id", auth.userId);
+    if (data.next_renewal && !data.reminders_muted) {
+      await scheduleDeadlineAlerts({
+        userId: auth.userId,
+        refType: "subscription",
+        refId: id,
+        deadline: data.next_renewal,
+        title: `${data.provider} se renouvelle`,
+        message: `Prochaine échéance le ${data.next_renewal}.`,
+      });
+    }
   }
 
   // Une date corrigée invalide les alertes programmées sur l'ancienne : la
