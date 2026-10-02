@@ -33,6 +33,17 @@ export async function scheduleDeadlineAlerts(input: {
   const db = createAdminClient();
   const today = formatDate(new Date());
 
+  // Rappels coupés par l'utilisateur pour cet abonnement : on n'en programme
+  // plus, d'où que vienne la demande (pipeline, déblocage, correction).
+  if (input.refType === "subscription") {
+    const { data: sub } = await db
+      .from("subscriptions")
+      .select("reminders_muted")
+      .eq("id", input.refId)
+      .maybeSingle();
+    if (sub?.reminders_muted) return 0;
+  }
+
   const rows = ALERT_OFFSETS_DAYS.map((offset) => ({
     user_id: input.userId,
     ref_type: input.refType,

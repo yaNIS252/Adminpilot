@@ -19,9 +19,17 @@ export const runtime = "nodejs";
 const PostSchema = z.object({
   ref_type: z.enum(["subscription", "document"]),
   ref_id: z.string().uuid(),
-  title: z.string().min(1).max(160),
-  message: z.string().max(500).default(""),
-  alert_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  title: z.string().trim().min(1).max(160),
+  message: z.string().trim().max(500).default(""),
+  alert_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    // Ni dans le passé (il partirait aussitôt), ni à plus de deux ans.
+    .refine((date) => {
+      const today = new Date().toISOString().slice(0, 10);
+      const limit = new Date(Date.now() + 730 * 86_400_000).toISOString().slice(0, 10);
+      return date >= today && date <= limit;
+    }, "date hors limites"),
   channel: z.enum(["email", "push", "both"]).default("email"),
 });
 
@@ -92,6 +100,8 @@ export async function POST(request: Request) {
     .insert({
       ...input,
       user_id: auth.userId,
+      // Envoyé tel quel, avec le titre et le message saisis.
+      kind: "manual",
       // Suffixe aléatoire : une alerte manuelle peut légitimement doublonner
       // une alerte automatique sur la même échéance.
       dedup_key: `manuel:${auth.userId}:${input.ref_id}:${crypto.randomUUID()}`,

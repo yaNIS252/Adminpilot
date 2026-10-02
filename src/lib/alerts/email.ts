@@ -150,3 +150,29 @@ export function buildPriceChangeEmail(input: {
     text: `${input.title}\n${input.message}\n\n${input.cancelUrl}`,
   };
 }
+
+/** Rappel créé à la main : envoyé avec le titre et le message saisis. */
+export function buildManualEmail(input: {
+  title: string;
+  message: string;
+  about: string;
+  dashboardUrl: string;
+}): AlertEmail {
+  const html = `<!doctype html>
+<html lang="fr"><body style="margin:0;padding:24px;background:#f5f5fa;font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1a1a2e">
+  <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:10px;padding:28px">
+    <p style="margin:0 0 8px;font-size:13px;color:#6b6b80">Ton rappel · ${escapeHtml(input.about)}</p>
+    <h1 style="margin:0 0 16px;font-size:22px;font-weight:700">${escapeHtml(input.title)}</h1>
+    ${input.message ? `<p style="margin:0;font-size:15px;line-height:1.6;white-space:pre-line">${escapeHtml(input.message)}</p>` : ""}
+    <p style="margin:24px 0 0">
+      <a href="${input.dashboardUrl}" style="display:inline-block;background:#6c5ce7;color:#fff;text-decoration:none;padding:11px 20px;border-radius:7px;font-size:14px;font-weight:600">Ouvrir AdminPilot</a>
+    </p>
+  </div>
+</body></html>`;
+
+  return {
+    subject: input.title,
+    html,
+    text: `${input.title}${input.message ? `\n${input.message}` : ""}\n\n${input.dashboardUrl}`,
+  };
+}

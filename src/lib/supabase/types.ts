@@ -487,6 +487,7 @@ export type Database = {
           over_quota: boolean;
           provider: string;
           provider_id: string | null;
+          reminders_muted: boolean;
           source_job_id: string | null;
           status: Database["public"]["Enums"]["sub_status"];
           user_id: string;
@@ -506,6 +507,7 @@ export type Database = {
           over_quota?: boolean;
           provider: string;
           provider_id?: string | null;
+          reminders_muted?: boolean;
           source_job_id?: string | null;
           status?: Database["public"]["Enums"]["sub_status"];
           user_id: string;
@@ -525,6 +527,7 @@ export type Database = {
           over_quota?: boolean;
           provider?: string;
           provider_id?: string | null;
+          reminders_muted?: boolean;
           source_job_id?: string | null;
           status?: Database["public"]["Enums"]["sub_status"];
           user_id?: string;

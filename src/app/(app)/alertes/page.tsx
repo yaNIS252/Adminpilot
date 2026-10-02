@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { Bell, BellOff, Lock } from "lucide-react";
 
+import {
+  NewReminder,
+  ReminderSwitches,
+  UpcomingAlerts,
+  type Target,
+} from "@/components/alerts/alerts-manager";
 import { requireUser } from "@/lib/auth/require-user";
 import { currentPeriod } from "@/lib/billing/quotas";
 import { PLAN_LIMITS } from "@/lib/constants";
-import { formatDate, formatRelativeDeadline } from "@/lib/format";
+import { formatDate, todayIso } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Alertes — AdminPilot" };
@@ -14,7 +20,13 @@ export default async function AlertsPage() {
   const supabase = await createClient();
   const monthlyCap = auth ? PLAN_LIMITS[auth.profile.plan].alerts : null;
 
-  const [{ data: upcoming }, { data: sent }, { data: usage }] = await Promise.all([
+  const [
+    { data: upcoming },
+    { data: sent },
+    { data: usage },
+    { data: subscriptions },
+    { data: documents },
+  ] = await Promise.all([
     supabase
       .from("alerts")
       .select("*")
@@ -32,7 +44,27 @@ export default async function AlertsPage() {
       .select("alerts_count")
       .eq("period", currentPeriod())
       .maybeSingle(),
+    supabase
+      .from("subscriptions")
+      .select("id, provider, next_renewal, reminders_muted")
+      .eq("status", "active")
+      .eq("over_quota", false)
+      .order("provider"),
+    supabase
+      .from("documents")
+      .select("id, filename_ai, filename_original")
+      .order("created_at", { ascending: false })
+      .limit(100),
   ]);
+
+  const targets: Target[] = [
+    ...(subscriptions ?? []).map((sub) => ({ id: sub.id, type: "subscription" as const, label: sub.provider })),
+    ...(documents ?? []).map((doc) => ({
+      id: doc.id,
+      type: "document" as const,
+      label: doc.filename_ai ?? doc.filename_original,
+    })),
+  ];
 
   const sentThisMonth = usage?.alerts_count ?? 0;
 
@@ -80,33 +112,31 @@ export default async function AlertsPage() {
           À venir
         </h2>
 
-        {(upcoming ?? []).length === 0 ? (
-          <p className="m-0 py-8 text-center text-sm text-[var(--text-faint)]">
-            Aucune alerte programmée.
-          </p>
-        ) : (
-          <ul className="m-0 list-none space-y-0.5 p-0">
-            {(upcoming ?? []).map((alert) => (
-              <li
-                key={alert.id}
-                className="flex items-center justify-between gap-3 rounded-[var(--radius-sm)] px-2 py-2.5 transition-colors hover:bg-[rgba(255,255,255,.04)]"
-              >
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">
-                    {alert.title}
-                  </div>
-                  <div className="text-xs text-[var(--text-faint)]">
-                    {formatDate(alert.alert_date)}
-                  </div>
-                </div>
-                <span className="shrink-0 rounded-full bg-[rgba(255,255,255,.05)] px-2.5 py-1 text-[11px] text-[var(--text-dim)]">
-                  {formatRelativeDeadline(alert.alert_date)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <UpcomingAlerts
+          alerts={(upcoming ?? []).map((alert) => ({
+            id: alert.id,
+            title: alert.title,
+            alert_date: alert.alert_date,
+            kind: alert.kind,
+          }))}
+        />
+        <div className="mt-4 flex flex-col">
+          <NewReminder targets={targets} today={todayIso()} />
+        </div>
       </section>
+
+      {(subscriptions ?? []).length > 0 && (
+        <section className="card-sheen anim-up rounded-[var(--radius-xl)] border border-[var(--border)] p-5">
+          <h2 className="mt-0 mb-1 flex items-center gap-2 text-[15px] font-semibold">
+            <Bell className="size-4 text-[var(--accent-light)]" />
+            Rappels automatiques
+          </h2>
+          <p className="m-0 mb-3 text-xs text-[var(--text-faint)]">
+            Par abonnement, coupe ceux dont tu n’as pas besoin.
+          </p>
+          <ReminderSwitches settings={subscriptions ?? []} />
+        </section>
+      )}
 
       {(sent ?? []).length > 0 && (
         <section className="card-sheen anim-up rounded-[var(--radius-xl)] border border-[var(--border)] p-5">

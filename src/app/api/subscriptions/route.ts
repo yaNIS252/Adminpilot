@@ -34,6 +34,8 @@ const PatchSchema = z.object({
   status: z.enum(["active", "cancelled", "paused", "expired"]).optional(),
   /** Validation explicite de l'utilisateur sur une extraction automatique. */
   confirmed_by_user: z.boolean().optional(),
+  /** Coupe ou rallume les rappels d'échéance de cet abonnement. */
+  reminders_muted: z.boolean().optional(),
 });
 
 export async function GET(request: Request) {
@@ -78,8 +80,9 @@ export async function PATCH(request: Request) {
 
   // Une correction manuelle vaut confirmation : si l'utilisateur prend la
   // peine de rectifier une valeur, la ligne n'est plus une simple supposition.
+  // Couper les rappels n'est pas une correction des données extraites.
   const touchesData = Object.keys(changes).some(
-    (key) => key !== "confirmed_by_user",
+    (key) => key !== "confirmed_by_user" && key !== "reminders_muted",
   );
   const patch = touchesData
     ? { ...changes, confidence: 1, confirmed_by_user: true }
@@ -99,15 +102,18 @@ export async function PATCH(request: Request) {
 
   // Une date corrigée invalide les alertes programmées sur l'ancienne : la
   // dedup_key les sépare, mais celles de l'ancienne date doivent disparaître.
-  if (changes.next_renewal !== undefined) {
+  if (changes.next_renewal !== undefined || changes.reminders_muted !== undefined) {
+    // Seuls les rappels d'échéance automatiques : un rappel créé à la main
+    // ou une alerte de hausse de prix ne dépendent pas de cette date.
     await supabase
       .from("alerts")
       .delete()
       .eq("ref_type", "subscription")
       .eq("ref_id", id)
+      .eq("kind", "deadline")
       .is("sent_at", null);
 
-    if (data.next_renewal && data.status === "active") {
+    if (data.next_renewal && data.status === "active" && !data.reminders_muted) {
       await scheduleDeadlineAlerts({
         userId: auth.userId,
         refType: "subscription",

@@ -83,3 +83,8 @@ export function monthlyEquivalent(
 export function isoDaysAgo(days: number): string {
   return new Date(Date.now() - days * 86_400_000).toISOString();
 }
+
+/** Date du jour au format `YYYY-MM-DD` (UTC). */
+export function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}

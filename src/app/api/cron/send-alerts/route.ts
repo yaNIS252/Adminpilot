@@ -3,6 +3,7 @@ import { Resend } from "resend";
 
 import {
   buildDeadlineEmail,
+  buildManualEmail,
   buildPriceChangeEmail,
   buildRenewalEmail,
 } from "@/lib/alerts/email";
@@ -151,7 +152,15 @@ export async function GET(request: Request) {
           continue;
         }
 
-        if (alert.kind === "price_change") {
+        if (alert.kind === "manual") {
+          if (!sub) continue;
+          email = buildManualEmail({
+            title: alert.title,
+            message: alert.message,
+            about: sub.provider,
+            dashboardUrl: `${base}/abonnements`,
+          });
+        } else if (alert.kind === "price_change") {
           // Abonnement supprimé depuis la détection : l'alerte n'a plus d'objet.
           if (!sub) continue;
           email = buildPriceChangeEmail({
@@ -181,14 +190,24 @@ export async function GET(request: Request) {
           refused += 1;
           continue;
         }
-        if (!doc?.deadline) continue;
+        if (alert.kind === "manual") {
+          if (!doc) continue;
+          email = buildManualEmail({
+            title: alert.title,
+            message: alert.message,
+            about: doc.filename_ai ?? doc.filename_original,
+            dashboardUrl: `${base}/documents`,
+          });
+        } else {
+          if (!doc?.deadline) continue;
 
-        email = buildDeadlineEmail({
-          title: doc.filename_ai ?? doc.filename_original,
-          deadline: doc.deadline,
-          daysLeft: Math.max(0, daysUntil(doc.deadline)),
-          dashboardUrl: `${base}/documents`,
-        });
+          email = buildDeadlineEmail({
+            title: doc.filename_ai ?? doc.filename_original,
+            deadline: doc.deadline,
+            daysLeft: Math.max(0, daysUntil(doc.deadline)),
+            dashboardUrl: `${base}/documents`,
+          });
+        }
       }
 
       await resend.emails.send({
