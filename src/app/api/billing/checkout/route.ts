@@ -22,6 +22,12 @@ export const runtime = "nodejs";
 const BodySchema = z.object({
   plan: z.enum(["pro", "family"]),
   cycle: z.enum(["monthly", "yearly"]).default("monthly"),
+  /**
+   * Demande expresse de commencer avant la fin du délai de rétractation
+   * (art. L221-25 du Code de la consommation). Sans elle, le service ne
+   * peut pas démarrer avant 14 jours sans exposer à un remboursement intégral.
+   */
+  immediateStart: z.literal(true),
 });
 
 export async function POST(request: Request) {

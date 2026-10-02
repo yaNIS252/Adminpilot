@@ -53,6 +53,7 @@ export function PlanPicker({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [immediateStart, setImmediateStart] = useState(false);
 
   const unchanged =
     mode === "switch" && current?.plan === plan && current?.cycle === cycle;
@@ -66,7 +67,7 @@ export function PlanPicker({
       const response = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan, cycle }),
+        body: JSON.stringify({ plan, cycle, immediateStart }),
       });
       const body = await response.json().catch(() => ({}));
 
@@ -217,11 +218,27 @@ export function PlanPicker({
         </p>
       )}
 
+      {mode === "checkout" && (
+        <label className="flex cursor-pointer items-start gap-2.5 text-[13px] leading-[1.55] text-[var(--text-dim)]">
+          <input
+            type="checkbox"
+            checked={immediateStart}
+            onChange={(event) => setImmediateStart(event.target.checked)}
+            className="mt-[3px] accent-[var(--accent)]"
+          />
+          <span>
+            Je demande à profiter de la formule dès maintenant, avant la fin du
+            délai de rétractation de 14 jours. Si je me rétracte dans ce délai,
+            seuls les jours utilisés me seront facturés.
+          </span>
+        </label>
+      )}
+
       {mode === "checkout" ? (
         <button
           type="button"
           onClick={pay}
-          disabled={busy}
+          disabled={busy || !immediateStart}
           className="btn-primary h-11 self-start px-5 text-sm disabled:opacity-60"
         >
           {busy
@@ -273,7 +290,27 @@ export function PlanPicker({
 /** Accès au portail Stripe pour un abonné : carte, factures, résiliation. */
 export function ManageSubscription() {
   const [busy, setBusy] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Résiliation en un clic, exigée par la loi : ouvre directement l'écran de
+  // résiliation de Stripe, sans passer par un menu.
+  async function cancel() {
+    setCancelling(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/billing/cancel", { method: "POST" });
+      const body = await response.json().catch(() => ({}));
+      if (response.ok && body.url) {
+        window.location.assign(body.url);
+        return;
+      }
+      setError("La résiliation n’a pas pu s’ouvrir. Réessaie, ou utilise « Gérer mon abonnement ».");
+    } catch {
+      setError("Connexion interrompue. Réessaie.");
+    }
+    setCancelling(false);
+  }
 
   async function open() {
     setBusy(true);
@@ -299,16 +336,28 @@ export function ManageSubscription() {
 
   return (
     <div className="flex flex-col gap-2">
-      <button
-        type="button"
-        onClick={open}
-        disabled={busy}
-        className="btn-secondary h-10 self-start px-4 text-sm disabled:opacity-60"
-      >
-        {busy ? "Ouverture…" : "Gérer mon abonnement"}
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={open}
+          disabled={busy}
+          className="btn-secondary h-10 px-4 text-sm disabled:opacity-60"
+        >
+          {busy ? "Ouverture…" : "Gérer mon abonnement"}
+        </button>
+        <button
+          type="button"
+          onClick={cancel}
+          disabled={cancelling}
+          className="h-10 rounded-[var(--radius-sm)] border border-[rgba(240,113,104,.3)] px-4 text-sm text-[var(--danger-light)] transition-colors hover:bg-[rgba(240,113,104,.1)] disabled:opacity-60"
+        >
+          {cancelling ? "Ouverture…" : "Résilier mon abonnement"}
+        </button>
+      </div>
       <p className="m-0 text-xs text-[var(--text-faint)]">
-        Mettre à jour ta carte, télécharger tes factures ou résilier.
+        Carte, factures et changement de moyen de paiement dans « Gérer ». La
+        résiliation prend effet à la fin de la période payée ; une
+        confirmation t’est envoyée par e-mail.
       </p>
       {error && (
         <p role="alert" className="m-0 text-xs text-[var(--danger-light)]">

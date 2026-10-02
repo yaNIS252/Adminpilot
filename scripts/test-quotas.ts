@@ -14,6 +14,7 @@ import { checkLimit } from "../src/lib/billing/quotas";
 import { trustedLink } from "../src/lib/cancel/links";
 import { PLAN_LIMITS } from "../src/lib/constants";
 import { processDocumentJob, processEmailJob } from "../src/lib/ingest/pipeline";
+import { compareOffers } from "../src/lib/offers";
 import { parseSearchQuery } from "../src/lib/search/parse-query";
 import type { Database } from "../src/lib/supabase/types";
 
@@ -191,6 +192,29 @@ async function main() {
   check("« prélèvement Netflix » → mots sans accents", pick("prélèvement Netflix"), { keywords: "prelevement netflix" });
   check("« entre 20 et 40 euros »", pick("entre 20 et 40 euros"), { amount_min: 20, amount_max: 40 });
   check("« impôts l'an dernier »", pick("impôts l’an dernier"), { category: "impots", date_from: "2025-01-01", date_to: "2025-12-31" });
+
+  console.log("\n— Comparateur et liens partenaires");
+  const offer = (id: string, category: string, price: number, affiliate: string | null) => ({
+    id, category, provider_name: `Op ${id}`, name: id, monthly_price: price, conditions: null,
+    url: "https://example.com", affiliate_url: affiliate, checked_at: "2026-10-01",
+  });
+  const compared = compareOffers(
+    [offer("cher", "telecom", 25, null), offer("b", "telecom", 9.99, "https://p.example"), offer("a", "telecom", 5, null)],
+    { currentMonthly: 19.99, currentProvider: "Free Mobile" },
+  );
+  check("seulement les offres moins chères, triées par prix", compared.map((o) => o.id), ["a", "b"]);
+  check("lien partenaire signalé en télécom", compared.map((o) => o.sponsored), [false, true]);
+  check("économie annuelle", compared[0].yearlySaving, 179.88);
+  check(
+    "jamais de lien rémunéré en assurance",
+    compareOffers([offer("x", "assurance", 10, "https://p.example")], { currentMonthly: 32, currentProvider: "MAIF" })[0].sponsored,
+    false,
+  );
+  check(
+    "l'offre du fournisseur actuel n'est pas proposée",
+    compareOffers([offer("y", "telecom", 5, null)], { currentMonthly: 19.99, currentProvider: "Op y" }).length,
+    0,
+  );
 
   console.log("\n— Surveillance des prix");
   await reset(userId);

@@ -49,7 +49,7 @@ async function currentBilling(
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ formule?: string; cycle?: string; paiement?: string }>;
+  searchParams: Promise<{ formule?: string; cycle?: string; paiement?: string; resiliation?: string }>;
 }) {
   const auth = await requireUser();
   if (!auth) return null;
@@ -85,6 +85,17 @@ export default async function SettingsPage({
       <header className="anim-up mb-1">
         <h1 className="serif m-0 text-[36px] leading-[1.05]">Réglages</h1>
       </header>
+
+      {params.resiliation === "enregistree" && (
+        <p
+          role="status"
+          className="m-0 rounded-[10px] border border-[rgba(63,207,149,.35)] bg-[rgba(63,207,149,.06)] px-5 py-4 text-sm"
+        >
+          Ta résiliation est enregistrée. Tu gardes ta formule jusqu’à la fin de
+          la période déjà payée, puis ton compte repasse en gratuit, sans perdre
+          tes données. Une confirmation t’a été envoyée par e-mail.
+        </p>
+      )}
 
       <Card icon={<UserRound className="size-4" />} title="Profil">
         <ProfileEditor

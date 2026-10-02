@@ -30,7 +30,7 @@ export default function TermsPage() {
     <LegalLayout
       title="Conditions d’utilisation"
       intro="Ce que le service s’engage à faire, ce qu’il ne garantit pas, et comment y mettre fin."
-      updated="24 septembre 2026"
+      updated="2 octobre 2026"
       current="/legal/cgu"
     >
       <Block title="1. Objet">
@@ -48,7 +48,8 @@ export default function TermsPage() {
 
       <Block title="2. Inscription">
         <p>
-          L’inscription se fait par compte Google ou par lien envoyé par email.
+          L’inscription se fait par un lien de connexion envoyé par e-mail,
+          sans mot de passe.
           L’utilisateur garantit l’exactitude de l’adresse fournie et
           l’utilisation personnelle de son compte.
         </p>
@@ -80,22 +81,58 @@ export default function TermsPage() {
         </p>
         <p>
           L’abonnement se reconduit automatiquement à échéance. Il peut être
-          résilié à tout moment depuis les réglages ; la résiliation prend effet
-          à la fin de la période en cours, sans remboursement au prorata.
+          résilié à tout moment, en ligne, depuis le bouton « Résilier mon
+          abonnement » des réglages. La résiliation prend effet à la fin de la
+          période déjà payée, sans remboursement au prorata hors exercice du
+          droit de rétractation ; l’utilisateur en reçoit la confirmation par
+          e-mail, avec sa date d’effet.
+        </p>
+        <p>
+          Pour les formules annuelles, un rappel est adressé par e-mail avant
+          chaque renouvellement, rappelant la possibilité de ne pas le
+          reconduire.
+        </p>
+        <p>
+          Toute évolution des prix est annoncée par e-mail au moins un mois
+          avant de s’appliquer. Elle ne concerne que les périodes suivantes, et
+          l’utilisateur peut résilier avant son entrée en vigueur.
         </p>
       </Block>
 
       <Block title="4. Droit de rétractation">
         <p>
           Conformément à l’article L221-18 du Code de la consommation,
-          l’utilisateur dispose de quatorze jours pour se rétracter d’un
-          abonnement payant. En souscrivant, il demande l’exécution immédiate du
-          service et reconnaît que ce droit s’éteint une fois le service
-          pleinement exécuté.
+          l’utilisateur dispose de quatorze jours à compter de la souscription
+          pour se rétracter d’un abonnement payant, sans avoir à se justifier.
         </p>
+        <p>
+          Au moment du paiement, l’utilisateur demande expressément à
+          bénéficier du service avant la fin de ce délai. S’il se rétracte
+          ensuite dans les quatorze jours, il est remboursé de la somme payée,
+          déduction faite du prix des jours écoulés jusqu’à sa rétractation
+          (article L221-25), sous quatorze jours et par le moyen de paiement
+          utilisé.
+        </p>
+        <p>
+          Pour se rétracter, il suffit d’adresser une déclaration dénuée
+          d’ambiguïté par e-mail
+          {LEGAL.contactEmail ? <> à {LEGAL.contactEmail}</> : null}, par
+          exemple au moyen du modèle ci-dessous.
+        </p>
+        <blockquote className="m-0 border-l-2 border-[var(--border-strong)] pl-4 text-[14px]">
+          À l’attention de {LEGAL.editorName ?? "[nom de l’éditeur]"},{" "}
+          {LEGAL.address ?? "[adresse]"}
+          {LEGAL.contactEmail ? <>, {LEGAL.contactEmail}</> : null} :<br />
+          Je vous notifie par la présente ma rétractation du contrat portant sur
+          l’abonnement AdminPilot ci-dessous.
+          <br />
+          Souscrit le : … · Nom : … · Adresse e-mail du compte : …
+          <br />
+          Date : … · Signature (en cas d’envoi papier)
+        </blockquote>
         <ToComplete>
-          la relecture de cette clause par un juriste, ainsi que le formulaire
-          de rétractation type.
+          la relecture de cette clause par un juriste avant l’ouverture au
+          public.
         </ToComplete>
       </Block>
 
@@ -165,8 +202,9 @@ export default function TermsPage() {
       <Block title="10. Résiliation">
         <p>
           L’utilisateur peut supprimer son compte à tout moment depuis ses{" "}
-          <Link href="/reglages">réglages</Link>. La suppression est définitive
-          et emporte l’effacement de ses documents et données.
+          <Link href="/reglages">réglages</Link>. La suppression est définitive,
+          emporte l’effacement de ses documents et données et met fin à
+          l’abonnement payant éventuel.
         </p>
         <p>
           L’éditeur peut résilier un compte en cas de manquement aux présentes
@@ -198,8 +236,7 @@ export default function TermsPage() {
             <a href={LEGAL.mediator.website} target="_blank" rel="noopener noreferrer">
               {LEGAL.mediator.website}
             </a>
-            . La plateforme européenne de règlement en ligne des litiges reste
-            également accessible.
+            .
           </p>
         ) : (
           <ToComplete>

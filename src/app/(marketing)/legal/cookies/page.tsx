@@ -28,13 +28,13 @@ export default function CookiesPage() {
     <LegalLayout
       title="Cookies"
       intro="Ce qui est déposé sur ton appareil, et pourquoi il n’y a pas de bannière."
-      updated="24 septembre 2026"
+      updated="2 octobre 2026"
       current="/legal/cookies"
     >
       <Block title="Pourquoi aucune bannière ne s’affiche">
         <p>
           AdminPilot ne dépose que des cookies strictement nécessaires au
-          fonctionnement du service : ceux qui te maintiennent connecté. La
+          fonctionnement du service : ceux qui te maintiennent connecté et retiennent tes choix. La
           réglementation française et européenne exempte ces cookies de
           consentement préalable, parce qu’ils sont indispensables à la
           fourniture d’un service que tu as expressément demandé.
@@ -66,7 +66,7 @@ export default function CookiesPage() {
                 </td>
                 <td className="py-2.5 whitespace-nowrap">1 an</td>
               </tr>
-              <tr>
+              <tr className="border-b border-[var(--border-soft)]">
                 <td className="mono py-2.5 pr-4 text-[13px] text-[var(--text)]">
                   sb-…-auth-token-code-verifier
                 </td>
@@ -75,12 +75,35 @@ export default function CookiesPage() {
                 </td>
                 <td className="py-2.5 whitespace-nowrap">Le temps de la connexion</td>
               </tr>
+              <tr className="border-b border-[var(--border-soft)]">
+                <td className="mono py-2.5 pr-4 text-[13px] text-[var(--text)]">
+                  ap_upsell_hidden
+                </td>
+                <td className="py-2.5 pr-4">
+                  Se souvient que tu as fermé la bannière « Passe Pro »
+                </td>
+                <td className="py-2.5 whitespace-nowrap">30 jours</td>
+              </tr>
+              <tr>
+                <td className="mono py-2.5 pr-4 text-[13px] text-[var(--text)]">
+                  ap_letter_sender
+                </td>
+                <td className="py-2.5 pr-4">
+                  Garde dans ton navigateur (stockage local, jamais envoyé à nos
+                  serveurs hors lettre) l’adresse saisie pour tes lettres de
+                  résiliation
+                </td>
+                <td className="py-2.5 whitespace-nowrap">Jusqu’à effacement</td>
+              </tr>
             </tbody>
           </table>
         </div>
         <p>
-          Ces cookies sont posés par Supabase, notre prestataire
-          d’authentification, et ne sont lisibles que par AdminPilot.
+          Les deux premiers sont posés par Supabase, notre prestataire
+          d’authentification ; les deux derniers par AdminPilot, pour retenir
+          un choix que tu as fait. Tous ne sont lisibles que par AdminPilot et
+          sont exemptés de consentement : ils servent uniquement le service que
+          tu utilises.
         </p>
       </Block>
 

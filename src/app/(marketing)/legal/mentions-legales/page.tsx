@@ -27,7 +27,7 @@ export default function LegalNoticePage() {
     <LegalLayout
       title="Mentions légales"
       intro="Qui édite ce service, qui l’héberge, et comment nous joindre."
-      updated="24 septembre 2026"
+      updated="2 octobre 2026"
       current="/legal/mentions-legales"
     >
       <Block title="Éditeur du service">
@@ -71,6 +71,10 @@ export default function LegalNoticePage() {
           <strong className="text-[var(--text)]">Vercel Inc.</strong>, 440 N
           Barranca Ave #4133, Covina, CA 91723, États-Unis.
         </p>
+        <ToComplete>
+          le numéro de téléphone de l’hébergeur, exigé par la loi (article 6
+          III de la LCEN) : à relever sur le site de Vercel.
+        </ToComplete>
         <p>
           Les données applicatives sont hébergées par{" "}
           <strong className="text-[var(--text)]">Supabase</strong> dans

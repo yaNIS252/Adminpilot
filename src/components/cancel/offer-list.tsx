@@ -76,10 +76,12 @@ export function OfferList({
 
       {offers.length > 0 && (
         <p className="m-0 mt-3 text-xs text-[var(--text-faint)]">
-          Classement par prix mensuel uniquement. Un « lien partenaire » peut
-          rapporter une commission à AdminPilot, sans surcoût pour toi et sans
-          effet sur le classement. Vérifie les conditions (engagement, frais de
-          mise en service) avant de changer.
+          Classement par prix mensuel uniquement.{" "}
+          {offers.some((offer) => offer.sponsored)
+            ? "Un « lien partenaire » peut rapporter une commission à AdminPilot, sans surcoût pour toi et sans effet sur le classement."
+            : "Aucun de ces liens ne rapporte de commission à AdminPilot."}{" "}
+          Vérifie les conditions (engagement, frais de mise en service) avant de
+          changer.
         </p>
       )}
     </section>

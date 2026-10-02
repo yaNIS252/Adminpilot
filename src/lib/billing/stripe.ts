@@ -96,7 +96,14 @@ export async function createCheckoutSession(input: {
     // Seule source fiable pour relier la session à un compte au retour du
     // webhook : l'email peut différer de celui du compte.
     client_reference_id: input.userId,
-    subscription_data: { metadata: { user_id: input.userId } },
+    subscription_data: {
+      metadata: {
+        user_id: input.userId,
+        // Preuve horodatée de la demande d'exécution immédiate, exigée pour
+        // facturer au prorata en cas de rétractation dans les 14 jours.
+        immediate_start_requested_at: new Date().toISOString(),
+      },
+    },
     success_url: `${input.siteUrl}/dashboard?abonnement=actif`,
     // Retour là où le bouton a été cliqué, avec le choix intact : une
     // hésitation au moment de payer ne doit pas obliger à tout recommencer.
@@ -118,10 +125,25 @@ export async function createCheckoutSession(input: {
 export async function createPortalSession(input: {
   stripeCustomerId: string;
   siteUrl: string;
+  /** Ouvre directement l'écran de résiliation de cet abonnement. */
+  cancelSubscriptionId?: string;
 }): Promise<string> {
+  const returnUrl = `${input.siteUrl}/reglages`;
   const session = await getStripe().billingPortal.sessions.create({
     customer: input.stripeCustomerId,
-    return_url: `${input.siteUrl}/reglages`,
+    return_url: returnUrl,
+    ...(input.cancelSubscriptionId
+      ? {
+          flow_data: {
+            type: "subscription_cancel" as const,
+            subscription_cancel: { subscription: input.cancelSubscriptionId },
+            after_completion: {
+              type: "redirect" as const,
+              redirect: { return_url: `${returnUrl}?resiliation=enregistree` },
+            },
+          },
+        }
+      : {}),
   });
   return session.url;
 }

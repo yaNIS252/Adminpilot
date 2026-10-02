@@ -28,7 +28,7 @@ export default function PrivacyPage() {
     <LegalLayout
       title="Confidentialité"
       intro="Ce que le service fait de tes données, décrit tel que le code le fait."
-      updated="24 septembre 2026"
+      updated="2 octobre 2026"
       current="/legal/confidentialite"
     >
       <Block title="1. Ce que nous recevons">
@@ -68,8 +68,23 @@ export default function PrivacyPage() {
         </p>
         <p>
           Les documents que tu déposes toi-même t’appartiennent et restent dans
-          ton espace jusqu’à ce que tu les supprimes. Les données extraites sont
-          conservées tant que ton compte est actif.
+          ton espace jusqu’à ce que tu les supprimes. Les données extraites, les
+          lettres de résiliation générées, ta photo de profil et tes
+          préférences sont conservées tant que ton compte est actif, et
+          effacées avec lui.
+        </p>
+        <p>
+          Une invitation au foyer Premium contient l’adresse e-mail de la
+          personne invitée, saisie par le titulaire pour lui envoyer
+          l’invitation. Elle expire au bout de 14 jours et disparaît dès que
+          l’invitation est annulée ou que le titulaire supprime son compte.
+        </p>
+        <p>
+          Les clics vers une offre du comparateur sont enregistrés pour
+          rapprocher les éventuelles commissions de nos partenaires ; ils ne
+          sont plus rattachés à toi dès la suppression de ton compte. Les
+          factures de ton abonnement sont conservées par Stripe pendant la
+          durée imposée par les obligations comptables (dix ans).
         </p>
       </Block>
 
@@ -122,6 +137,14 @@ export default function PrivacyPage() {
             contiennent ni cookies, ni contenu de formulaire, ni adresse e-mail.
           </li>
         </ul>
+        <p>
+          Vercel, Stripe et Sentry sont des sociétés américaines : les
+          transferts de données vers les États-Unis qu’ils impliquent sont
+          encadrés par le cadre de protection des données UE–États-Unis (Data
+          Privacy Framework) et par les clauses contractuelles types de la
+          Commission européenne. Les documents et les données extraites restent
+          stockés dans l’Union européenne.
+        </p>
       </Block>
 
       <Block title="6. Base légale des traitements">
