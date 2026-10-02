@@ -6,6 +6,7 @@ import {
   LegalLayout,
   ToComplete,
 } from "@/components/marketing/legal-page";
+import { LEGAL } from "@/lib/legal";
 import { FAMILY_SEATS, PLAN_PRICES } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -128,9 +129,16 @@ export default function TermsPage() {
 
       <Block title="7. Comparateur d’offres">
         <p>
-          Les comparaisons éventuellement affichées sont fournies à titre
-          informatif et ne constituent ni un conseil en assurance, ni une
-          recommandation personnalisée, ni un acte d’intermédiation.
+          Les comparaisons affichées sont fournies à titre informatif et ne
+          constituent ni un conseil en assurance, ni une recommandation
+          personnalisée, ni un acte d’intermédiation.
+        </p>
+        <p>
+          Les offres sont classées par prix mensuel, sans autre critère.
+          Certaines sont signalées comme « lien partenaire » : AdminPilot peut
+          percevoir une commission si l’utilisateur souscrit par ce lien, sans
+          surcoût pour lui et sans effet sur le classement. Aucun lien rémunéré
+          n’est proposé pour les assurances ni les produits bancaires.
         </p>
       </Block>
 
@@ -182,10 +190,23 @@ export default function TermsPage() {
           litige, l’utilisateur peut recourir gratuitement au médiateur de la
           consommation avant toute action judiciaire.
         </p>
-        <ToComplete>
-          les coordonnées du médiateur de la consommation dont relève
-          l’activité.
-        </ToComplete>
+        {LEGAL.mediator.name && LEGAL.mediator.website ? (
+          <p>
+            Médiateur de la consommation :{" "}
+            <strong className="text-[var(--text)]">{LEGAL.mediator.name}</strong>
+            {LEGAL.mediator.address && <>, {LEGAL.mediator.address}</>} —{" "}
+            <a href={LEGAL.mediator.website} target="_blank" rel="noopener noreferrer">
+              {LEGAL.mediator.website}
+            </a>
+            . La plateforme européenne de règlement en ligne des litiges reste
+            également accessible.
+          </p>
+        ) : (
+          <ToComplete>
+            les coordonnées du médiateur de la consommation dont relève
+            l’activité (à renseigner dans src/lib/legal.ts).
+          </ToComplete>
+        )}
       </Block>
     </LegalLayout>
   );

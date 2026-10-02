@@ -6,6 +6,7 @@ import {
   LegalLayout,
   ToComplete,
 } from "@/components/marketing/legal-page";
+import { LEGAL } from "@/lib/legal";
 import { RAW_RETENTION_DAYS } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -114,6 +115,11 @@ export default function PrivacyPage() {
             Aucune coordonnée bancaire ne transite par nos serveurs ni n’y est
             stockée.
           </li>
+          <li>
+            <strong className="text-[var(--text)]">Sentry</strong> — détection
+            des erreurs techniques, lorsqu’elle est activée. Les rapports ne
+            contiennent ni cookies, ni contenu de formulaire, ni adresse e-mail.
+          </li>
         </ul>
       </Block>
 
@@ -154,10 +160,18 @@ export default function PrivacyPage() {
       </Block>
 
       <Block title="9. Nous contacter">
-        <ToComplete>
-          l’adresse de contact pour les demandes relatives aux données
-          personnelles.
-        </ToComplete>
+        {LEGAL.privacyEmail ? (
+          <p>
+            Pour toute demande relative à tes données :{" "}
+            <a href={`mailto:${LEGAL.privacyEmail}`}>{LEGAL.privacyEmail}</a>.
+            Réponse sous un mois au plus.
+          </p>
+        ) : (
+          <ToComplete>
+            l’adresse de contact pour les demandes relatives aux données
+            personnelles (à renseigner dans src/lib/legal.ts).
+          </ToComplete>
+        )}
       </Block>
     </LegalLayout>
   );

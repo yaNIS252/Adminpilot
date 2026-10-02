@@ -5,6 +5,7 @@ import {
   LegalLayout,
   ToComplete,
 } from "@/components/marketing/legal-page";
+import { LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Mentions légales — AdminPilot",
@@ -30,11 +31,21 @@ export default function LegalNoticePage() {
       current="/legal/mentions-legales"
     >
       <Block title="Éditeur du service">
-        <ToComplete>
-          nom et prénom de l’entrepreneur individuel, adresse du siège, numéro
-          SIREN, numéro de TVA intracommunautaire le cas échéant, adresse email
-          et numéro de téléphone de contact.
-        </ToComplete>
+        {LEGAL.editorName && LEGAL.siren && LEGAL.address ? (
+          <p>
+            <strong className="text-[var(--text)]">{LEGAL.tradeName}</strong>{" "}
+            est édité par {LEGAL.editorName}, entrepreneur individuel, SIREN{" "}
+            {LEGAL.siren}, {LEGAL.address}. {LEGAL.vatMention}
+            {LEGAL.contactEmail && <> Contact : {LEGAL.contactEmail}</>}
+            {LEGAL.phone && <> · {LEGAL.phone}</>}.
+          </p>
+        ) : (
+          <ToComplete>
+            nom et prénom de l’entrepreneur individuel, adresse, numéro SIREN,
+            adresse e-mail et téléphone de contact (à renseigner dans
+            src/lib/legal.ts).
+          </ToComplete>
+        )}
         <p>
           Ces mentions sont obligatoires pour tout service en ligne
           professionnel, en application de l’article 6 III de la loi pour la
@@ -44,10 +55,14 @@ export default function LegalNoticePage() {
       </Block>
 
       <Block title="Directeur de la publication">
-        <ToComplete>
-          nom du directeur de la publication, généralement l’entrepreneur
-          lui-même.
-        </ToComplete>
+        {LEGAL.publicationDirector ? (
+          <p>{LEGAL.publicationDirector}</p>
+        ) : (
+          <ToComplete>
+            nom du directeur de la publication, généralement l’entrepreneur
+            lui-même.
+          </ToComplete>
+        )}
       </Block>
 
       <Block title="Hébergement">

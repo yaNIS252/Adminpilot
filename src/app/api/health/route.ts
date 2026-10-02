@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { missingLegalFields } from "@/lib/legal";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -57,6 +58,8 @@ export async function GET(request: Request) {
     !configured.stripe && "Stripe incomplet : paiement impossible",
     !database && "base de données injoignable",
     (failed.count ?? 0) > 0 && `${failed.count} tâche(s) d'analyse en échec`,
+    missingLegalFields().length > 0 &&
+      `mentions légales incomplètes : ${missingLegalFields().join(", ")}`,
   ].filter(Boolean);
 
   return NextResponse.json(
