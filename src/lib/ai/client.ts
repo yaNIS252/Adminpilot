@@ -14,10 +14,20 @@ import { Mistral } from "@mistralai/mistralai";
 
 export type AiProvider = "mistral" | "anthropic";
 
+/**
+ * Une clé plausible, pas un texte de remplissage. Une valeur provisoire
+ * (« aa », « xxx ») faisait croire l'IA configurée : chaque e-mail reçu
+ * échouait alors à l'analyse jusqu'à être abandonné, au lieu d'attendre la
+ * vraie clé en file.
+ */
+function usableKey(value: string | undefined): boolean {
+  return Boolean(value && value.trim().length >= 20 && !/\s/.test(value.trim()));
+}
+
 /** Fournisseur actif, d'après les clés présentes. */
 export function aiProvider(): AiProvider | null {
-  if (process.env.MISTRAL_API_KEY) return "mistral";
-  if (process.env.ANTHROPIC_API_KEY) return "anthropic";
+  if (usableKey(process.env.MISTRAL_API_KEY)) return "mistral";
+  if (usableKey(process.env.ANTHROPIC_API_KEY)) return "anthropic";
   return null;
 }
 
@@ -43,8 +53,8 @@ let mistral: Mistral | null = null;
 let anthropic: Anthropic | null = null;
 
 export function getMistral(): Mistral {
-  const apiKey = process.env.MISTRAL_API_KEY;
-  if (!apiKey) throw new Error("MISTRAL_API_KEY manquante");
+  const apiKey = process.env.MISTRAL_API_KEY?.trim();
+  if (!apiKey || !usableKey(apiKey)) throw new Error("MISTRAL_API_KEY manquante ou invalide");
   // Le pipeline est asynchrone : une requête lente n'immobilise personne.
   // Mieux vaut patienter que multiplier les tentatives.
   mistral ??= new Mistral({ apiKey, timeoutMs: 120_000 });

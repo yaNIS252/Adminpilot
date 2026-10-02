@@ -29,6 +29,15 @@ des contrats ou des achats à ton nom.
       URL Configuration), le webhook Stripe et le webhook de réception Resend.
 - [ ] **Stripe en mode réel** : activer le compte (identité, IBAN), recréer les
       4 prix en mode réel, remplacer les clés et le secret du webhook sur Vercel.
+- [ ] **Stripe, réglages du mode réel** (non modifiables en mode test) :
+      Paramètres → Billing → Abonnements et e-mails → activer « Envoyer des
+      e-mails concernant les renouvellements à venir » (rappel avant chaque
+      renouvellement annuel, promis par les CGU — régler l'événement sur
+      30 jours), les e-mails d'échec de paiement et de carte expirée.
+      Refaire aussi le portail client du mode réel : résiliation activée, à la
+      fin de la période, changement d'offre désactivé (il se fait dans l'app).
+- [ ] **Stripe, informations publiques** : liens vers les CGU et la politique de
+      confidentialité (affichés dans le portail client).
 - [ ] **Sentry** : créer le projet (région UE), ajouter `NEXT_PUBLIC_SENTRY_DSN`.
 - [ ] **Anthropic** : plafond de dépense mensuel réglé, rechargement auto coupé.
 - [ ] **Connexion Google** (facultatif) : client OAuth Google Cloud, activer le
