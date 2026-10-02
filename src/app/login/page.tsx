@@ -9,7 +9,7 @@ import { LogoMark } from "@/components/marketing/logo-mark";
 export const metadata: Metadata = {
   title: "Connexion — AdminPilot",
   description:
-    "Connecte-toi à AdminPilot ou crée ton compte. Sans mot de passe : lien sécurisé par e-mail ou compte Google.",
+    "Connecte-toi à AdminPilot ou crée ton compte. Sans mot de passe : un lien sécurisé par e-mail.",
   // Une page de connexion n'a aucune raison d'être indexée, et la voir remonter
   // dans les résultats de recherche dilue le référencement de la landing.
   robots: { index: false, follow: true },

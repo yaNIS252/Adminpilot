@@ -17,6 +17,8 @@ const PUBLIC_PREFIXES = [
   "/api/inbound",
   "/api/cron",
   "/api/webhooks",
+  // Protégée par CRON_SECRET dans la route elle-même.
+  "/api/health",
   "/resilier",
   "/legal",
 ];

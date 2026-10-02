@@ -13,6 +13,13 @@ import {
 import { createClient } from "@/lib/supabase/client";
 
 /**
+ * Connexion Google : affichée seulement une fois le fournisseur configuré dans
+ * Supabase (client OAuth Google Cloud). Tant qu'il ne l'est pas, le bouton
+ * menait à une page d'erreur — pire que pas de bouton du tout.
+ */
+const GOOGLE_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1";
+
+/**
  * Panneau d'authentification — connexion et création de compte.
  *
  * Il n'y a pas de mot de passe : Google OAuth ou lien à usage unique. C'est le
@@ -89,7 +96,9 @@ function humanError(message: string, status: number | undefined, mode: Mode) {
   // voir avec un abus de la part de l'utilisateur, d'où un message qui ne le
   // met pas en cause.
   if (raw.includes("rate limit") || status === 429) {
-    return "Le service d’envoi d’e-mails a atteint sa limite horaire. Réessaie dans une heure, ou connecte-toi avec Google.";
+    return GOOGLE_ENABLED
+      ? "Le service d’envoi d’e-mails a atteint sa limite horaire. Réessaie dans une heure, ou connecte-toi avec Google."
+      : "Le service d’envoi d’e-mails a atteint sa limite horaire. Réessaie dans une heure.";
   }
 
   if (raw.includes("invalid") && raw.includes("email")) {
@@ -316,21 +325,25 @@ export function AuthPanel() {
         ))}
       </div>
 
-      <button
-        type="button"
-        onClick={signInWithGoogle}
-        disabled={sending}
-        className="btn-secondary h-12 gap-2.5 text-[15px] disabled:opacity-60"
-      >
-        <GoogleMark />
-        Continuer avec Google
-      </button>
+      {GOOGLE_ENABLED && (
+        <>
+          <button
+            type="button"
+            onClick={signInWithGoogle}
+            disabled={sending}
+            className="btn-secondary h-12 gap-2.5 text-[15px] disabled:opacity-60"
+          >
+            <GoogleMark />
+            Continuer avec Google
+          </button>
 
-      <div className="flex items-center gap-3 text-xs text-[var(--text-ghost)]">
-        <span className="h-px flex-1 bg-[rgba(255,255,255,.08)]" />
-        ou par e-mail
-        <span className="h-px flex-1 bg-[rgba(255,255,255,.08)]" />
-      </div>
+          <div className="flex items-center gap-3 text-xs text-[var(--text-ghost)]">
+            <span className="h-px flex-1 bg-[rgba(255,255,255,.08)]" />
+            ou par e-mail
+            <span className="h-px flex-1 bg-[rgba(255,255,255,.08)]" />
+          </div>
+        </>
+      )}
 
       <form onSubmit={submit} className="flex flex-col gap-3">
         <label htmlFor={emailId} className="text-[13px] text-[var(--text-muted)]">
