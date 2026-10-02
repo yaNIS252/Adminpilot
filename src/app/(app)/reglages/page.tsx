@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Forward, Inbox, Lock, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
+import { Forward, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 
 import { ManageSubscription, PlanPicker } from "@/components/billing/plan-picker";
 import {
@@ -7,6 +7,7 @@ import {
   HouseholdMembership,
 } from "@/components/household/household-manager";
 import { ProfileEditor } from "@/components/profile/profile-editor";
+import { RecapToggle } from "@/components/profile/recap-toggle";
 import { ThemePicker } from "@/components/profile/theme-picker";
 import { AccountActions } from "@/components/shared/account-actions";
 import { ForwardingSetup } from "@/components/shared/forwarding-setup";
@@ -215,6 +216,20 @@ export default async function SettingsPage({
           </div>
         )}
       </Card>
+
+      <section id="recap" className="scroll-mt-6">
+        <Card icon={<Mail className="size-4" />} title="Récap mensuel par e-mail">
+          {profile.plan === "free" ? (
+            <p className="m-0 flex items-center gap-2 text-sm text-[var(--text-dim)]">
+              <Lock className="size-4 shrink-0 text-[var(--accent-lighter)]" />
+              Chaque mois, le bilan de tes abonnements et des hausses de prix :
+              inclus avec Pro et Premium.
+            </p>
+          ) : (
+            <RecapToggle initial={profile.monthly_recap} />
+          )}
+        </Card>
+      </section>
 
       <Card
         icon={<ShieldCheck className="size-4 text-[var(--positive)]" />}

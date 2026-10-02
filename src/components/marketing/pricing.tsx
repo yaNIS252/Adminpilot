@@ -86,6 +86,7 @@ export function Pricing() {
             "Abonnements, documents et alertes illimités",
             "Recherche en langage courant",
             "Lettres de résiliation illimitées",
+            "Récap mensuel par e-mail",
           ]}
           cta="Passer Pro"
           href={checkoutHref("pro", yearly)}

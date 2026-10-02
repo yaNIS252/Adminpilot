@@ -13,6 +13,7 @@
     "test:rls": "tsx --conditions=react-server --env-file=.env.local scripts/test-rls.ts",
     "seed:demo": "tsx --conditions=react-server --env-file=.env.local scripts/seed-demo.ts",
     "login:link": "tsx --conditions=react-server --env-file=.env.local scripts/login-link.ts",
+    "preview:recap": "tsx --conditions=react-server --env-file=.env.local scripts/preview-recap.ts",
     "test:quotas": "cross-env ADMINPILOT_AI_MODE=mock tsx --conditions=react-server --env-file=.env.local scripts/test-quotas.ts"
   },
   "dependencies": {

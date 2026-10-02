@@ -427,6 +427,8 @@ export type Database = {
           gmail_forward_verified: boolean;
           id: string;
           inbox_token: string;
+          last_recap_period: string | null;
+          monthly_recap: boolean;
           name: string | null;
           plan: Database["public"]["Enums"]["plan"];
           stripe_customer_id: string | null;
@@ -445,6 +447,8 @@ export type Database = {
           gmail_forward_verified?: boolean;
           id: string;
           inbox_token?: string;
+          last_recap_period?: string | null;
+          monthly_recap?: boolean;
           name?: string | null;
           plan?: Database["public"]["Enums"]["plan"];
           stripe_customer_id?: string | null;
@@ -463,6 +467,8 @@ export type Database = {
           gmail_forward_verified?: boolean;
           id?: string;
           inbox_token?: string;
+          last_recap_period?: string | null;
+          monthly_recap?: boolean;
           name?: string | null;
           plan?: Database["public"]["Enums"]["plan"];
           stripe_customer_id?: string | null;

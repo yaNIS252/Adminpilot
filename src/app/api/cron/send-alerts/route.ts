@@ -7,6 +7,7 @@ import {
   buildPriceChangeEmail,
   buildRenewalEmail,
 } from "@/lib/alerts/email";
+import { sendMonthlyRecaps } from "@/lib/alerts/recap";
 import { currentPeriod, incrementUsage } from "@/lib/billing/quotas";
 import { PLAN_LIMITS } from "@/lib/constants";
 import { siteUrl } from "@/lib/site-url";
@@ -50,6 +51,11 @@ export async function GET(request: Request) {
   const base = siteUrl();
   const today = new Date().toISOString().slice(0, 10);
 
+  // Récapitulatif mensuel des abonnés, du 1er au 3 du mois. Porté par cette
+  // tâche quotidienne plutôt que par une tâche à part : le plan Vercel limite
+  // le nombre de tâches planifiées.
+  const recap = await sendMonthlyRecaps({ db, resend, from: sender(), siteUrl: base });
+
   const { data: alerts, error } = await db
     .from("alerts")
     .select("*, profiles!inner(email, deleted_at, plan)")
@@ -59,7 +65,7 @@ export async function GET(request: Request) {
 
   if (error) throw error;
   if (!alerts?.length) {
-    return NextResponse.json({ candidates: 0, sent: 0, failed: 0, refused: 0 });
+    return NextResponse.json({ candidates: 0, sent: 0, failed: 0, refused: 0, recap });
   }
 
   // Les objets référencés sont chargés en deux requêtes, pas en deux par
@@ -235,5 +241,6 @@ export async function GET(request: Request) {
     failed,
     refused,
     capped,
+    recap,
   });
 }

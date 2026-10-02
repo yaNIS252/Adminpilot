@@ -25,6 +25,7 @@ const BodySchema = z
     background: z
       .enum(BACKGROUNDS.map((background) => background.id) as [string, ...string[]])
       .optional(),
+    monthly_recap: z.boolean().optional(),
   })
   .refine((body) => Object.values(body).some((value) => value !== undefined), {
     message: "rien à modifier",
@@ -43,6 +44,7 @@ export async function PATCH(request: Request) {
     name?: string | null;
     accent?: string;
     background?: string;
+    monthly_recap?: boolean;
     updated_at: string;
   } = {
     updated_at: new Date().toISOString(),
@@ -65,6 +67,7 @@ export async function PATCH(request: Request) {
   }
   if (body.data.accent !== undefined) update.accent = body.data.accent;
   if (body.data.background !== undefined) update.background = body.data.background;
+  if (body.data.monthly_recap !== undefined) update.monthly_recap = body.data.monthly_recap;
 
   const { error } = await createAdminClient()
     .from("profiles")
