@@ -1,9 +1,13 @@
 import { DocumentGrid } from "@/components/dashboard/document-grid";
+import { DocumentSearch } from "@/components/dashboard/document-search";
+import { requireUser } from "@/lib/auth/require-user";
+import { PLAN_LIMITS } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Documents — AdminPilot" };
 
 export default async function DocumentsPage() {
+  const auth = await requireUser();
   const supabase = await createClient();
 
   const { data } = await supabase
@@ -23,6 +27,10 @@ export default async function DocumentsPage() {
           ne sont jamais accessibles publiquement.
         </p>
       </header>
+
+      <DocumentSearch
+        locked={!auth || PLAN_LIMITS[auth.profile.plan].searches === 0}
+      />
 
       <DocumentGrid initial={data ?? []} />
     </div>

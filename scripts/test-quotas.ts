@@ -14,6 +14,7 @@ import { checkLimit } from "../src/lib/billing/quotas";
 import { trustedLink } from "../src/lib/cancel/links";
 import { PLAN_LIMITS } from "../src/lib/constants";
 import { processDocumentJob, processEmailJob } from "../src/lib/ingest/pipeline";
+import { parseSearchQuery } from "../src/lib/search/parse-query";
 import type { Database } from "../src/lib/supabase/types";
 
 const EMAIL = "gratuit@adminpilot.test";
@@ -174,6 +175,22 @@ async function main() {
   });
   ({ data: sub } = await db.from("subscriptions").select("provider_id, metadata").eq("user_id", userId).single());
   check("lien officiel ajouté à la facture suivante", (sub?.metadata as Record<string, unknown>)?.manage_url ?? null, "https://www.netflix.com/account/cancel");
+
+  console.log("\n— Lecture des recherches (sans modèle, au 2 octobre 2026)");
+  const day = new Date("2026-10-02T10:00:00Z");
+  const pick = (q: string) => {
+    const f = parseSearchQuery(q, day);
+    return Object.fromEntries(Object.entries(f).filter(([, v]) => v !== null));
+  };
+  check("« facture EDF de mars »", pick("facture EDF de mars"), { category: "facture", date_from: "2026-03-01", date_to: "2026-03-31", keywords: "edf" });
+  check("« fiches de paie 2025 »", pick("fiches de paie 2025"), { category: "travail", date_from: "2025-01-01", date_to: "2025-12-31" });
+  check("« assurance plus de 50 € »", pick("assurance plus de 50 €"), { category: "assurance", amount_min: 50 });
+  check("« quittance de loyer décembre » → décembre passé", pick("quittance de loyer décembre"), { category: "logement", date_from: "2025-12-01", date_to: "2025-12-31", keywords: "loyer" });
+  check("« relevé du mois dernier »", pick("relevé du mois dernier"), { category: "banque", date_from: "2026-09-01", date_to: "2026-09-30" });
+  check("« contrat de travail » → travail, pas contrat", pick("contrat de travail"), { category: "travail" });
+  check("« prélèvement Netflix » → mots sans accents", pick("prélèvement Netflix"), { keywords: "prelevement netflix" });
+  check("« entre 20 et 40 euros »", pick("entre 20 et 40 euros"), { amount_min: 20, amount_max: 40 });
+  check("« impôts l'an dernier »", pick("impôts l’an dernier"), { category: "impots", date_from: "2025-01-01", date_to: "2025-12-31" });
 
   console.log("\n— Surveillance des prix");
   await reset(userId);
