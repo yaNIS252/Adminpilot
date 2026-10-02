@@ -354,6 +354,82 @@ export type Database = {
         };
         Relationships: [];
       };
+      offer_clicks: {
+        Row: {
+          created_at: string;
+          id: string;
+          offer_id: string;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          offer_id: string;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          offer_id?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "offer_clicks_offer_id_fkey";
+            columns: ["offer_id"];
+            isOneToOne: false;
+            referencedRelation: "offers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      offers: {
+        Row: {
+          active: boolean;
+          affiliate_url: string | null;
+          category: string;
+          checked_at: string;
+          conditions: string | null;
+          created_at: string;
+          id: string;
+          monthly_price: number;
+          name: string;
+          provider_name: string;
+          url: string;
+          valid_until: string | null;
+        };
+        Insert: {
+          active?: boolean;
+          affiliate_url?: string | null;
+          category: string;
+          checked_at?: string;
+          conditions?: string | null;
+          created_at?: string;
+          id?: string;
+          monthly_price: number;
+          name: string;
+          provider_name: string;
+          url: string;
+          valid_until?: string | null;
+        };
+        Update: {
+          active?: boolean;
+          affiliate_url?: string | null;
+          category?: string;
+          checked_at?: string;
+          conditions?: string | null;
+          created_at?: string;
+          id?: string;
+          monthly_price?: number;
+          name?: string;
+          provider_name?: string;
+          url?: string;
+          valid_until?: string | null;
+        };
+        Relationships: [
+
+        ];
+      };
       price_changes: {
         Row: {
           created_at: string;

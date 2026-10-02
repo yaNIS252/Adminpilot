@@ -4,6 +4,7 @@ import { ArrowLeft, ExternalLink, FileText, Globe, Lock, Scale } from "lucide-re
 
 import { CategoryTip, GuideSteps } from "@/components/cancel/cancel-guide";
 import { LetterForm } from "@/components/cancel/letter-form";
+import { OfferList } from "@/components/cancel/offer-list";
 import { LetterTracker } from "@/components/cancel/letter-tracker";
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { requireUser } from "@/lib/auth/require-user";
@@ -11,7 +12,8 @@ import { parseGuide } from "@/lib/cancel/guides";
 import { trustedLink } from "@/lib/cancel/links";
 import { LEGAL_TEMPLATES } from "@/lib/cancel/templates";
 import { readUuid } from "@/lib/http/request";
-import { formatAmount, formatCycle, formatDate } from "@/lib/format";
+import { formatAmount, formatCycle, formatDate, monthlyEquivalent } from "@/lib/format";
+import { compareOffers } from "@/lib/offers";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
 
@@ -86,6 +88,22 @@ export default async function CancelPage({
   const fromEmail = !catalogue?.cancel_url && Boolean(onlineUrl);
 
   const guide = parseGuide(catalogue?.cancel_guide);
+  const category = catalogue?.category ?? sub.category;
+  const currentMonthly = monthlyEquivalent(sub.amount, sub.cycle);
+  const { data: catalogueOffers } =
+    category && currentMonthly > 0
+      ? await supabase
+          .from("offers")
+          .select("id, provider_name, name, monthly_price, conditions, url, affiliate_url, checked_at, category, valid_until")
+          .eq("category", category)
+          .or(`valid_until.is.null,valid_until.gte.${new Date().toISOString().slice(0, 10)}`)
+          .order("monthly_price")
+          .limit(20)
+      : { data: [] };
+  const offers = compareOffers(catalogueOffers ?? [], {
+    currentMonthly,
+    currentProvider: name,
+  });
   const paid = auth.profile.plan !== "free";
   const cancelled = sub.status === "cancelled";
 
@@ -176,6 +194,8 @@ export default async function CancelPage({
           </p>
         )}
       </Card>
+
+      {!cancelled && <OfferList offers={offers} category={category} />}
 
       <Card icon={<Scale className="size-4" />} title={`Ce que dit la loi · ${template.label}`}>
         <p className="m-0 text-sm text-[var(--text-dim)]">{template.timing}</p>
