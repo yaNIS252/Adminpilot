@@ -82,7 +82,7 @@ export async function POST(request: Request) {
 
     // Le webhook suivra, mais l'utilisateur doit voir sa nouvelle formule dès
     // le rechargement de la page, pas après un délai de livraison.
-    const applied = await applySubscription(updated, { fresh: false });
+    const applied = await applySubscription(updated);
 
     return NextResponse.json({ plan: applied, upgrade });
   } catch (error) {

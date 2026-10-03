@@ -79,9 +79,9 @@ export async function POST(request: Request) {
             metadata: subscription.metadata,
           });
         }
-        // Déjà relu à l'instant depuis Stripe : une seconde lecture n'apporte
-        // rien et consomme un appel d'API.
-        await applySubscription(subscription, { fresh: false });
+        // Relu avec ses remises : le code promo éventuel compte pour le
+        // montant affiché dans les abonnements suivis.
+        await applySubscription(subscription);
       }
       break;
     }

@@ -109,6 +109,10 @@ export async function createCheckoutSession(input: {
     // hésitation au moment de payer ne doit pas obliger à tout recommencer.
     cancel_url: `${input.siteUrl}/reglages?formule=${input.plan}&cycle=${input.cycle}&paiement=annule#formules`,
     allow_promotion_codes: true,
+    // Un code promo à 100 % (Premium offert à un proche) ramène le total à
+    // 0 € : Stripe ne demande alors aucune carte. Sans ce réglage, il en
+    // exigeait une même pour un abonnement gratuit.
+    payment_method_collection: "if_required",
     locale: "fr",
     // « Managed Payments » est activé par défaut sur les comptes Stripe
     // récents : Stripe y devient le vendeur officiel et collecte la TVA. Ce

@@ -24,8 +24,12 @@ export async function applySubscription(
   input: Stripe.Subscription,
   { fresh = true }: { fresh?: boolean } = {},
 ) {
+  // Remises développées : le montant réellement payé (code promo, Premium
+  // offert) est reporté sur la ligne « AdminPilot » des abonnements suivis.
   const subscription = fresh
-    ? await getStripe().subscriptions.retrieve(input.id)
+    ? await getStripe().subscriptions.retrieve(input.id, {
+        expand: ["discounts", "discounts.source.coupon"],
+      })
     : input;
 
   const db = createAdminClient();
@@ -86,6 +90,22 @@ export async function applySubscription(
   return update.plan;
 }
 
+/**
+ * Prix après remises (codes promo). Pourcentage puis montant fixe, comme
+ * Stripe les applique ; jamais négatif.
+ */
+function discounted(base: number, subscription: Stripe.Subscription): number {
+  let amount = base;
+  for (const discount of subscription.discounts ?? []) {
+    if (typeof discount === "string") continue;
+    const coupon = discount.source?.coupon;
+    if (!coupon || typeof coupon === "string") continue;
+    if (coupon.percent_off) amount *= 1 - coupon.percent_off / 100;
+    if (coupon.amount_off) amount -= coupon.amount_off / 100;
+  }
+  return Math.max(0, Math.round(amount * 100) / 100);
+}
+
 /** Marqueur de l'abonnement AdminPilot dans la liste des abonnements suivis. */
 export const OWN_SUBSCRIPTION_SOURCE = "adminpilot_billing";
 
@@ -107,7 +127,7 @@ async function syncOwnSubscription(
   const item = subscription.items.data[0];
   const price = item?.price;
   const plan = price ? planFromPriceId(price.id) : null;
-  const amount = price?.unit_amount != null ? price.unit_amount / 100 : null;
+  const amount = price?.unit_amount != null ? discounted(price.unit_amount / 100, subscription) : null;
   const cycle = price?.recurring?.interval === "year" ? "yearly" : "monthly";
   // Pas de prochaine échéance si la résiliation est programmée : il n'y aura
   // pas de renouvellement à rappeler.
