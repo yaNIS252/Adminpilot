@@ -1,6 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import {
+  SESSION_COOKIE,
+  SESSION_COOKIE_OPTIONS,
+  SESSION_IDLE_MS,
+  SESSION_MAX_MS,
+  SESSION_TOUCH_MS,
+  readSession,
+  sessionCookieValue,
+} from "@/lib/auth/session";
 import type { Database } from "@/lib/supabase/types";
 
 /**
@@ -63,6 +72,33 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+
+  if (user) {
+    const now = Date.now();
+    const session = readSession(request.cookies.get(SESSION_COOKIE)?.value);
+    const expired =
+      session && (now - session.issued > SESSION_MAX_MS || now - session.seen > SESSION_IDLE_MS);
+
+    if (expired) {
+      // Révoque la session côté Supabase et efface ses cookies sur `response`.
+      await supabase.auth.signOut({ scope: "local" });
+      const out = pathname.startsWith("/api/")
+        ? NextResponse.json({ error: "session expirée", code: "session_expired" }, { status: 401 })
+        : NextResponse.redirect(new URL("/login?error=session_expiree", request.url));
+      for (const cookie of response.cookies.getAll()) out.cookies.set(cookie);
+      out.cookies.set(SESSION_COOKIE, "", { ...SESSION_COOKIE_OPTIONS, maxAge: 0 });
+      return out;
+    }
+
+    // Sessions ouvertes avant cette règle : leur compteur démarre maintenant.
+    if (!session || now - session.seen > SESSION_TOUCH_MS) {
+      response.cookies.set(
+        SESSION_COOKIE,
+        sessionCookieValue(session?.issued ?? now, now),
+        SESSION_COOKIE_OPTIONS,
+      );
+    }
+  }
 
   // Supabase renvoie ses erreurs d'authentification (lien expiré, déjà
   // utilisé…) sur le Site URL du projet, c'est-à-dire la page d'accueil, qui

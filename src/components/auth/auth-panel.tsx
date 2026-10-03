@@ -128,6 +128,8 @@ function linkErrorMessage(code: string): string {
       return "Ce lien a expiré ou a déjà servi. Chaque nouvelle demande annule les précédentes : utilise toujours le dernier e-mail reçu, ou demande un nouveau lien.";
     case "jeton_manquant":
       return "Ce lien de connexion est incomplet. Demande-en un nouveau.";
+    case "session_expiree":
+      return "Par sécurité, ta session a expiré (30 jours, ou 14 jours sans visite). Reconnecte-toi avec un nouveau lien.";
     default:
       return "La connexion par ce lien a échoué. Demande un nouveau lien, en l’ouvrant dans le même navigateur que celui où tu l’as demandé.";
   }

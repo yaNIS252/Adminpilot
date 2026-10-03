@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import {
+  SESSION_COOKIE,
+  SESSION_COOKIE_OPTIONS,
+  sessionCookieValue,
+} from "@/lib/auth/session";
 
 export const runtime = "nodejs";
 
@@ -66,5 +71,9 @@ export async function GET(request: Request) {
     );
   }
 
-  return NextResponse.redirect(new URL(next, url.origin));
+  // Nouvelle connexion : le compteur de durée de session repart de zéro.
+  const response = NextResponse.redirect(new URL(next, url.origin));
+  const now = Date.now();
+  response.cookies.set(SESSION_COOKIE, sessionCookieValue(now, now), SESSION_COOKIE_OPTIONS);
+  return response;
 }
