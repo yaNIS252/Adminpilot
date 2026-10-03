@@ -80,9 +80,97 @@ export async function applySubscription(
       await unlockHiddenSubscriptions(db, profile.id);
     }
     await syncHousehold(db, profile.id, update.plan);
+    await syncOwnSubscription(db, profile.id, subscription, entitled && Boolean(plan));
   }
 
   return update.plan;
+}
+
+/** Marqueur de l'abonnement AdminPilot dans la liste des abonnements suivis. */
+export const OWN_SUBSCRIPTION_SOURCE = "adminpilot_billing";
+
+/**
+ * L'abonnement AdminPilot lui-même apparaît parmi les abonnements suivis de
+ * l'utilisateur : montant, périodicité, prochaine échéance et rappels, comme
+ * n'importe quel autre. Un outil qui suit les abonnements et cache le sien
+ * serait mal placé pour inspirer confiance.
+ *
+ * Tenu à jour uniquement depuis Stripe : l'utilisateur ne le saisit pas, et sa
+ * résiliation passe par les réglages, pas par une lettre.
+ */
+async function syncOwnSubscription(
+  db: Db,
+  userId: string,
+  subscription: Stripe.Subscription,
+  active: boolean,
+) {
+  const item = subscription.items.data[0];
+  const price = item?.price;
+  const plan = price ? planFromPriceId(price.id) : null;
+  const amount = price?.unit_amount != null ? price.unit_amount / 100 : null;
+  const cycle = price?.recurring?.interval === "year" ? "yearly" : "monthly";
+  // Pas de prochaine échéance si la résiliation est programmée : il n'y aura
+  // pas de renouvellement à rappeler.
+  const periodEnd = item?.current_period_end ?? null;
+  const nextRenewal =
+    active && periodEnd && !subscription.cancel_at_period_end && !subscription.cancel_at
+      ? new Date(periodEnd * 1000).toISOString().slice(0, 10)
+      : null;
+  const provider = `AdminPilot ${plan === "family" ? "Premium" : "Pro"}`;
+
+  const { data: existing } = await db
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("metadata->>source", OWN_SUBSCRIPTION_SOURCE)
+    .maybeSingle();
+
+  const row = {
+    provider,
+    amount,
+    currency: (price?.currency ?? "eur").toUpperCase(),
+    cycle: cycle as "monthly" | "yearly",
+    category: "logiciel",
+    next_renewal: nextRenewal,
+    status: active ? ("active" as const) : ("cancelled" as const),
+    cancelled_at: active ? null : new Date().toISOString(),
+    confidence: 1,
+    confirmed_by_user: true,
+    over_quota: false,
+    metadata: { source: OWN_SUBSCRIPTION_SOURCE, stripe_subscription: subscription.id },
+  };
+
+  let id = existing?.id ?? null;
+  if (id) {
+    await db.from("subscriptions").update(row).eq("id", id);
+  } else if (active) {
+    const { data } = await db
+      .from("subscriptions")
+      .insert({ ...row, user_id: userId })
+      .select("id")
+      .single();
+    id = data?.id ?? null;
+  }
+  if (!id) return;
+
+  // Rappels d'échéance : recalés sur la date Stripe à chaque changement.
+  await db
+    .from("alerts")
+    .delete()
+    .eq("user_id", userId)
+    .eq("ref_id", id)
+    .eq("kind", "deadline")
+    .is("sent_at", null);
+  if (nextRenewal) {
+    await scheduleDeadlineAlerts({
+      userId,
+      refType: "subscription",
+      refId: id,
+      deadline: nextRenewal,
+      title: `${provider} se renouvelle`,
+      message: `Prochain prélèvement le ${nextRenewal}.`,
+    });
+  }
 }
 
 /**

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ExternalLink, FileText, Globe, Lock, Scale } from "lucide-react";
 
 import { CategoryTip, GuideSteps } from "@/components/cancel/cancel-guide";
@@ -53,6 +53,10 @@ export default async function CancelPage({
       .maybeSingle(),
   ]);
   if (!sub) notFound();
+
+  // L'abonnement AdminPilot se résilie depuis les réglages, en un clic.
+  const meta = sub.metadata && typeof sub.metadata === "object" && !Array.isArray(sub.metadata) ? sub.metadata : {};
+  if ((meta as Record<string, unknown>).source === "adminpilot_billing") redirect("/reglages#formules");
 
   const catalogue = sub.known_providers as unknown as {
     name: string;

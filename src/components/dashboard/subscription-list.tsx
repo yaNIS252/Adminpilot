@@ -124,7 +124,10 @@ export function SubscriptionList({
                     <div className="flex items-center gap-1.5 font-medium">
                       {sub.provider}
                       {priceChanges[sub.id] && (
-                        <PriceBadge change={priceChanges[sub.id]} currency={sub.currency} />
+                        <PriceBadge
+                          change={priceChanges[sub.id]}
+                          currency={sub.currency}
+                        />
                       )}
                       {uncertain && (
                         <span
@@ -149,40 +152,51 @@ export function SubscriptionList({
                     {formatAmount(sub.amount, sub.currency) ?? "—"}
                   </div>
 
-                  <div className="flex w-full gap-2 sm:w-auto">
-                    {reviewMode && (
-                      <Action
-                        onClick={() => patch(sub.id, { confirmed_by_user: true })}
-                        disabled={busy === sub.id}
-                        tone="positive"
-                        icon={<Check className="size-4" />}
-                      >
-                        Confirmer
-                      </Action>
-                    )}
-                    <Action
-                      onClick={() => setEditing(sub.id)}
-                      icon={<Pencil className="size-4" />}
+                  {isOwnSubscription(sub) ? (
+                    <Link
+                      href="/reglages#formules"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3 py-2 text-sm text-[var(--text-muted)] no-underline transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-white"
                     >
-                      Modifier
-                    </Action>
-                    {!reviewMode && (
-                      <Link
-                        href={`/abonnements/${sub.id}/resilier`}
-                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3 py-2 text-sm text-[var(--text-muted)] no-underline transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-white sm:flex-none"
+                      Géré dans Réglages
+                    </Link>
+                  ) : (
+                    <div className="flex w-full gap-2 sm:w-auto">
+                      {reviewMode && (
+                        <Action
+                          onClick={() =>
+                            patch(sub.id, { confirmed_by_user: true })
+                          }
+                          disabled={busy === sub.id}
+                          tone="positive"
+                          icon={<Check className="size-4" />}
+                        >
+                          Confirmer
+                        </Action>
+                      )}
+                      <Action
+                        onClick={() => setEditing(sub.id)}
+                        icon={<Pencil className="size-4" />}
                       >
-                        <LogOut className="size-4" />
-                        Résilier
-                      </Link>
-                    )}
-                    <Action
-                      onClick={() => remove(sub.id)}
-                      disabled={busy === sub.id}
-                      tone="danger"
-                      icon={<Trash2 className="size-4" />}
-                      label="Supprimer"
-                    />
-                  </div>
+                        Modifier
+                      </Action>
+                      {!reviewMode && (
+                        <Link
+                          href={`/abonnements/${sub.id}/resilier`}
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3 py-2 text-sm text-[var(--text-muted)] no-underline transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-white sm:flex-none"
+                        >
+                          <LogOut className="size-4" />
+                          Résilier
+                        </Link>
+                      )}
+                      <Action
+                        onClick={() => remove(sub.id)}
+                        disabled={busy === sub.id}
+                        tone="danger"
+                        icon={<Trash2 className="size-4" />}
+                        label="Supprimer"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </li>
@@ -190,6 +204,17 @@ export function SubscriptionList({
         })}
       </ul>
     </>
+  );
+}
+
+/** Abonnement AdminPilot lui-même, tenu à jour depuis Stripe. */
+function isOwnSubscription(sub: Subscription): boolean {
+  const meta = sub.metadata;
+  return Boolean(
+    meta &&
+    typeof meta === "object" &&
+    !Array.isArray(meta) &&
+    meta.source === "adminpilot_billing",
   );
 }
 
@@ -317,7 +342,11 @@ function EditForm({
             className="w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
           >
             {BILLING_CYCLES.map((value) => (
-              <option key={value} value={value} className="bg-[var(--bg-elevated)]">
+              <option
+                key={value}
+                value={value}
+                className="bg-[var(--bg-elevated)]"
+              >
                 {formatCycle(value) || "inconnue"}
               </option>
             ))}

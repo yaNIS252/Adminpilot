@@ -79,11 +79,13 @@ Cartes : `4242 4242 4242 4242` (OK) · `4000 0000 0000 0002` (refusée) ·
 |---|---|---|---|
 | 5.1 | Réglages → Pro mensuel → payer avec la carte refusée | Refus affiché par Stripe, rien débité | Plan toujours `free` |
 | 5.2 | Payer avec 4242 | Retour « Bienvenue en Pro », abonnement masqué débloqué | Webhook reçu, plan `pro`, alertes programmées |
+| 5.2b | Page Abonnements | Ligne « AdminPilot Pro » 5,99 €/mois avec la prochaine échéance, bouton « Géré dans Réglages » | Ligne `source: adminpilot_billing`, rappels programmés |
 | 5.3 | Facture Stripe | Mention « TVA non applicable, art. 293 B du CGI » | — |
 | 5.4 | Changer pour Premium annuel | Différence facturée au prorata, plan Premium | Plan `family` |
 | 5.5 | Revenir en Pro mensuel | Crédit sur la prochaine facture | — |
 | 5.6 | « Gérer mon abonnement » | Portail Stripe : carte, factures, résiliation | — |
-| 5.7 | Résilier dans le portail (fin de période) | Accès gardé jusqu'à l'échéance | Plan rebasculé en `free` à l'échéance |
+| 5.7 | « Résilier mon abonnement » dans les réglages | Écran de résiliation Stripe, bandeau « résiliation enregistrée », **e-mail de confirmation reçu** | Plus de prochaine échéance sur la ligne AdminPilot |
+| 5.8 | Payer sans cocher la case de rétractation | Bouton « Payer » inactif | API : 400 |
 
 ## 6. Premium et foyer (avec l'adresse B)
 
