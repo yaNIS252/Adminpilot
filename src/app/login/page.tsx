@@ -48,8 +48,9 @@ export default async function LoginPage({
             className="flex items-center gap-2.5 text-[var(--text)] hover:text-[var(--text)]"
           >
             <LogoMark />
-            <span className="text-[15px] font-semibold tracking-[-0.01em]">
-              AdminPilot
+            <span className="text-[15px] tracking-[-0.01em]">
+              <span className="font-normal">Admin</span>
+              <span className="font-bold">Pilot</span>
             </span>
           </Link>
 

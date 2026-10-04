@@ -11,7 +11,7 @@ import { useState } from "react";
  * expéditeurs à copier dans une règle de transfert.
  */
 
-type Mailbox = "gmail" | "outlook" | "autre";
+export type Mailbox = "gmail" | "outlook" | "autre";
 
 const TABS: { id: Mailbox; label: string }[] = [
   { id: "gmail", label: "Gmail" },
@@ -22,33 +22,42 @@ const TABS: { id: Mailbox; label: string }[] = [
 export function ForwardingSetup({
   address,
   domains,
+  mailbox: fixedMailbox,
 }: {
   address: string;
   domains: string[];
+  /** Messagerie déjà choisie (présentation de bienvenue) : onglets masqués. */
+  mailbox?: Mailbox;
 }) {
-  const [mailbox, setMailbox] = useState<Mailbox>("gmail");
-  const [keywords, setKeywords] = useState(true);
+  const [chosenMailbox, setMailbox] = useState<Mailbox>("gmail");
+  const mailbox = fixedMailbox ?? chosenMailbox;
+  // Décoché par défaut (protection des données dès la conception, art. 25
+  // du RGPD) : ce filtre capte des expéditeurs inconnus, donc parfois des
+  // e-mails personnels. L'utilisateur l'active en connaissance de cause.
+  const [keywords, setKeywords] = useState(false);
 
   return (
     <div className="flex flex-col gap-4">
-      <div role="tablist" aria-label="Messagerie" className="inline-flex flex-wrap gap-1 self-start rounded-[10px] border border-[var(--border)] p-1">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={mailbox === tab.id}
-            onClick={() => setMailbox(tab.id)}
-            className={`rounded-[7px] px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
-              mailbox === tab.id
-                ? "bg-[var(--paper)] text-[var(--ink)]"
-                : "text-[var(--text-dim)] hover:text-[var(--text)]"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {!fixedMailbox && (
+        <div role="tablist" aria-label="Messagerie" className="inline-flex flex-wrap gap-1 self-start rounded-[10px] border border-[var(--border)] p-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={mailbox === tab.id}
+              onClick={() => setMailbox(tab.id)}
+              className={`rounded-[7px] px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
+                mailbox === tab.id
+                  ? "bg-[var(--paper)] text-[var(--ink)]"
+                  : "text-[var(--text-dim)] hover:text-[var(--text)]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {mailbox === "gmail" && (
         <div className="flex flex-col gap-3.5">
@@ -63,7 +72,10 @@ export function ForwardingSetup({
               Inclure aussi les e-mails dont l’objet parle de facture, de
               prélèvement ou de renouvellement{" "}
               <span className="text-[var(--text-faint)]">
-                — capte les fournisseurs que nous ne connaissons pas encore.
+                — capte les fournisseurs que nous ne connaissons pas encore,
+                mais aussi parfois un e-mail personnel ou une facture médicale.
+                Ce qui n’est pas une facture d’abonnement est effacé dès
+                l’analyse.
               </span>
             </span>
           </label>
@@ -98,7 +110,8 @@ export function ForwardingSetup({
           </ol>
 
           <p className="m-0 text-xs text-[var(--text-faint)]">
-            Ton adresse AdminPilot doit déjà être validée comme adresse de
+            Les codes de connexion et alertes de sécurité ne sont jamais
+            transférés. Ton adresse AdminPilot doit déjà être validée comme adresse de
             transfert dans Gmail. Le filtre vaut pour les e-mails qui arrivent
             ensuite : transfère tes factures récentes à la main une fois.
             L’import se fait depuis un ordinateur, pas depuis l’application

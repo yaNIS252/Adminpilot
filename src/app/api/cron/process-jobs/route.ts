@@ -8,7 +8,8 @@ import {
   processDocumentJob,
   processEmailJob,
 } from "@/lib/ingest/pipeline";
-import { getRaw } from "@/lib/storage";
+import { deleteRaw, getRaw } from "@/lib/storage";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -54,12 +55,23 @@ async function drain() {
         const payload = JSON.parse(
           Buffer.from(raw.base64, "base64").toString("utf8"),
         );
-        await processEmailJob({
+        const result = await processEmailJob({
           id: job.id,
           user_id: job.user_id,
           attempts: job.attempts,
           payload,
         });
+        // E-mail sans rapport avec un abonnement (newsletter, message
+        // personnel capté par un filtre) : effacé tout de suite plutôt que
+        // gardé 30 jours. Minimisation (art. 5 du RGPD) : rien n'en a été
+        // extrait, il n'y a rien à rejouer.
+        if ("skipped" in result && result.skipped) {
+          await deleteRaw(job.raw_url).catch(() => {});
+          await createAdminClient()
+            .from("ingestion_jobs")
+            .update({ raw_url: null })
+            .eq("id", job.id);
+        }
       } else {
         await processDocumentJob({
           id: job.id,

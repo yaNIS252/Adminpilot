@@ -43,9 +43,10 @@ export default function MarketingLayout({
               className="flex items-center gap-2.5 text-[var(--text)] hover:text-[var(--text)]"
             >
               <LogoMark />
-              <span className="font-semibold tracking-[-0.01em]">
-                AdminPilot
-              </span>
+              <span className="tracking-[-0.01em]">
+              <span className="font-normal">Admin</span>
+              <span className="font-bold">Pilot</span>
+            </span>
             </Link>
             <p className="mt-4 mb-0 max-w-[300px] text-[13px] leading-[1.6] text-[var(--text-faint)]">
               Service indépendant, sans lien avec les fournisseurs cités. Données

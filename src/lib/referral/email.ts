@@ -3,6 +3,7 @@ import "server-only";
 import { Resend } from "resend";
 
 import { escapeHtml } from "@/lib/alerts/email";
+import { senderAddress } from "@/lib/email/sender";
 import { siteUrl } from "@/lib/site-url";
 
 /**
@@ -17,7 +18,6 @@ export async function sendReferralValidated(input: {
 }): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) return false;
 
-  const domain = process.env.INBOUND_DOMAIN ?? "in.zylax.fr";
   const base = siteUrl();
   const until = input.bonusUntil
     ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "Europe/Paris" }).format(
@@ -36,7 +36,7 @@ export async function sendReferralValidated(input: {
 
   try {
     const { error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
-      from: `AdminPilot <no-reply@${domain}>`,
+      from: senderAddress(),
       to: input.to,
       subject: "Ton mois offert est validé",
       text: `${lines.join("\n\n")}\n\nSuivre tes parrainages : ${base}/reglages#parrainage`,

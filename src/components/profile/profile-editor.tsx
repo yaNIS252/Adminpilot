@@ -14,10 +14,16 @@ export function ProfileEditor({
   email,
   initialName,
   avatarUrl,
+  saveOnBlur = false,
 }: {
   email: string;
   initialName: string | null;
   avatarUrl: string | null;
+  /**
+   * Enregistre le prénom en quittant le champ (présentation de bienvenue) :
+   * on y passe à l'étape suivante sans penser au bouton « Enregistrer ».
+   */
+  saveOnBlur?: boolean;
 }) {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -37,8 +43,8 @@ export function ProfileEditor({
     return response.ok;
   }
 
-  async function saveName(event: React.FormEvent) {
-    event.preventDefault();
+  async function saveName(event?: React.FormEvent) {
+    event?.preventDefault();
     setSaving(true);
     setMessage(null);
     const ok = await patch({ name: name.trim() }).catch(() => false);
@@ -141,6 +147,9 @@ export function ProfileEditor({
             id="profile-name"
             value={name}
             onChange={(event) => setName(event.target.value)}
+            onBlur={() => {
+              if (saveOnBlur && nameChanged && !saving) void saveName();
+            }}
             maxLength={60}
             placeholder="Ton prénom"
             className="h-10 min-w-[200px] flex-1 rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 text-sm outline-none focus:border-[var(--accent)]"

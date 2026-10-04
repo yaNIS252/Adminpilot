@@ -1,8 +1,14 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { WelcomeTour } from "@/components/onboarding/welcome-tour";
+import { ReferralBanner } from "@/components/referral/referral-banner";
 import { Sidebar } from "@/components/shared/sidebar";
-import { requireUser } from "@/lib/auth/require-user";
-import { PLAN_LIMITS } from "@/lib/constants";
+import { SESSION_COOKIE, readSession } from "@/lib/auth/session";
+import { inboxAddress, requireUser } from "@/lib/auth/require-user";
+import { PLAN_LIMITS, REFERRAL_BANNER_COOKIE } from "@/lib/constants";
+import { forwardingDomains } from "@/lib/forwarding-domains";
+import { siteUrl } from "@/lib/site-url";
 import { effectiveTheme } from "@/lib/profile/theme";
 import { avatarUrl } from "@/lib/profile/avatar";
 import { createClient } from "@/lib/supabase/server";
@@ -22,13 +28,17 @@ export default async function AppLayout({
   const auth = await requireUser();
   if (!auth) redirect("/login");
 
-  // Tant que le transfert n'est pas confirmé, l'application est vide de sens :
-  // aucun email n'arrive. On renvoie vers l'onboarding plutôt que d'afficher
-  // un tableau de bord désert que l'utilisateur prendrait pour une panne.
-  if (!auth.profile.gmail_forward_verified) redirect("/onboarding");
+  // La mise en place (profil, transfert, parrainage) se fait dans la
+  // présentation de bienvenue, par-dessus l'application : plus d'écran à part
+  // qui bloque l'accès. Tant qu'elle n'est pas finie, elle revient à chaque
+  // connexion ; le tableau de bord rappelle aussi de brancher la boîte mail.
+  const cookieStore = await cookies();
+  const session = readSession(cookieStore.get(SESSION_COOKIE)?.value);
+  const bannerHidden = cookieStore.get(REFERRAL_BANNER_COOKIE)?.value === "1";
+  const tourPending = !auth.profile.tour_completed_at;
 
   const supabase = await createClient();
-  const [{ count: reviewCount }, { count: documentsUsed }, photo] = await Promise.all([
+  const [{ count: reviewCount }, { count: documentsUsed }, photo, domains] = await Promise.all([
     supabase
       .from("subscriptions")
       .select("id", { count: "exact", head: true })
@@ -37,6 +47,11 @@ export default async function AppLayout({
       .lt("confidence", 0.7),
     supabase.from("documents").select("id", { count: "exact", head: true }),
     avatarUrl(auth.profile.avatar_path),
+    // Expéditeurs à transférer : seulement tant que la mise en place n'est
+    // pas finie (présentation, ou boîte mail encore à brancher).
+    tourPending || !auth.profile.gmail_forward_verified
+      ? forwardingDomains()
+      : Promise.resolve([] as string[]),
   ]);
 
   const { accent, background } = effectiveTheme(auth.profile);
@@ -57,8 +72,25 @@ export default async function AppLayout({
         documentsLimit={PLAN_LIMITS[auth.profile.plan].documents}
       />
       <main className="min-w-0 flex-1 px-4 pt-6 pb-24 md:px-8 md:pb-10">
-        <div className="mx-auto w-full max-w-5xl">{children}</div>
+        <div className="mx-auto w-full max-w-5xl">
+          {!bannerHidden && <ReferralBanner />}
+          {children}
+        </div>
       </main>
+      <WelcomeTour
+        userId={auth.userId}
+        email={auth.profile.email}
+        name={auth.profile.name}
+        avatarUrl={photo}
+        address={inboxAddress(auth.profile)}
+        domains={domains}
+        initialConfirmation={
+          auth.profile.gmail_confirmation as { code: string; url: string | null } | null
+        }
+        referralLink={`${siteUrl()}/p/${auth.profile.referral_code}`}
+        completed={!tourPending}
+        sessionKey={String(session?.issued ?? "")}
+      />
     </div>
   );
 }

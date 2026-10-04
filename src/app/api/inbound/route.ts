@@ -3,12 +3,14 @@ import { Resend } from "resend";
 import { Webhook } from "svix";
 import { z } from "zod";
 
+import { isSenderAddress, senderAddress } from "@/lib/email/sender";
 import { hashEmail } from "@/lib/ingest/dedupe";
 import {
   detectGmailConfirmation,
   forwardingSourceAddress,
 } from "@/lib/ingest/gmail-confirmation";
 import { enqueue } from "@/lib/ingest/pipeline";
+import { isSecurityEmail } from "@/lib/ingest/sensitive";
 import { consume, tooManyRequests } from "@/lib/rate-limit";
 import { activateReferral, recordForwardingSource } from "@/lib/referral/engine";
 import { buildKey, uploadRaw } from "@/lib/storage";
@@ -87,6 +89,14 @@ export async function POST(request: Request) {
     .find((value): value is string => Boolean(value));
 
   if (!token) {
+    // Réponse d'un utilisateur à l'un de nos e-mails (bonjour@, alertes@…) :
+    // relayée vers la boîte du support si elle est configurée. Acquittée
+    // dans tous les cas, pour que Resend ne réessaie pas.
+    const recipients = [...event.data.received_for, ...event.data.to];
+    if (recipients.some(isSenderAddress)) {
+      await relayToSupport(event.data.email_id, event.data.from, event.data.subject);
+      return NextResponse.json({ status: "relayed" }, { status: 202 });
+    }
     return NextResponse.json({ error: "destinataire inconnu" }, { status: 404 });
   }
 
@@ -151,6 +161,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: "gmail_confirmation" }, { status: 202 });
   }
 
+  // Code de connexion, alerte de sécurité : refusé sans être stocké.
+  if (isSecurityEmail(event.data.subject)) {
+    return NextResponse.json({ status: "ignored_security" }, { status: 202 });
+  }
+
   if (!(await consume("inbound", token))) {
     return tooManyRequests("inbound");
   }
@@ -201,4 +216,31 @@ export async function POST(request: Request) {
   }).catch(() => {});
 
   return NextResponse.json(result, { status: 202 });
+}
+
+/**
+ * Relaie vers `SUPPORT_FORWARD_TO` un message adressé à l'une de nos adresses
+ * d'expédition, avec l'expéditeur d'origine en adresse de réponse. Ne lève
+ * pas : un relais manqué ne doit pas faire réémettre le webhook.
+ */
+async function relayToSupport(emailId: string, from: string, subject: string) {
+  const to = process.env.SUPPORT_FORWARD_TO?.trim();
+  if (!to || !process.env.RESEND_API_KEY) return;
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const received = await resend.emails.receiving.get(emailId);
+    if (received.error || !received.data) return;
+    await resend.emails.send({
+      from: senderAddress(),
+      to,
+      replyTo: from,
+      subject: `[Réponse reçue] ${subject}`.slice(0, 200),
+      text: `De : ${from}
+
+${received.data.text ?? ""}`,
+      ...(received.data.html ? { html: received.data.html } : {}),
+    });
+  } catch (error) {
+    console.error("[inbound] relais support:", error);
+  }
 }

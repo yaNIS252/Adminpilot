@@ -104,6 +104,24 @@ export default function CookiesPage() {
               </tr>
               <tr className="border-b border-[var(--border-soft)]">
                 <td className="mono py-2.5 pr-4 text-[13px] text-[var(--text)]">
+                  ap_referral_banner_hidden
+                </td>
+                <td className="py-2.5 pr-4">
+                  Se souvient que tu as fermé la bande de parrainage
+                </td>
+                <td className="py-2.5 whitespace-nowrap">60 jours</td>
+              </tr>
+              <tr className="border-b border-[var(--border-soft)]">
+                <td className="mono py-2.5 pr-4 text-[13px] text-[var(--text)]">
+                  ap_tour_step, ap_tour_dismissed
+                </td>
+                <td className="py-2.5 pr-4">
+                  Stockage local : l’étape atteinte dans la présentation de bienvenue, et le fait de l’avoir fermée pour la connexion en cours
+                </td>
+                <td className="py-2.5 whitespace-nowrap">Jusqu’à la fin de la présentation</td>
+              </tr>
+              <tr className="border-b border-[var(--border-soft)]">
+                <td className="mono py-2.5 pr-4 text-[13px] text-[var(--text)]">
                   ap_upsell_hidden
                 </td>
                 <td className="py-2.5 pr-4">

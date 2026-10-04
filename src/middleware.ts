@@ -32,6 +32,8 @@ const PUBLIC_PREFIXES = [
   "/legal",
   // Lien de parrainage : pose un cookie puis renvoie vers l'inscription.
   "/p",
+  // Icône de l'écran d'accueil iOS, générée sans extension de fichier.
+  "/apple-icon",
 ];
 
 function isPublic(pathname: string): boolean {

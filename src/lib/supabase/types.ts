@@ -512,6 +512,7 @@ export type Database = {
           referral_code: string;
           stripe_customer_id: string | null;
           stripe_sub_id: string | null;
+          tour_completed_at: string | null;
           updated_at: string;
         };
         Insert: {
@@ -535,6 +536,7 @@ export type Database = {
           referral_code?: string;
           stripe_customer_id?: string | null;
           stripe_sub_id?: string | null;
+          tour_completed_at?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -558,6 +560,7 @@ export type Database = {
           referral_code?: string;
           stripe_customer_id?: string | null;
           stripe_sub_id?: string | null;
+          tour_completed_at?: string | null;
           updated_at?: string;
         };
         Relationships: [];

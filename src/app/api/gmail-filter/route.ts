@@ -9,8 +9,8 @@ export const runtime = "nodejs";
 /**
  * Fichier de filtres Gmail de l'utilisateur, à importer dans Gmail.
  *
- * `?mots=0` retire le filtre par mots-clés de l'objet, pour qui ne veut
- * transférer que les e-mails des fournisseurs connus.
+ * `?mots=1` ajoute le filtre par mots-clés de l'objet. Désactivé par défaut :
+ * il capte des expéditeurs inconnus, donc parfois des e-mails personnels.
  */
 export async function GET(request: Request) {
   const auth = await requireUser();
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   const xml = buildGmailFilterXml({
     forwardTo: inboxAddress(auth.profile),
     domains: await forwardingDomains(),
-    includeKeywords: new URL(request.url).searchParams.get("mots") !== "0",
+    includeKeywords: new URL(request.url).searchParams.get("mots") === "1",
   });
 
   return new NextResponse(xml, {

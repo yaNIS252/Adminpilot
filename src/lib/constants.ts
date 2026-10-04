@@ -124,6 +124,15 @@ export const INVITE_TTL_DAYS = 14;
 export const REFERRAL_COOKIE = "ap_ref";
 /** Carte « Et tes proches ? » du tableau de bord refermée. */
 export const SHARE_COOKIE = "ap_share_hidden";
+/**
+ * Étape « messagerie » de la présentation de bienvenue, rouverte par le
+ * bouton « Branche ta boîte mail ». Ici et non dans le composant client :
+ * une valeur exportée d'un fichier « use client » n'est qu'une référence
+ * opaque côté serveur.
+ */
+export const TOUR_MAILBOX_STEP = 2;
+/** Bande de parrainage en haut de l'application refermée. */
+export const REFERRAL_BANNER_COOKIE = "ap_referral_banner_hidden";
 
 /**
  * Règles du parrainage. Ce sont celles que publient les CGU : les changer ici

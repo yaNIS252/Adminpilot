@@ -5,6 +5,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { Resend } from "resend";
 
 import { FAMILY_SEATS } from "@/lib/constants";
+import { senderAddress } from "@/lib/email/sender";
 import { restoreBonus } from "@/lib/referral/bonus";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -69,12 +70,11 @@ export async function sendInviteEmail(input: {
 }): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) return false;
 
-  const domain = process.env.INBOUND_DOMAIN ?? "in.zylax.fr";
   const owner = escapeHtml(input.ownerName);
 
   try {
     const { error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
-      from: `AdminPilot <no-reply@${domain}>`,
+      from: senderAddress(),
       to: input.to,
       subject: `${input.ownerName} t’invite à rejoindre son foyer AdminPilot`,
       text: `${input.ownerName} partage avec toi sa formule Premium AdminPilot : abonnements, documents et alertes illimités, sur ton propre compte.\n\nTes données restent privées : personne d'autre, pas même ${input.ownerName}, ne voit tes documents ni tes abonnements.\n\nRejoindre le foyer : ${input.link}\n\nCe lien est personnel et expire dans 14 jours.`,

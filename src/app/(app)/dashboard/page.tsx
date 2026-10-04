@@ -4,6 +4,7 @@ import {
   ArrowRight,
   CalendarRange,
   ChartPie,
+  Mail,
   FileText,
   Layers,
   ScanEye,
@@ -17,11 +18,12 @@ import {
   hiddenSubscriptionsCopy,
 } from "@/components/billing/upgrade-notice";
 import { UpsellBanner } from "@/components/billing/upsell-banner";
+import { OpenTourButton } from "@/components/onboarding/open-tour-button";
 import { ShareCard } from "@/components/referral/share-card";
 
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { requireUser } from "@/lib/auth/require-user";
-import { PLAN_LABELS, SHARE_COOKIE, UPSELL_COOKIE } from "@/lib/constants";
+import { PLAN_LABELS, SHARE_COOKIE, TOUR_MAILBOX_STEP, UPSELL_COOKIE } from "@/lib/constants";
 import { OWN_SUBSCRIPTION_SOURCE } from "@/lib/billing/sync";
 import { periodsPerYear } from "@/lib/ingest/price-tracker";
 import {
@@ -186,6 +188,27 @@ export default async function DashboardPage({
           )}
         </h1>
       </header>
+
+      {/* Boîte mail pas encore branchée : rien n'arrivera tant que ce n'est
+          pas fait, c'est donc la première chose à montrer. */}
+      {auth && !auth.profile.gmail_forward_verified && (
+        <section className="flex flex-wrap items-center gap-4 rounded-[10px] border border-[rgb(var(--accent-rgb)/.35)] bg-[var(--accent-soft)] px-5 py-4">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[rgb(var(--accent-rgb)/.16)] text-[var(--accent-lighter)]">
+            <Mail className="size-[18px]" />
+          </span>
+          <div className="min-w-[220px] flex-1">
+            <div className="text-[15px] font-semibold">Branche ta boîte mail</div>
+            <p className="m-0 mt-0.5 text-[13px] text-[var(--text-dim)]">
+              Deux minutes, une seule fois : tes factures arriveront ensuite
+              toutes seules, et tes abonnements apparaîtront ici.
+            </p>
+          </div>
+          <OpenTourButton step={TOUR_MAILBOX_STEP} className="btn-primary h-10 px-4 text-[13px]">
+            Le faire maintenant
+            <ArrowRight className="size-4" />
+          </OpenTourButton>
+        </section>
+      )}
 
       {/* Retour de paiement. Le webhook Stripe, seul juge du plan, arrive en
           général avant l'utilisateur — mais pas toujours : si le profil est

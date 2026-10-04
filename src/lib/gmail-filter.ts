@@ -22,6 +22,15 @@ const DOMAINS_PER_FILTER = 25;
 export const KEYWORD_QUERY =
   'subject:(facture OR prélèvement OR échéance OR renouvellement OR "votre abonnement" OR "votre reçu" OR "nouveau tarif")';
 
+/**
+ * Jamais transférés, quel que soit le filtre : codes de connexion, alertes de
+ * sécurité, réinitialisations de mot de passe. Ils n'apportent rien au suivi
+ * des abonnements et donneraient à un tiers de quoi entrer dans un compte.
+ * Une seconde barrière existe à la réception (`isSecurityEmail`).
+ */
+export const EXCLUDED_QUERY =
+  'subject:(code OR "mot de passe" OR "nouvel appareil" OR "nouvelle connexion" OR "tentative de connexion" OR "vérification" OR "verification" OR "sécurité" OR "security" OR "password" OR "sign-in" OR "login" OR OTP OR "authentification")';
+
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -37,8 +46,9 @@ export function fromCriteria(domains: string[]): string {
 }
 
 export function chunkDomains(domains: string[]): string[][] {
+  // Un domaine, ou une adresse exacte pour les messageries grand public.
   const unique = [...new Set(domains.map((domain) => domain.toLowerCase().trim()))]
-    .filter((domain) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain))
+    .filter((domain) => /^([a-z0-9._%+-]+@)?[a-z0-9.-]+\.[a-z]{2,}$/.test(domain))
     .sort();
   const chunks: string[][] = [];
   for (let index = 0; index < unique.length; index += DOMAINS_PER_FILTER) {
@@ -65,10 +75,20 @@ export function buildGmailFilterXml(input: {
   includeKeywords: boolean;
 }): string {
   const entries = chunkDomains(input.domains).map((group) =>
-    entry({ from: fromCriteria(group), forwardTo: input.forwardTo }),
+    entry({
+      from: fromCriteria(group),
+      doesNotHaveTheWord: EXCLUDED_QUERY,
+      forwardTo: input.forwardTo,
+    }),
   );
   if (input.includeKeywords) {
-    entries.push(entry({ hasTheWord: KEYWORD_QUERY, forwardTo: input.forwardTo }));
+    entries.push(
+      entry({
+        hasTheWord: KEYWORD_QUERY,
+        doesNotHaveTheWord: EXCLUDED_QUERY,
+        forwardTo: input.forwardTo,
+      }),
+    );
   }
 
   return `<?xml version='1.0' encoding='UTF-8'?>

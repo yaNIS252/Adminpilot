@@ -80,6 +80,15 @@ export default function PrivacyPage() {
           l’invitation est annulée ou que le titulaire supprime son compte.
         </p>
         <p>
+          Un e-mail qui ne concerne ni un abonnement ni une facture
+          (newsletter, message personnel transféré par erreur) est effacé dès
+          son analyse, sans attendre ce délai. Les codes de connexion et
+          alertes de sécurité sont refusés à la réception, sans être stockés
+          ni lus. Le filtre Gmail que nous proposons ne vise que les adresses
+          d’envoi des fournisseurs connus ; l’option qui ajoute les e-mails
+          dont l’objet parle de facture est désactivée par défaut.
+        </p>
+        <p>
           Pour le parrainage, nous conservons le lien entre parrain et filleul
           tant que leurs comptes existent, ainsi qu’une empreinte chiffrée
           (non réversible) de l’adresse IP d’inscription du filleul pendant

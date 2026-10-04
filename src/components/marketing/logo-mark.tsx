@@ -1,27 +1,64 @@
-import { Send } from "lucide-react";
+/**
+ * Pictogramme de la marque : un « A » dont la barre est un avion en papier
+ * violet, signe d'un courrier qui part et d'un pilote qui s'en occupe.
+ *
+ * Redessiné en SVG d'après la planche du logo : le « A » prend la couleur du
+ * texte (blanc sur l'application sombre, encre sur fond clair), l'avion garde
+ * le violet de la marque, détouré de la couleur du fond pour se détacher.
+ *
+ * Partagé entre l'en-tête, le pied de page, la connexion et l'application,
+ * pour qu'il ne puisse plus diverger d'un endroit à l'autre.
+ */
+export function LogoMark({
+  size = 26,
+  className = "text-[var(--text-bright)]",
+}: {
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 100 100"
+      width={size}
+      height={size}
+      className={`shrink-0 ${className}`}
+    >
+      <LogoPaths cutout="var(--bg, #0a0a0f)" />
+    </svg>
+  );
+}
 
 /**
- * Pictogramme de la marque.
- *
- * Un aplat, sans dégradé ni halo ni pulsation. Le carré violet lumineux qui
- * respire est l'un des tics les plus répandus des interfaces générées ; un
- * logo qui s'anime attire l'œil là où il n'y a rien à faire.
- *
- * Partagé entre l'en-tête, le pied de page et la connexion, pour qu'il ne
- * puisse plus diverger d'un endroit à l'autre.
+ * Tracés du pictogramme, réutilisés par les icônes de l'application
+ * (favicon, écran d'accueil du téléphone).
  */
-export function LogoMark({ size = 26 }: { size?: number }) {
+export function LogoPaths({
+  glyph = "currentColor",
+  plane = "#6c5ce7",
+  cutout,
+}: {
+  glyph?: string;
+  plane?: string;
+  cutout: string;
+}) {
   return (
-    <span
-      aria-hidden
-      className="grid shrink-0 place-items-center rounded-[7px] bg-[var(--accent)]"
-      style={{ width: size, height: size }}
-    >
-      <Send
-        className="text-[var(--ink)]"
-        style={{ width: size * 0.5, height: size * 0.5 }}
-        strokeWidth={2.4}
+    <>
+      <path
+        d="M40 6h20l38 88H76L57 74 39 70 24 94H2Z"
+        fill={glyph}
+        stroke={glyph}
+        strokeWidth={4}
+        strokeLinejoin="round"
       />
-    </span>
+      <path
+        d="M70 45 27 59l16 6 7 20Z"
+        fill={plane}
+        stroke={cutout}
+        strokeWidth={6}
+        strokeLinejoin="round"
+        paintOrder="stroke"
+      />
+    </>
   );
 }

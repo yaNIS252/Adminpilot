@@ -10,6 +10,7 @@ import {
 import { sendMonthlyRecaps } from "@/lib/alerts/recap";
 import { currentPeriod, incrementUsage } from "@/lib/billing/quotas";
 import { PLAN_LIMITS } from "@/lib/constants";
+import { alertsAddress } from "@/lib/email/sender";
 import { runReferralTasks } from "@/lib/referral/engine";
 import { siteUrl } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -37,8 +38,7 @@ function daysUntil(date: string): number {
 
 /** Adresse d'expédition, alignée sur le domaine d'ingestion configuré. */
 function sender(): string {
-  const domain = process.env.INBOUND_DOMAIN ?? "in.zylax.fr";
-  return `AdminPilot <alertes@${domain}>`;
+  return alertsAddress();
 }
 
 export async function GET(request: Request) {

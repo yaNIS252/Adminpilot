@@ -42,7 +42,7 @@ insert into known_providers (name, domain, sender_emails, category, cancel_metho
   ('Amazon Prime', 'amazon.fr', array['no-reply@amazon.fr'], 'logiciel', 'en_ligne', null, 'libre', 'amazon-prime'),
   ('Deliveroo Plus', 'deliveroo.fr', array['noreply@deliveroo.fr'], 'logiciel', 'en_ligne', null, 'libre', 'deliveroo-plus'),
   ('iCloud', 'apple.com', array['no_reply@email.apple.com'], 'logiciel', 'en_ligne', null, 'libre', 'icloud'),
-  ('Microsoft 365', 'microsoft.com', array['account-security-noreply@accountprotection.microsoft.com'], 'logiciel', 'en_ligne', null, 'libre', 'microsoft-365'),
+  ('Microsoft 365', 'microsoft.com', array['microsoft-noreply@microsoft.com'], 'logiciel', 'en_ligne', null, 'libre', 'microsoft-365'),
   ('Uber One', 'uber.com', array['noreply@uber.com'], 'logiciel', 'en_ligne', null, 'libre', 'uber-one'),
   ('Apple TV+', 'apple.com', array['no_reply@email.apple.com'], 'streaming', 'en_ligne', null, 'libre', 'apple-tv-plus'),
   ('Canal+', 'canalplus.com', array['contact@canalplus.com'], 'streaming', 'courrier', null, 'chatel', 'canal-plus'),

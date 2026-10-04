@@ -277,7 +277,7 @@ export function AuthPanel({
 
         <p className="m-0 text-xs leading-[1.55] text-[var(--text-ghost)]">
           Rien reçu au bout de deux minutes ? Regarde dans les indésirables, le
-          message vient de <span className="font-mono">no-reply@in.zylax.fr</span>.
+          message vient de <span className="font-mono">connexion@in.zylax.fr</span>.
         </p>
       </div>
     );

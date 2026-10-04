@@ -50,9 +50,10 @@ export function SiteHeader() {
           className="flex shrink-0 items-center gap-2.5 text-[var(--text-bright)] hover:text-[var(--text-bright)]"
         >
           <LogoMark />
-          <span className="text-[15px] font-semibold tracking-[-0.01em]">
-            AdminPilot
-          </span>
+          <span className="text-[15px] tracking-[-0.01em]">
+              <span className="font-normal">Admin</span>
+              <span className="font-bold">Pilot</span>
+            </span>
         </Link>
 
         <nav className="hidden gap-6 lg:flex">

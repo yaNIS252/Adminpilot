@@ -4,6 +4,7 @@ import { Resend } from "resend";
 
 import { escapeHtml } from "@/lib/alerts/email";
 import { PLAN_LABELS } from "@/lib/constants";
+import { senderAddress } from "@/lib/email/sender";
 import { siteUrl } from "@/lib/site-url";
 import type { Enums } from "@/lib/supabase/types";
 
@@ -22,7 +23,6 @@ export async function sendCancellationConfirmation(input: {
 }): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) return false;
 
-  const domain = process.env.INBOUND_DOMAIN ?? "in.zylax.fr";
   const date = (value: Date) =>
     new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "Europe/Paris" }).format(value);
   const received = date(new Date());
@@ -40,7 +40,7 @@ export async function sendCancellationConfirmation(input: {
 
   try {
     const { error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
-      from: `AdminPilot <no-reply@${domain}>`,
+      from: senderAddress(),
       to: input.to,
       subject: "Confirmation de ta résiliation AdminPilot",
       text: `${lines.join("\n\n")}\n\nTu peux te réabonner à tout moment : ${base}/reglages`,

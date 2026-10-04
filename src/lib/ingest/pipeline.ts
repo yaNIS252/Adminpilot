@@ -163,7 +163,7 @@ export async function processEmailJob(job: {
       .from("ingestion_jobs")
       .update({ status: "done", ...common })
       .eq("id", job.id);
-    return { created: false as const };
+    return { created: false as const, skipped: true as const };
   }
 
   const needsReview = data.confidence < REVIEW_THRESHOLD;
