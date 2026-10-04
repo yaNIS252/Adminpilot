@@ -502,6 +502,7 @@ export type Database = {
           forwarding_source_hash: string | null;
           gmail_confirmation: Json | null;
           gmail_confirmation_at: string | null;
+          gmail_filter_hash: string | null;
           gmail_forward_verified: boolean;
           id: string;
           inbox_token: string;
@@ -526,6 +527,7 @@ export type Database = {
           forwarding_source_hash?: string | null;
           gmail_confirmation?: Json | null;
           gmail_confirmation_at?: string | null;
+          gmail_filter_hash?: string | null;
           gmail_forward_verified?: boolean;
           id: string;
           inbox_token?: string;
@@ -550,6 +552,7 @@ export type Database = {
           forwarding_source_hash?: string | null;
           gmail_confirmation?: Json | null;
           gmail_confirmation_at?: string | null;
+          gmail_filter_hash?: string | null;
           gmail_forward_verified?: boolean;
           id?: string;
           inbox_token?: string;
@@ -621,6 +624,48 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      sender_candidates: {
+        Row: {
+          category: string | null;
+          domain: string;
+          first_seen: string;
+          id: string;
+          last_seen: string;
+          promoted_at: string | null;
+          provider: string;
+          provider_id: string | null;
+          seen_count: number;
+          sender_email: string;
+          user_hashes: string[];
+        };
+        Insert: {
+          category?: string | null;
+          domain: string;
+          first_seen?: string;
+          id?: string;
+          last_seen?: string;
+          promoted_at?: string | null;
+          provider: string;
+          provider_id?: string | null;
+          seen_count?: number;
+          sender_email: string;
+          user_hashes?: string[];
+        };
+        Update: {
+          category?: string | null;
+          domain?: string;
+          first_seen?: string;
+          id?: string;
+          last_seen?: string;
+          promoted_at?: string | null;
+          provider?: string;
+          provider_id?: string | null;
+          seen_count?: number;
+          sender_email?: string;
+          user_hashes?: string[];
+        };
+        Relationships: [];
       };
       subscriptions: {
         Row: {

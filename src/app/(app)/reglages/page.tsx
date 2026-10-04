@@ -23,7 +23,7 @@ import {
   REFERRAL,
 } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
-import { forwardingDomains } from "@/lib/forwarding-domains";
+import { filterFingerprint, forwardingDomains } from "@/lib/forwarding-domains";
 import { householdOf, INVITE_SLOTS, membershipOf } from "@/lib/household";
 import { avatarUrl, avatarUrls } from "@/lib/profile/avatar";
 import { effectiveTheme } from "@/lib/profile/theme";
@@ -133,7 +133,13 @@ export default async function SettingsPage({
         subtitle="C’est ici que tu transfères tes factures"
       >
         <InboxAddress address={inboxAddress(profile)} />
-        <p className="m-0 mt-3 text-xs text-[var(--text-faint)]">
+        <p className="m-0 mt-3 text-[13px] leading-[1.55] text-[var(--text-dim)]">
+          Elle sert aussi à <strong className="text-[var(--text)]">ajouter un abonnement que
+          l’analyse n’a pas trouvé</strong> : transfère-nous simplement son e-mail de facture.
+          Tu peux aussi le saisir à la main depuis la page{" "}
+          <Link href="/abonnements">Abonnements</Link>.
+        </p>
+        <p className="m-0 mt-2 text-xs text-[var(--text-faint)]">
           Garde-la pour toi : quiconque la connaît peut y envoyer des documents
           qui apparaîtront dans ton compte.
         </p>
@@ -144,7 +150,14 @@ export default async function SettingsPage({
         title="Transfert automatique"
         subtitle="Pour que chaque nouvelle facture arrive sans y penser"
       >
-        <ForwardingSetup address={inboxAddress(profile)} domains={domains} />
+        <ForwardingSetup
+          address={inboxAddress(profile)}
+          domains={domains}
+          outdated={
+            Boolean(profile.gmail_filter_hash) &&
+            profile.gmail_filter_hash !== filterFingerprint(domains)
+          }
+        />
       </Card>
 
       <Card

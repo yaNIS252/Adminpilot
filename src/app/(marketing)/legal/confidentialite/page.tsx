@@ -89,6 +89,15 @@ export default function PrivacyPage() {
           dont l’objet parle de facture est désactivée par défaut.
         </p>
         <p>
+          Pour améliorer la reconnaissance des fournisseurs, nous retenons
+          l’adresse d’envoi des factures que nous recevons (par exemple
+          l’adresse d’expédition de Netflix), jamais celle d’un particulier ni
+          le contenu de l’e-mail. Le nombre de comptes concernés est compté au
+          moyen d’une empreinte chiffrée, qui ne permet pas de savoir qui ils
+          sont. Une adresse confirmée par plusieurs comptes rejoint notre liste
+          de fournisseurs, au bénéfice de tous.
+        </p>
+        <p>
           Pour le parrainage, nous conservons le lien entre parrain et filleul
           tant que leurs comptes existent, ainsi qu’une empreinte chiffrée
           (non réversible) de l’adresse IP d’inscription du filleul pendant

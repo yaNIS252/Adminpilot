@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
 import { buildGmailFilterXml } from "@/lib/gmail-filter";
-import { forwardingDomains } from "@/lib/forwarding-domains";
+import { filterFingerprint, forwardingDomains } from "@/lib/forwarding-domains";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -18,11 +19,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
   }
 
+  const domains = await forwardingDomains();
   const xml = buildGmailFilterXml({
     forwardTo: inboxAddress(auth.profile),
-    domains: await forwardingDomains(),
+    domains,
     includeKeywords: new URL(request.url).searchParams.get("mots") === "1",
   });
+
+  // Empreinte du filtre remis : les réglages proposeront de le réimporter
+  // quand le catalogue ou les règles auront changé.
+  await createAdminClient()
+    .from("profiles")
+    .update({ gmail_filter_hash: filterFingerprint(domains) })
+    .eq("id", auth.userId);
 
   return new NextResponse(xml, {
     headers: {

@@ -5,7 +5,13 @@ import { BILLING_CYCLES, SUB_CATEGORIES } from "@/lib/ai/schemas";
 import { requireUser } from "@/lib/auth/require-user";
 import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
 import { invalidId, readJson, readUuid } from "@/lib/http/request";
-import { markCancelled } from "@/lib/ingest/pipeline";
+import { matchCatalogue } from "@/lib/cancel/links";
+import {
+  exceedsSubscriptionQuota,
+  findExistingSubscription,
+  markCancelled,
+} from "@/lib/ingest/pipeline";
+import { isAdminPilotProvider } from "@/lib/ingest/sender-learning";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -39,6 +45,94 @@ const PatchSchema = z.object({
   /** Coupe ou rallume les rappels d'échéance de cet abonnement. */
   reminders_muted: z.boolean().optional(),
 });
+
+const CreateSchema = z.object({
+  provider: z.string().trim().min(1).max(120),
+  amount: z.number().nonnegative().max(100_000).nullable(),
+  cycle: z.enum(BILLING_CYCLES).default("monthly"),
+  category: z.enum(SUB_CATEGORIES).default("autre"),
+  next_renewal: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .default(null),
+});
+
+/**
+ * Ajout manuel d'un abonnement que l'analyse n'a pas trouvé (aucun e-mail,
+ * prélèvement bancaire sans facture, abonnement payé en espèces…).
+ *
+ * Mêmes règles qu'une détection : limite de la formule, pas de doublon d'un
+ * abonnement déjà suivi, rappels d'échéance. Saisi par l'utilisateur, il est
+ * confirmé d'office.
+ */
+export async function POST(request: Request) {
+  const auth = await requireUser();
+  if (!auth) {
+    return NextResponse.json({ error: "non authentifié" }, { status: 401 });
+  }
+
+  const body = await readJson(request, CreateSchema);
+  if (!body.ok) return body.response;
+  const input = body.data;
+  const db = createAdminClient();
+
+  if (isAdminPilotProvider(input.provider)) {
+    return NextResponse.json(
+      { error: "l'abonnement AdminPilot est suivi automatiquement", code: "own_subscription" },
+      { status: 409 },
+    );
+  }
+
+  const existing = await findExistingSubscription(db, auth.userId, input.provider);
+  if (existing) {
+    return NextResponse.json(
+      { error: "déjà suivi", code: "duplicate", id: existing.id },
+      { status: 409 },
+    );
+  }
+
+  // Un ajout manuel ne se met pas en réserve comme une détection : on
+  // prévient plutôt que d'enregistrer un abonnement que l'utilisateur ne
+  // verrait pas.
+  if (await exceedsSubscriptionQuota(db, auth.userId)) {
+    return NextResponse.json({ error: "limite atteinte", code: "limit" }, { status: 403 });
+  }
+
+  const catalogue = await matchCatalogue(db, { provider: input.provider });
+
+  const { data, error } = await db
+    .from("subscriptions")
+    .insert({
+      user_id: auth.userId,
+      provider: input.provider,
+      amount: input.amount,
+      cycle: input.cycle,
+      category: input.category,
+      next_renewal: input.next_renewal,
+      status: "active",
+      confidence: 1,
+      confirmed_by_user: true,
+      provider_id: catalogue?.id ?? null,
+      metadata: { source: "manual" },
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+
+  if (data.next_renewal) {
+    await scheduleDeadlineAlerts({
+      userId: auth.userId,
+      refType: "subscription",
+      refId: data.id,
+      deadline: data.next_renewal,
+      title: `${data.provider} se renouvelle`,
+      message: `Prochaine échéance le ${data.next_renewal}.`,
+    });
+  }
+
+  return NextResponse.json({ subscription: data }, { status: 201 });
+}
 
 export async function GET(request: Request) {
   const auth = await requireUser();

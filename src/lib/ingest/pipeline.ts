@@ -6,6 +6,7 @@ import { REVIEW_THRESHOLD } from "@/lib/ai/schemas";
 import { extractFromDocument, extractFromEmail } from "@/lib/ai/extract";
 import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
 import { matchCatalogue, senderDomain, trustedLink } from "@/lib/cancel/links";
+import { isAdminPilotProvider, learnSender } from "@/lib/ingest/sender-learning";
 import { trackPriceChange } from "@/lib/ingest/price-tracker";
 import { PLAN_LIMITS } from "@/lib/constants";
 
@@ -158,7 +159,9 @@ export async function processEmailJob(job: {
   };
 
   // Email non transactionnel : rien à créer, le job est clos proprement.
-  if (data.type === "skip" || !data.provider) {
+  // L'abonnement AdminPilot lui-même est suivi depuis Stripe, jamais relu
+  // dans un e-mail : ce serait un doublon.
+  if (data.type === "skip" || !data.provider || isAdminPilotProvider(data.provider)) {
     await db
       .from("ingestion_jobs")
       .update({ status: "done", ...common })
@@ -315,6 +318,18 @@ export async function processEmailJob(job: {
     .update({ status: needsReview ? "needs_review" : "done", ...common })
     .eq("id", job.id);
 
+  // Adresse d'envoi retenue pour enrichir le catalogue, donc le filtre de
+  // tous. Seulement sur une lecture sûre d'un fournisseur.
+  if (!needsReview) {
+    await learnSender(db, {
+      userId: job.user_id,
+      from: job.payload.from,
+      body: job.payload.body,
+      provider: data.provider,
+      category: data.category,
+    });
+  }
+
   return { created: true as const, subscriptionId: inserted.id, needsReview };
 }
 
@@ -430,7 +445,7 @@ function normalizeProvider(name: string): string {
 }
 
 /** Abonnement actif du même fournisseur, s'il en existe un. */
-async function findExistingSubscription(
+export async function findExistingSubscription(
   db: Db,
   userId: string,
   provider: string,
@@ -515,7 +530,7 @@ async function refreshSubscription(
  * Seuls les abonnements VISIBLES comptent : ceux déjà en réserve ne doivent
  * pas empêcher l'utilisateur de retrouver sa place s'il en supprime un.
  */
-async function exceedsSubscriptionQuota(
+export async function exceedsSubscriptionQuota(
   db: Db,
   userId: string,
 ): Promise<boolean> {

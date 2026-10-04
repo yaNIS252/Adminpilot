@@ -10,6 +10,7 @@ import {
   forwardingSourceAddress,
 } from "@/lib/ingest/gmail-confirmation";
 import { enqueue } from "@/lib/ingest/pipeline";
+import { isOwnMessage } from "@/lib/ingest/sender-learning";
 import { isSecurityEmail } from "@/lib/ingest/sensitive";
 import { consume, tooManyRequests } from "@/lib/rate-limit";
 import { activateReferral, recordForwardingSource } from "@/lib/referral/engine";
@@ -159,6 +160,12 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ status: "gmail_confirmation" }, { status: 202 });
+  }
+
+  // Nos propres e-mails (rappels, reçu Stripe d'AdminPilot) renvoyés par un
+  // filtre : ignorés, l'abonnement AdminPilot est suivi depuis Stripe.
+  if (isOwnMessage({ from: event.data.from, subject: event.data.subject, body })) {
+    return NextResponse.json({ status: "ignored_own" }, { status: 202 });
   }
 
   // Code de connexion, alerte de sécurité : refusé sans être stocké.

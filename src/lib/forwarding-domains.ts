@@ -1,44 +1,20 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
+
 import { rootDomain } from "@/lib/cancel/links";
+import { CONSUMER_MAIL_DOMAINS } from "@/lib/email/consumer-domains";
+import { EXCLUDED_QUERY, KEYWORD_QUERY } from "@/lib/gmail-filter";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * Domaines qui sont AUSSI des messageries grand public. Un filtre « tout ce
- * qui vient de orange.fr » transférerait les e-mails de chaque particulier
- * ayant une adresse @orange.fr — la grand-mère, le voisin — vers nos serveurs
- * et un modèle d'IA : des correspondances privées de tiers, sans rapport avec
- * le service (RGPD, minimisation). Pour eux, seules les adresses d'envoi
- * exactes du fournisseur sont retenues.
+ * Catégories jamais transférées automatiquement. Une banque envoie relevés,
+ * alertes de solde, avis d'opération : des données financières sensibles,
+ * pour très peu d'abonnements à la clé (les frais de carte apparaissent de
+ * toute façon sur les autres factures). Minimisation : on ne les demande pas.
+ * L'utilisateur peut toujours transférer un e-mail bancaire à la main.
  */
-const CONSUMER_MAIL_DOMAINS = new Set([
-  "orange.fr",
-  "wanadoo.fr",
-  "free.fr",
-  "sfr.fr",
-  "neuf.fr",
-  "laposte.net",
-  "bbox.fr",
-  "numericable.fr",
-  "gmail.com",
-  "googlemail.com",
-  "outlook.com",
-  "outlook.fr",
-  "hotmail.com",
-  "hotmail.fr",
-  "live.com",
-  "live.fr",
-  "msn.com",
-  "yahoo.com",
-  "yahoo.fr",
-  "icloud.com",
-  "me.com",
-  "aol.com",
-  "gmx.fr",
-  "gmx.com",
-  "proton.me",
-  "protonmail.com",
-]);
+const EXCLUDED_CATEGORIES = ["banque"];
 
 /**
  * Expéditeurs à transférer : le domaine du site de chaque fournisseur et
@@ -48,7 +24,8 @@ const CONSUMER_MAIL_DOMAINS = new Set([
 export async function forwardingDomains(): Promise<string[]> {
   const { data, error } = await createAdminClient()
     .from("known_providers")
-    .select("domain, sender_emails");
+    .select("domain, sender_emails, category")
+    .not("category", "in", `(${EXCLUDED_CATEGORIES.join(",")})`);
   if (error) throw error;
 
   const criteria = (data ?? []).flatMap((provider) => {
@@ -63,4 +40,16 @@ export async function forwardingDomains(): Promise<string[]> {
     ];
   });
   return [...new Set(criteria.filter(Boolean))].sort();
+}
+
+/**
+ * Empreinte du filtre Gmail tel qu'on le génère aujourd'hui. Mémorisée au
+ * téléchargement : si le catalogue ou les règles changent, l'utilisateur est
+ * invité à réimporter son filtre (Gmail ne le met jamais à jour tout seul).
+ */
+export function filterFingerprint(criteria: string[]): string {
+  return createHash("sha256")
+    .update(JSON.stringify([criteria, EXCLUDED_QUERY, KEYWORD_QUERY]))
+    .digest("hex")
+    .slice(0, 16);
 }

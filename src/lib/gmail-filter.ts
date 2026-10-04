@@ -27,9 +27,13 @@ export const KEYWORD_QUERY =
  * sécurité, réinitialisations de mot de passe. Ils n'apportent rien au suivi
  * des abonnements et donneraient à un tiers de quoi entrer dans un compte.
  * Une seconde barrière existe à la réception (`isSecurityEmail`).
+ *
+ * Ni rien qui parle d'AdminPilot : nos rappels et le reçu de l'abonnement
+ * AdminPilot, déjà suivi depuis Stripe, reviendraient sinon en doublon — ou
+ * en boucle (`isOwnMessage` les arrête aussi à la réception).
  */
 export const EXCLUDED_QUERY =
-  'subject:(code OR "mot de passe" OR "nouvel appareil" OR "nouvelle connexion" OR "tentative de connexion" OR "vérification" OR "verification" OR "sécurité" OR "security" OR "password" OR "sign-in" OR "login" OR OTP OR "authentification")';
+  'subject:(code OR "mot de passe" OR "nouvel appareil" OR "nouvelle connexion" OR "tentative de connexion" OR "vérification" OR "verification" OR "sécurité" OR "security" OR "password" OR "sign-in" OR "login" OR OTP OR "authentification") OR AdminPilot';
 
 function escapeXml(value: string): string {
   return value

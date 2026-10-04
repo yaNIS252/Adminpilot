@@ -11,6 +11,8 @@ import {
   SubscriptionList,
   type RecentPriceChange,
 } from "@/components/dashboard/subscription-list";
+import { AddSubscription } from "@/components/dashboard/add-subscription";
+import { inboxAddress, requireUser } from "@/lib/auth/require-user";
 import { createClient } from "@/lib/supabase/server";
 import {
   UpgradeNotice,
@@ -41,6 +43,7 @@ export default async function SubscriptionsPage({
   const { revue } = await searchParams;
   const reviewMode = revue === "1";
 
+  const auth = await requireUser();
   const supabase = await createClient();
 
   let query = supabase
@@ -115,7 +118,7 @@ export default async function SubscriptionsPage({
           <p className="m-0 mt-1 max-w-xl text-sm text-[var(--text-dim)]">
             {reviewMode
               ? "Ces montants ont été extraits avec une confiance faible. Corrige ou confirme — tant que tu ne l’as pas fait, ils ne déclenchent aucune alerte."
-              : "Détectés depuis les emails que tu transfères."}
+              : "Détectés depuis les e-mails que tu transfères, ou ajoutés par toi."}
           </p>
         </div>
 
@@ -127,11 +130,16 @@ export default async function SubscriptionsPage({
         </Link>
       </header>
 
+      {!reviewMode && auth && <AddSubscription inboxAddress={inboxAddress(auth.profile)} />}
+
       {!reviewMode && hiddenCount ? (
         <UpgradeNotice {...hiddenSubscriptionsCopy(hiddenCount)} />
       ) : null}
 
       <SubscriptionList
+        // Remonté quand la liste change (ajout manuel) : l'état local du
+        // composant part de `initial`.
+        key={(data ?? []).map((sub) => sub.id).join(",")}
         initial={data ?? []}
         reviewMode={reviewMode}
         priceChanges={latestChange}

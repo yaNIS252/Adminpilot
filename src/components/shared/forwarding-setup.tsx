@@ -23,9 +23,12 @@ export function ForwardingSetup({
   address,
   domains,
   mailbox: fixedMailbox,
+  outdated = false,
 }: {
   address: string;
   domains: string[];
+  /** Le filtre déjà importé date d'avant le catalogue ou les règles actuels. */
+  outdated?: boolean;
   /** Messagerie déjà choisie (présentation de bienvenue) : onglets masqués. */
   mailbox?: Mailbox;
 }) {
@@ -61,6 +64,18 @@ export function ForwardingSetup({
 
       {mailbox === "gmail" && (
         <div className="flex flex-col gap-3.5">
+          {outdated && (
+            <p
+              role="status"
+              className="m-0 rounded-[8px] border border-[rgba(224,161,56,.35)] bg-[rgba(224,161,56,.06)] px-3.5 py-2.5 text-[13px] leading-[1.55] text-[var(--text-dim)]"
+            >
+              <strong className="text-[var(--text)]">Ton filtre Gmail a été amélioré.</strong>{" "}
+              Gmail ne le met pas à jour tout seul : dans Gmail, onglet{" "}
+              <strong className="text-[var(--text)]">Filtres et adresses bloquées</strong>, supprime
+              les filtres qui transfèrent vers ton adresse AdminPilot, puis
+              télécharge et importe le nouveau ci-dessous.
+            </p>
+          )}
           <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[var(--text-dim)]">
             <input
               type="checkbox"
