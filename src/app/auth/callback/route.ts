@@ -1,5 +1,10 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { REFERRAL_COOKIE } from "@/lib/constants";
+import { attachReferral } from "@/lib/referral/engine";
+import { clientIp } from "@/lib/referral/normalize";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   SESSION_COOKIE,
@@ -71,8 +76,31 @@ export async function GET(request: Request) {
     );
   }
 
+  // Lien de parrainage suivi avant l'inscription : le compte tout juste créé
+  // est rattaché au parrain. Sans effet pour un compte existant. Un échec ne
+  // doit jamais bloquer la connexion.
+  const referralCode = (await cookies()).get(REFERRAL_COOKIE)?.value;
+  if (referralCode) {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        await attachReferral({
+          db: createAdminClient(),
+          userId: user.id,
+          code: referralCode,
+          ip: clientIp(request.headers),
+        });
+      }
+    } catch (error) {
+      console.error("[auth/callback] parrainage:", error);
+    }
+  }
+
   // Nouvelle connexion : le compteur de durée de session repart de zéro.
   const response = NextResponse.redirect(new URL(next, url.origin));
+  if (referralCode) response.cookies.delete(REFERRAL_COOKIE);
   const now = Date.now();
   response.cookies.set(SESSION_COOKIE, sessionCookieValue(now, now), SESSION_COOKIE_OPTIONS);
   return response;

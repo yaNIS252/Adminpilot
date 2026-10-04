@@ -86,8 +86,19 @@ export async function createCheckoutSession(input: {
   plan: "pro" | "family";
   cycle: "monthly" | "yearly";
   siteUrl: string;
+  /**
+   * Fin d'un mois offert par parrainage en cours : l'abonnement démarre par
+   * une période d'essai jusqu'à cette date, pour ne pas faire payer des jours
+   * déjà offerts.
+   */
+  trialEnd?: Date | null;
 }): Promise<string> {
   const stripe = getStripe();
+  // Stripe exige au moins 48 h d'essai ; en deçà, on facture tout de suite.
+  const trialEnd =
+    input.trialEnd && input.trialEnd.getTime() - Date.now() > 48 * 3_600_000
+      ? Math.floor(input.trialEnd.getTime() / 1000)
+      : null;
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -103,6 +114,7 @@ export async function createCheckoutSession(input: {
         // facturer au prorata en cas de rétractation dans les 14 jours.
         immediate_start_requested_at: new Date().toISOString(),
       },
+      ...(trialEnd ? { trial_end: trialEnd } : {}),
     },
     success_url: `${input.siteUrl}/dashboard?abonnement=actif`,
     // Retour là où le bouton a été cliqué, avec le choix intact : une
@@ -112,7 +124,11 @@ export async function createCheckoutSession(input: {
     // Un code promo à 100 % (Premium offert à un proche) ramène le total à
     // 0 € : Stripe ne demande alors aucune carte. Sans ce réglage, il en
     // exigeait une même pour un abonnement gratuit.
-    payment_method_collection: "if_required",
+    //
+    // Avec un essai, la carte est demandée dès maintenant : sinon rien ne
+    // serait prélevé à la fin du mois offert et l'abonnement tomberait en
+    // impayé.
+    payment_method_collection: trialEnd ? "always" : "if_required",
     locale: "fr",
     // « Managed Payments » est activé par défaut sur les comptes Stripe
     // récents : Stripe y devient le vendeur officiel et collecte la TVA. Ce

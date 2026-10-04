@@ -5,6 +5,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { Resend } from "resend";
 
 import { FAMILY_SEATS } from "@/lib/constants";
+import { restoreBonus } from "@/lib/referral/bonus";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -113,6 +114,8 @@ export async function revokeMemberPlan(db: Db, memberId: string) {
     // Un membre ne peut rejoindre qu'en gratuit : s'il est en Premium, il le
     // tient forcément du foyer. Un Pro payé à côté n'est pas touché.
     .eq("plan", "family");
+  // Un mois offert par parrainage encore en cours reprend le relais.
+  await restoreBonus(db, [memberId]);
 }
 
 function escapeHtml(value: string): string {

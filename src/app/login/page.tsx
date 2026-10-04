@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { AuthPanel } from "@/components/auth/auth-panel";
 import { AuthShowcase } from "@/components/auth/auth-showcase";
 import { LogoMark } from "@/components/marketing/logo-mark";
+import { REFERRAL_COOKIE } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Connexion — AdminPilot",
@@ -27,7 +29,16 @@ export const metadata: Metadata = {
  * bouton qui ne fait rien coûte plus cher en confiance qu'il ne rapporte en
  * esthétique. À rouvrir le jour où WebAuthn sera branché.
  */
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string }>;
+}) {
+  const { mode } = await searchParams;
+  // Arrivée par un lien de parrainage (/p/<code>) : onglet d'inscription et
+  // annonce du mois offert.
+  const referred = Boolean((await cookies()).get(REFERRAL_COOKIE)?.value);
+
   return (
     <div className="grid min-h-dvh bg-[var(--bg)] lg:grid-cols-2">
       <main className="relative flex flex-col overflow-hidden px-[clamp(20px,5vw,64px)] py-7">
@@ -53,7 +64,10 @@ export default function LoginPage() {
 
         <div className="relative flex flex-1 items-center justify-center py-12">
           <div className="w-full max-w-[380px]">
-            <AuthPanel />
+            <AuthPanel
+              initialMode={mode === "signup" || referred ? "signup" : "signin"}
+              referred={referred}
+            />
           </div>
         </div>
 

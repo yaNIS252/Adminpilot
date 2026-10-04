@@ -495,9 +495,11 @@ export type Database = {
           accent: string;
           avatar_path: string | null;
           background: string;
+          bonus_pro_until: string | null;
           created_at: string;
           deleted_at: string | null;
           email: string;
+          forwarding_source_hash: string | null;
           gmail_confirmation: Json | null;
           gmail_confirmation_at: string | null;
           gmail_forward_verified: boolean;
@@ -507,6 +509,7 @@ export type Database = {
           monthly_recap: boolean;
           name: string | null;
           plan: Database["public"]["Enums"]["plan"];
+          referral_code: string;
           stripe_customer_id: string | null;
           stripe_sub_id: string | null;
           updated_at: string;
@@ -515,9 +518,11 @@ export type Database = {
           accent?: string;
           avatar_path?: string | null;
           background?: string;
+          bonus_pro_until?: string | null;
           created_at?: string;
           deleted_at?: string | null;
           email: string;
+          forwarding_source_hash?: string | null;
           gmail_confirmation?: Json | null;
           gmail_confirmation_at?: string | null;
           gmail_forward_verified?: boolean;
@@ -527,6 +532,7 @@ export type Database = {
           monthly_recap?: boolean;
           name?: string | null;
           plan?: Database["public"]["Enums"]["plan"];
+          referral_code?: string;
           stripe_customer_id?: string | null;
           stripe_sub_id?: string | null;
           updated_at?: string;
@@ -535,9 +541,11 @@ export type Database = {
           accent?: string;
           avatar_path?: string | null;
           background?: string;
+          bonus_pro_until?: string | null;
           created_at?: string;
           deleted_at?: string | null;
           email?: string;
+          forwarding_source_hash?: string | null;
           gmail_confirmation?: Json | null;
           gmail_confirmation_at?: string | null;
           gmail_forward_verified?: boolean;
@@ -547,11 +555,69 @@ export type Database = {
           monthly_recap?: boolean;
           name?: string | null;
           plan?: Database["public"]["Enums"]["plan"];
+          referral_code?: string;
           stripe_customer_id?: string | null;
           stripe_sub_id?: string | null;
           updated_at?: string;
         };
         Relationships: [];
+      };
+      referrals: {
+        Row: {
+          activated_at: string | null;
+          block_reason: string | null;
+          created_at: string;
+          id: string;
+          ip_hash: string | null;
+          referee_email_norm: string;
+          referee_id: string;
+          referrer_id: string;
+          referrer_reward: string | null;
+          status: string;
+          validated_at: string | null;
+        };
+        Insert: {
+          activated_at?: string | null;
+          block_reason?: string | null;
+          created_at?: string;
+          id?: string;
+          ip_hash?: string | null;
+          referee_email_norm: string;
+          referee_id: string;
+          referrer_id: string;
+          referrer_reward?: string | null;
+          status?: string;
+          validated_at?: string | null;
+        };
+        Update: {
+          activated_at?: string | null;
+          block_reason?: string | null;
+          created_at?: string;
+          id?: string;
+          ip_hash?: string | null;
+          referee_email_norm?: string;
+          referee_id?: string;
+          referrer_id?: string;
+          referrer_reward?: string | null;
+          status?: string;
+          validated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referee_id_fkey";
+            columns: ["referee_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referrals_referrer_id_fkey";
+            columns: ["referrer_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       subscriptions: {
         Row: {

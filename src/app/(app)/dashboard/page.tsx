@@ -17,10 +17,12 @@ import {
   hiddenSubscriptionsCopy,
 } from "@/components/billing/upgrade-notice";
 import { UpsellBanner } from "@/components/billing/upsell-banner";
+import { ShareCard } from "@/components/referral/share-card";
 
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { requireUser } from "@/lib/auth/require-user";
-import { PLAN_LABELS, UPSELL_COOKIE } from "@/lib/constants";
+import { PLAN_LABELS, SHARE_COOKIE, UPSELL_COOKIE } from "@/lib/constants";
+import { OWN_SUBSCRIPTION_SOURCE } from "@/lib/billing/sync";
 import { periodsPerYear } from "@/lib/ingest/price-tracker";
 import {
   daysUntil,
@@ -31,6 +33,7 @@ import {
   formatRelativeDeadline,
   monthlyEquivalent,
 } from "@/lib/format";
+import { siteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Vue d'ensemble — AdminPilot" };
@@ -65,7 +68,9 @@ export default async function DashboardPage({
   const { abonnement, foyer } = await searchParams;
   const justPaid = abonnement === "actif";
   const justJoined = foyer === "rejoint" && auth?.profile.plan === "family";
-  const upsellHidden = (await cookies()).get(UPSELL_COOKIE)?.value === "1";
+  const cookieStore = await cookies();
+  const upsellHidden = cookieStore.get(UPSELL_COOKIE)?.value === "1";
+  const shareHidden = cookieStore.get(SHARE_COOKIE)?.value === "1";
   const supabase = await createClient();
 
   // `count` vit sur la réponse, pas dans `data` : avec `head: true`, `data`
@@ -129,6 +134,15 @@ export default async function DashboardPage({
     (sum, sub) => sum + monthlyEquivalent(sub.amount, sub.cycle),
     0,
   );
+
+  // Montant de la carte de parrainage : les abonnements détectés, sans la
+  // ligne AdminPilot, qui n'a rien à faire dans « et tes proches ? ».
+  const detectedMonthly = subs
+    .filter(
+      (sub) =>
+        (sub.metadata as { source?: string } | null)?.source !== OWN_SUBSCRIPTION_SOURCE,
+    )
+    .reduce((sum, sub) => sum + monthlyEquivalent(sub.amount, sub.cycle), 0);
 
   // Répartition par catégorie — calculée sur les données du moment, donc juste.
   // La maquette montrait une courbe d'évolution : elle demanderait un
@@ -285,6 +299,15 @@ export default async function DashboardPage({
           }
         />
       </section>
+
+      {/* Partage après la première détection : c'est le chiffre qui donne
+          envie d'en parler, pas une publicité. */}
+      {auth && detectedMonthly > 0 && !shareHidden && (
+        <ShareCard
+          link={`${siteUrl()}/p/${auth.profile.referral_code}`}
+          monthly={formatAmount(detectedMonthly) ?? ""}
+        />
+      )}
 
       {changes.length > 0 && (
         <Card

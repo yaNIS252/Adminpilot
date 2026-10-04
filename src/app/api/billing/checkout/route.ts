@@ -9,6 +9,7 @@ import {
   ensureCustomer,
 } from "@/lib/billing/stripe";
 import { readJson } from "@/lib/http/request";
+import { bonusActive } from "@/lib/referral/bonus";
 import { siteUrl } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -81,7 +82,11 @@ async function handle(request: Request) {
 
   // Membre d'un foyer : Premium lui vient du titulaire, il n'a ni abonnement
   // ni portail. Lui ouvrir un paiement le ferait payer une seconde fois.
-  if (auth.profile.plan !== "free" && !auth.profile.stripe_sub_id) {
+  // Un mois offert par parrainage n'est pas un abonnement : il peut, lui,
+  // être prolongé par un paiement.
+  const onBonus = bonusActive(auth.profile);
+
+  if (auth.profile.plan !== "free" && !auth.profile.stripe_sub_id && !onBonus) {
     return NextResponse.json(
       { error: "formule incluse dans un foyer", code: "household_member" },
       { status: 409 },
@@ -102,7 +107,7 @@ async function handle(request: Request) {
 
   // Déjà client et déjà sur un plan payant : le portail Stripe est le bon
   // endroit, une seconde session de paiement créerait un doublon d'abonnement.
-  if (auth.profile.stripe_customer_id && auth.profile.plan !== "free") {
+  if (auth.profile.stripe_customer_id && auth.profile.plan !== "free" && !onBonus) {
     const url = await createPortalSession({
       stripeCustomerId: auth.profile.stripe_customer_id,
       siteUrl: base,
@@ -135,6 +140,7 @@ async function handle(request: Request) {
     plan: body.data.plan,
     cycle: body.data.cycle,
     siteUrl: base,
+    trialEnd: onBonus && auth.profile.bonus_pro_until ? new Date(auth.profile.bonus_pro_until) : null,
   });
 
   return NextResponse.json({ url, kind: "checkout" });

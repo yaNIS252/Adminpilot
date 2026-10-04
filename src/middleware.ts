@@ -30,6 +30,8 @@ const PUBLIC_PREFIXES = [
   "/api/health",
   "/resilier",
   "/legal",
+  // Lien de parrainage : pose un cookie puis renvoie vers l'inscription.
+  "/p",
 ];
 
 function isPublic(pathname: string): boolean {

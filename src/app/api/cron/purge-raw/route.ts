@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { RAW_RETENTION_DAYS } from "@/lib/constants";
+import { RAW_RETENTION_DAYS, REFERRAL } from "@/lib/constants";
 import { deleteRaw } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -65,6 +65,18 @@ export async function GET(request: Request) {
   }
 
   await db.rpc("purge_rate_limits");
+
+  // Empreintes d'IP du parrainage : utiles 30 jours pour repérer les
+  // inscriptions en série, puis effacées comme l'annonce la politique de
+  // confidentialité.
+  await db
+    .from("referrals")
+    .update({ ip_hash: null })
+    .not("ip_hash", "is", null)
+    .lt(
+      "created_at",
+      new Date(Date.now() - REFERRAL.ipRetentionDays * 86_400_000).toISOString(),
+    );
 
   return NextResponse.json({ candidates: jobs?.length ?? 0, purged });
 }

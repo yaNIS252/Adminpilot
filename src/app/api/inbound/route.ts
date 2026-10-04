@@ -4,9 +4,13 @@ import { Webhook } from "svix";
 import { z } from "zod";
 
 import { hashEmail } from "@/lib/ingest/dedupe";
-import { detectGmailConfirmation } from "@/lib/ingest/gmail-confirmation";
+import {
+  detectGmailConfirmation,
+  forwardingSourceAddress,
+} from "@/lib/ingest/gmail-confirmation";
 import { enqueue } from "@/lib/ingest/pipeline";
 import { consume, tooManyRequests } from "@/lib/rate-limit";
+import { activateReferral, recordForwardingSource } from "@/lib/referral/engine";
 import { buildKey, uploadRaw } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -130,6 +134,20 @@ export async function POST(request: Request) {
       })
       .eq("id", profile.id);
 
+    // La demande de Gmail prouve une vraie boîte derrière le compte : c'est
+    // le moment où un filleul reçoit son mois offert. Un échec ici ne doit
+    // pas empêcher le code de s'afficher.
+    try {
+      const source = forwardingSourceAddress(
+        body,
+        process.env.INBOUND_DOMAIN ?? "in.zylax.fr",
+      );
+      if (source) await recordForwardingSource(db, profile.id, source);
+      await activateReferral(db, profile.id);
+    } catch (error) {
+      console.error("[inbound] parrainage:", error);
+    }
+
     return NextResponse.json({ status: "gmail_confirmation" }, { status: 202 });
   }
 
@@ -169,6 +187,12 @@ export async function POST(request: Request) {
     rawUrl: key,
     mimeType: "message/rfc822",
   });
+
+  // Messageries sans demande de validation (règles Outlook, etc.) : le
+  // premier e-mail transféré prouve, lui aussi, que le transfert fonctionne.
+  await activateReferral(db, profile.id).catch((error) =>
+    console.error("[inbound] parrainage:", error),
+  );
 
   // Réveil immédiat du drain. Échec sans conséquence : le cron rattrapera.
   void fetch(new URL("/api/cron/process-jobs", request.url), {

@@ -140,11 +140,18 @@ function noopSubscribe() {
   return () => {};
 }
 
-export function AuthPanel() {
+export function AuthPanel({
+  initialMode = "signin",
+  referred = false,
+}: {
+  initialMode?: Mode;
+  /** Arrivée par un lien de parrainage : le mois offert est annoncé. */
+  referred?: boolean;
+} = {}) {
   const emailId = useId();
   const termsId = useId();
 
-  const [mode, setMode] = useState<Mode>("signin");
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState("");
   const [terms, setTerms] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
@@ -291,6 +298,17 @@ export function AuthPanel() {
             : "Crée ton compte en une minute. Gratuit jusqu’à 5 abonnements, sans carte bancaire."}
         </p>
       </div>
+
+      {referred && mode === "signup" && (
+        <p
+          role="status"
+          className="m-0 rounded-[10px] border border-[rgb(var(--accent-rgb)/.35)] bg-[var(--accent-soft)] px-4 py-3 text-[13px] leading-[1.55] text-[var(--text-dim)]"
+        >
+          <strong className="text-[var(--text)]">Un proche t’offre 1 mois de Pro.</strong>{" "}
+          Il s’active tout seul dès que le transfert de tes e-mails est en
+          place, sans carte bancaire.
+        </p>
+      )}
 
       {/* Onglets : `radiogroup` et non `tablist`, parce qu'ils ne révèlent pas
           deux panneaux distincts mais choisissent le comportement d'un même

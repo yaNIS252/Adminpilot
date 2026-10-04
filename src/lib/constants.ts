@@ -118,6 +118,32 @@ export const UPSELL_COOKIE = "ap_upsell_hidden";
 /** Validité d'une invitation au foyer. */
 export const INVITE_TTL_DAYS = 14;
 
+// ---------------------------------------------------------------- parrainage
+
+/** Cookie posé par le lien de parrainage, lu à l'inscription. */
+export const REFERRAL_COOKIE = "ap_ref";
+/** Carte « Et tes proches ? » du tableau de bord refermée. */
+export const SHARE_COOKIE = "ap_share_hidden";
+
+/**
+ * Règles du parrainage. Ce sont celles que publient les CGU : les changer ici
+ * impose de mettre l'article « Parrainage » à jour.
+ */
+export const REFERRAL = {
+  /** Durée du Pro offert, au filleul comme au parrain. */
+  bonusDays: 30,
+  /** Plafond de mois offerts à un même parrain. */
+  maxMonths: 12,
+  /** Abonnements détectés depuis les e-mails du filleul pour valider. */
+  minSubscriptions: 2,
+  /** Ancienneté minimale du compte filleul pour valider (hors paiement). */
+  minAgeDays: 7,
+  /** Filleuls par adresse IP sur 30 jours au-delà desquels on écarte. */
+  maxPerIp: 3,
+  /** Conservation de l'empreinte d'IP. */
+  ipRetentionDays: 30,
+} as const;
+
 // ---------------------------------------------------------------- ingestion
 
 /** Types de fichiers acceptés à l'upload. Claude les lit tous nativement. */

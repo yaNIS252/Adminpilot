@@ -38,6 +38,11 @@ des contrats ou des achats à ton nom.
       fin de la période, changement d'offre désactivé (il se fait dans l'app).
 - [ ] **Stripe, informations publiques** : liens vers les CGU et la politique de
       confidentialité (affichés dans le portail client).
+- [ ] **Parrainage** : ajouter `REFERRAL_SALT` sur Vercel (longue valeur
+      aléatoire, à ne jamais changer ensuite). Sans elle, les empreintes
+      anti-abus utilisent `CRON_SECRET`, et changer ce secret rendrait les
+      anciennes empreintes incomparables. Recréer aussi le code promo
+      `FAMILLE2026` en mode réel.
 - [ ] **Sentry** : créer le projet (région UE), ajouter `NEXT_PUBLIC_SENTRY_DSN`.
 - [ ] **Mistral** : offre « Pay-as-you-go », plafond de dépense mensuel réglé, entraînement sur les données désactivé.
 - [ ] **Connexion Google** (facultatif) : client OAuth Google Cloud, activer le

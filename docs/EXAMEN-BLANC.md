@@ -98,6 +98,20 @@ Cartes : `4242 4242 4242 4242` (OK) · `4000 0000 0000 0002` (refusée) ·
 | 6.5 | A repasse en Pro | B repasse en gratuit, avertissement affiché avant | Plan de B = `free` |
 | 6.6 | B quitte le foyer / A retire B | Cohérent des deux côtés | — |
 
+## 6b. Parrainage (A parraine une adresse C neuve)
+
+| # | Toi | ✅ Attendu | Moi |
+|---|---|---|---|
+| 6b.1 | A : Réglages → Parrainage → « Copier le lien » | Lien `/p/…`, compteur 0 / 12 | — |
+| 6b.2 | Navigateur privé : ouvrir le lien | Onglet « Créer un compte » + encart « Un proche t’offre 1 mois de Pro » | Cookie `ap_ref` posé |
+| 6b.3 | C crée son compte | Chez A : C « inscrit » | Ligne `referrals` en `signed_up` |
+| 6b.4 | C ajoute son adresse dans Gmail (code reçu) | C passe en Pro, « Offerte par parrainage jusqu’au … » | `pending`, empreinte de la boîte enregistrée |
+| 6b.5 | C transfère 2 factures | Chez A : « en attente de validation » | — |
+| 6b.6 | — | — | Je vieillis le compte de C de 8 jours et lance la tâche du jour → A « validé », e-mail reçu, A en Pro (ou crédit Stripe s’il paie) |
+| 6b.7 | C clique « Payer » pendant son mois offert | Stripe affiche un essai jusqu’à la fin du mois offert, carte demandée | Abonnement `trialing`, date effacée du profil |
+| 6b.8 | A se parraine avec `a+1@gmail.com` | Rien d’offert, « en attente » chez A | `blocked:self_email` |
+| 6b.9 | Tableau de bord de A | Carte « Tu paies X € par mois… Et tes proches ? », fermable | — |
+
 ## 7. Alertes et hausses de prix
 
 | # | Toi | ✅ Attendu | Moi |

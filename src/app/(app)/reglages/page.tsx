@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Forward, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
+import { Forward, Gift, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 
 import { ManageSubscription, PlanPicker } from "@/components/billing/plan-picker";
 import {
@@ -8,6 +8,7 @@ import {
 } from "@/components/household/household-manager";
 import { ProfileEditor } from "@/components/profile/profile-editor";
 import { RecapToggle } from "@/components/profile/recap-toggle";
+import { ReferralPanel } from "@/components/referral/referral-panel";
 import { ThemePicker } from "@/components/profile/theme-picker";
 import { AccountActions } from "@/components/shared/account-actions";
 import { ForwardingSetup } from "@/components/shared/forwarding-setup";
@@ -19,11 +20,16 @@ import {
   PLAN_LABELS,
   PLAN_LIMITS,
   RAW_RETENTION_DAYS,
+  REFERRAL,
 } from "@/lib/constants";
+import { formatDate } from "@/lib/format";
 import { forwardingDomains } from "@/lib/forwarding-domains";
 import { householdOf, INVITE_SLOTS, membershipOf } from "@/lib/household";
 import { avatarUrl, avatarUrls } from "@/lib/profile/avatar";
 import { effectiveTheme } from "@/lib/profile/theme";
+import { bonusActive } from "@/lib/referral/bonus";
+import { referralOverview } from "@/lib/referral/engine";
+import { siteUrl } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata = { title: "Réglages — AdminPilot" };
@@ -60,16 +66,21 @@ export default async function SettingsPage({
   const db = createAdminClient();
 
   // Titulaire d'un abonnement, membre d'un foyer, ou gratuit : trois écrans.
-  const subscriber = profile.plan !== "free" && Boolean(profile.stripe_sub_id);
+  // Un mois offert par parrainage n'est pas un abonnement, même si un ancien
+  // identifiant Stripe traîne sur le profil.
+  const onBonus = bonusActive(profile);
+  const bonusEnd = onBonus ? formatDate(profile.bonus_pro_until!.slice(0, 10)) : null;
+  const subscriber = profile.plan !== "free" && Boolean(profile.stripe_sub_id) && !onBonus;
   const membership = subscriber ? null : await membershipOf(db, auth.userId);
   const isMember = Boolean(membership) && profile.plan === "family";
   const householdOwner = subscriber && profile.plan === "family";
 
-  const [billing, ownAvatar, household, domains] = await Promise.all([
+  const [billing, ownAvatar, household, domains, referrals] = await Promise.all([
     subscriber && profile.stripe_sub_id ? currentBilling(profile.stripe_sub_id) : null,
     avatarUrl(profile.avatar_path),
     householdOwner ? householdOf(db, auth.userId) : Promise.resolve([]),
     forwardingDomains(),
+    referralOverview(db, auth.userId),
   ]);
   const memberAvatars = await avatarUrls(household.map((row) => row.member?.avatar_path ?? null));
 
@@ -139,7 +150,13 @@ export default async function SettingsPage({
       <Card
         icon={<Sparkles className="size-4" />}
         title={`Formule ${PLAN_LABELS[profile.plan]}`}
-        subtitle={isMember ? "Incluse dans un foyer Premium" : undefined}
+        subtitle={
+          isMember
+            ? "Incluse dans un foyer Premium"
+            : onBonus
+              ? `Offerte par parrainage jusqu’au ${bonusEnd}`
+              : undefined
+        }
       >
         <ul className="m-0 list-none space-y-0 p-0 text-sm">
           <Limit label="Abonnements suivis" value={limits.subscriptions} />
@@ -167,6 +184,12 @@ export default async function SettingsPage({
                 : "Recherche en langage courant, lettres de résiliation, tout illimité"
             }
           >
+            {onBonus && (
+              <p className="m-0 mb-4 text-[13px] leading-[1.55] text-[var(--text-dim)]">
+                Ton mois offert continue : si tu t’abonnes maintenant, rien
+                n’est prélevé avant le {bonusEnd}.
+              </p>
+            )}
             <PlanPicker
               mode={subscriber ? "switch" : "checkout"}
               initialPlan={billing?.plan ?? initialPlan}
@@ -227,6 +250,23 @@ export default async function SettingsPage({
           </div>
         )}
       </Card>
+
+      <section id="parrainage" className="scroll-mt-6">
+        <Card
+          icon={<Gift className="size-4" />}
+          title="Parrainage"
+          subtitle="1 mois de Pro offert à tes proches, et à toi"
+        >
+          <ReferralPanel
+            link={`${siteUrl()}/p/${profile.referral_code}`}
+            rows={referrals.rows}
+            earned={referrals.earned}
+            maxMonths={REFERRAL.maxMonths}
+            minSubscriptions={REFERRAL.minSubscriptions}
+            minAgeDays={REFERRAL.minAgeDays}
+          />
+        </Card>
+      </section>
 
       <section id="recap" className="scroll-mt-6">
         <Card icon={<Mail className="size-4" />} title="Récap mensuel par e-mail">

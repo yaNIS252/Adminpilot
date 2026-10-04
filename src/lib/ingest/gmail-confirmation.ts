@@ -52,3 +52,22 @@ export function detectGmailConfirmation(input: {
 
   return { code, url: URL_PATTERN.exec(haystack)?.[0] ?? null };
 }
+
+const EMAIL_PATTERN = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi;
+
+/**
+ * Adresse qui demande le transfert, telle que Gmail la cite dans sa demande
+ * de validation (« jean@gmail.com a demandé à transférer… »). On écarte notre
+ * propre domaine et les adresses de Google ; la première qui reste est la
+ * boîte de l'utilisateur.
+ */
+export function forwardingSourceAddress(body: string, inboundDomain: string): string | null {
+  for (const match of body.matchAll(EMAIL_PATTERN)) {
+    const address = match[0].toLowerCase();
+    const domain = address.split("@")[1] ?? "";
+    if (domain === inboundDomain || domain.endsWith(`.${inboundDomain}`)) continue;
+    if (domain === "google.com" || domain.endsWith(".google.com")) continue;
+    return address;
+  }
+  return null;
+}

@@ -15,6 +15,7 @@
     "login:link": "tsx --conditions=react-server --env-file=.env.local scripts/login-link.ts",
     "preview:recap": "tsx --conditions=react-server --env-file=.env.local scripts/preview-recap.ts",
     "check:ai-schemas": "tsx --conditions=react-server scripts/check-ai-schemas.ts",
+    "test:referrals": "tsx --conditions=react-server --env-file=.env.local scripts/test-referrals.ts",
     "test:quotas": "cross-env ADMINPILOT_AI_MODE=mock tsx --conditions=react-server --env-file=.env.local scripts/test-quotas.ts"
   },
   "dependencies": {

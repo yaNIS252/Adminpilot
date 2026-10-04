@@ -10,6 +10,7 @@ import {
 import { sendMonthlyRecaps } from "@/lib/alerts/recap";
 import { currentPeriod, incrementUsage } from "@/lib/billing/quotas";
 import { PLAN_LIMITS } from "@/lib/constants";
+import { runReferralTasks } from "@/lib/referral/engine";
 import { siteUrl } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -56,6 +57,13 @@ export async function GET(request: Request) {
   // le nombre de tâches planifiées.
   const recap = await sendMonthlyRecaps({ db, resend, from: sender(), siteUrl: base });
 
+  // Parrainage : fin des mois offerts, validation des parrains. Même raison
+  // que le récap pour être hébergé ici. Un échec n'empêche pas les alertes.
+  const referrals = await runReferralTasks(db).catch((error) => {
+    console.error("[cron] parrainage:", error);
+    return null;
+  });
+
   const { data: alerts, error } = await db
     .from("alerts")
     .select("*, profiles!inner(email, deleted_at, plan)")
@@ -65,7 +73,7 @@ export async function GET(request: Request) {
 
   if (error) throw error;
   if (!alerts?.length) {
-    return NextResponse.json({ candidates: 0, sent: 0, failed: 0, refused: 0, recap });
+    return NextResponse.json({ candidates: 0, sent: 0, failed: 0, refused: 0, recap, referrals });
   }
 
   // Les objets référencés sont chargés en deux requêtes, pas en deux par
@@ -242,5 +250,6 @@ export async function GET(request: Request) {
     refused,
     capped,
     recap,
+    referrals,
   });
 }

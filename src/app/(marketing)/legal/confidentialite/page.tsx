@@ -80,6 +80,17 @@ export default function PrivacyPage() {
           l’invitation est annulée ou que le titulaire supprime son compte.
         </p>
         <p>
+          Pour le parrainage, nous conservons le lien entre parrain et filleul
+          tant que leurs comptes existent, ainsi qu’une empreinte chiffrée
+          (non réversible) de l’adresse IP d’inscription du filleul pendant
+          30 jours, et une empreinte chiffrée de l’adresse e-mail qui
+          transfère ses messages. Elles servent uniquement à repérer les
+          inscriptions abusives (comptes multiples d’une même personne) ;
+          aucune adresse n’est conservée en clair à cette fin. Le parrain ne
+          voit de ses filleuls que leur prénom et l’état de leur
+          parrainage.
+        </p>
+        <p>
           Les clics vers une offre du comparateur sont enregistrés pour
           rapprocher les éventuelles commissions de nos partenaires ; ils ne
           sont plus rattachés à toi dès la suppression de ton compte. Les
@@ -152,7 +163,9 @@ export default function PrivacyPage() {
           Le traitement de tes documents repose sur l’exécution du contrat qui
           nous lie : c’est l’objet même du service auquel tu souscris. La
           conservation limitée des messages bruts repose sur notre intérêt
-          légitime à corriger une analyse défaillante.
+          légitime à corriger une analyse défaillante. Les vérifications
+          anti-abus du parrainage reposent sur notre intérêt légitime à
+          prévenir la fraude au programme.
         </p>
       </Block>
 

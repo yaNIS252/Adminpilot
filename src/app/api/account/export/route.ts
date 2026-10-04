@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
 import { getSignedUrl } from "@/lib/storage";
+import { referralOverview } from "@/lib/referral/engine";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -24,13 +26,16 @@ export async function GET() {
 
   const supabase = await createClient();
 
-  const [subscriptions, documents, alerts, cancellations, usage] =
+  const [subscriptions, documents, alerts, cancellations, usage, referrals] =
     await Promise.all([
       supabase.from("subscriptions").select("*"),
       supabase.from("documents").select("*"),
       supabase.from("alerts").select("*"),
       supabase.from("cancellations").select("*"),
       supabase.from("usage_counters").select("*"),
+      // Table lue par le serveur seul : on n'en exporte que ce qui concerne
+      // l'utilisateur, tel qu'il le voit dans ses réglages.
+      referralOverview(createAdminClient(), auth.userId),
     ]);
 
   // Les URL de téléchargement annoncées plus haut étaient documentées mais
@@ -58,12 +63,15 @@ export async function GET() {
       plan: auth.profile.plan,
       inbox_address: inboxAddress(auth.profile),
       created_at: auth.profile.created_at,
+      referral_code: auth.profile.referral_code,
+      bonus_pro_until: auth.profile.bonus_pro_until,
     },
     subscriptions: subscriptions.data ?? [],
     documents: documentsWithUrls,
     alerts: alerts.data ?? [],
     cancellations: cancellations.data ?? [],
     usage_counters: usage.data ?? [],
+    referrals: referrals.rows,
   };
 
   return new NextResponse(JSON.stringify(payload, null, 2), {

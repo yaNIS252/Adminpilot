@@ -5,6 +5,8 @@ import type Stripe from "stripe";
 import { REVIEW_THRESHOLD } from "@/lib/ai/schemas";
 import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
 import { getStripe, planFromPriceId } from "@/lib/billing/stripe";
+import { restoreBonus } from "@/lib/referral/bonus";
+import { onRefereePaid } from "@/lib/referral/engine";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Enums } from "@/lib/supabase/types";
 
@@ -54,6 +56,10 @@ export async function applySubscription(
     plan: paidPlan,
     stripe_customer_id: customerId,
     stripe_sub_id: subscription.id,
+    // Un abonnement qui ouvre les droits remplace le mois offert par
+    // parrainage (le paiement est d'ailleurs différé à sa fin, par une
+    // période d'essai) : la date s'efface, le Pro vient désormais de Stripe.
+    ...(paidPlan !== "free" ? { bonus_pro_until: null } : {}),
     updated_at: new Date().toISOString(),
   };
 
@@ -77,7 +83,17 @@ export async function applySubscription(
           .eq("id", profile.id);
       }
     }
+    // Ni foyer ni abonnement, mais un mois offert en cours : il continue.
+    await restoreBonus(db, (profiles ?? []).map((profile) => profile.id));
   }
+
+  // Filleul devenu client payant : son parrain est validé sans attendre.
+  // Ni la période d'essai ni un code à 100 % ne comptent comme paiement.
+  const unitAmount = subscription.items.data[0]?.price.unit_amount;
+  const paying =
+    subscription.status === "active" &&
+    unitAmount != null &&
+    discounted(unitAmount / 100, subscription) > 0;
 
   for (const profile of profiles ?? []) {
     if (update.plan !== "free") {
@@ -85,6 +101,7 @@ export async function applySubscription(
     }
     await syncHousehold(db, profile.id, update.plan);
     await syncOwnSubscription(db, profile.id, subscription, entitled && Boolean(plan));
+    if (paying) await onRefereePaid(db, profile.id, subscription);
   }
 
   return update.plan;
@@ -229,6 +246,8 @@ export async function syncHousehold(
     .in("id", memberIds)
     .eq("plan", covered ? "free" : "family");
   if (updateError) throw updateError;
+
+  if (!covered) await restoreBonus(db, memberIds);
 
   if (covered) {
     for (const memberId of memberIds) {

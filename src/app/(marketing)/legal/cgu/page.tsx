@@ -7,7 +7,7 @@ import {
   ToComplete,
 } from "@/components/marketing/legal-page";
 import { LEGAL } from "@/lib/legal";
-import { FAMILY_SEATS, PLAN_PRICES } from "@/lib/constants";
+import { FAMILY_SEATS, PLAN_PRICES, REFERRAL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Conditions d’utilisation — AdminPilot",
@@ -30,7 +30,7 @@ export default function TermsPage() {
     <LegalLayout
       title="Conditions d’utilisation"
       intro="Ce que le service s’engage à faire, ce qu’il ne garantit pas, et comment y mettre fin."
-      updated="2 octobre 2026"
+      updated="4 octobre 2026"
       current="/legal/cgu"
     >
       <Block title="1. Objet">
@@ -179,7 +179,48 @@ export default function TermsPage() {
         </p>
       </Block>
 
-      <Block title="8. Obligations de l’utilisateur">
+      <Block title="8. Parrainage">
+        <p>
+          Chaque utilisateur dispose d’un lien de parrainage personnel. Une
+          personne qui crée son compte par ce lien (le « filleul ») reçoit{" "}
+          {REFERRAL.bonusDays} jours de formule Pro, sans paiement ni carte
+          bancaire, dès que le transfert de ses e-mails vers AdminPilot
+          fonctionne. À l’issue de cette période, le compte revient à la
+          formule gratuite sauf souscription d’un abonnement ; un abonnement
+          souscrit pendant la période offerte ne donne lieu à aucun
+          prélèvement avant son terme.
+        </p>
+        <p>
+          Le parrain reçoit {REFERRAL.bonusDays} jours de formule Pro lorsque
+          le filleul compte au moins {REFERRAL.minSubscriptions} abonnements
+          détectés à partir d’e-mails transférés et un compte ouvert depuis au
+          moins {REFERRAL.minAgeDays} jours, ou dès que le filleul souscrit un
+          abonnement payant. Un parrain déjà abonné reçoit à la place un
+          crédit égal à un mois de formule Pro, déduit de ses prochaines
+          factures. Les avantages se cumulent dans la limite de{" "}
+          {REFERRAL.maxMonths} mois par parrain. Ils ne sont ni échangeables
+          ni remboursables en argent.
+        </p>
+        <p>
+          Le parrainage est réservé à des personnes distinctes. Ne donnent lieu
+          à aucun avantage : le parrainage de soi-même, y compris par une autre
+          adresse e-mail ou une autre boîte de réception que l’on contrôle ;
+          le parrainage entre membres d’un même foyer Premium ; un compte
+          alimenté par une boîte de réception déjà utilisée par un autre
+          compte ; les inscriptions en série depuis une même connexion ; un
+          paiement effectué avec un moyen de paiement du parrain. AdminPilot
+          procède à des vérifications automatiques à cette fin. Tant qu’un
+          parrainage n’est pas validé, il apparaît « en attente de
+          validation » ; l’utilisateur peut nous écrire pour en connaître la
+          raison.
+        </p>
+        <p>
+          L’éditeur peut modifier ou arrêter le programme de parrainage à tout
+          moment, pour l’avenir : les avantages déjà accordés restent acquis.
+        </p>
+      </Block>
+
+      <Block title="9. Obligations de l’utilisateur">
         <p>
           L’utilisateur s’engage à ne transférer que des documents dont il est
           le destinataire légitime, à ne pas tenter d’accéder aux données
@@ -191,7 +232,7 @@ export default function TermsPage() {
         </p>
       </Block>
 
-      <Block title="9. Disponibilité">
+      <Block title="10. Disponibilité">
         <p>
           Le service est fourni sans engagement de disponibilité. Des
           interruptions peuvent survenir pour maintenance ou du fait de nos
@@ -199,7 +240,7 @@ export default function TermsPage() {
         </p>
       </Block>
 
-      <Block title="10. Résiliation">
+      <Block title="11. Résiliation">
         <p>
           L’utilisateur peut supprimer son compte à tout moment depuis ses{" "}
           <Link href="/reglages">réglages</Link>. La suppression est définitive,
@@ -212,7 +253,7 @@ export default function TermsPage() {
         </p>
       </Block>
 
-      <Block title="11. Données personnelles">
+      <Block title="12. Données personnelles">
         <p>
           Le traitement des données est décrit dans la{" "}
           <Link href="/legal/confidentialite">
@@ -222,7 +263,7 @@ export default function TermsPage() {
         </p>
       </Block>
 
-      <Block title="12. Droit applicable">
+      <Block title="13. Droit applicable">
         <p>
           Les présentes conditions sont soumises au droit français. En cas de
           litige, l’utilisateur peut recourir gratuitement au médiateur de la

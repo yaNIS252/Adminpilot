@@ -77,6 +77,33 @@ export default function CookiesPage() {
               </tr>
               <tr className="border-b border-[var(--border-soft)]">
                 <td className="mono py-2.5 pr-4 text-[13px] text-[var(--text)]">
+                  ap_session
+                </td>
+                <td className="py-2.5 pr-4">
+                  Limite la durée d’une session : déconnexion après 14 jours sans visite ou 30 jours au total
+                </td>
+                <td className="py-2.5 whitespace-nowrap">30 jours</td>
+              </tr>
+              <tr className="border-b border-[var(--border-soft)]">
+                <td className="mono py-2.5 pr-4 text-[13px] text-[var(--text)]">
+                  ap_ref
+                </td>
+                <td className="py-2.5 pr-4">
+                  Retient le lien de parrainage suivi, le temps de créer ton compte ; effacé à l’inscription
+                </td>
+                <td className="py-2.5 whitespace-nowrap">30 jours au plus</td>
+              </tr>
+              <tr className="border-b border-[var(--border-soft)]">
+                <td className="mono py-2.5 pr-4 text-[13px] text-[var(--text)]">
+                  ap_share_hidden
+                </td>
+                <td className="py-2.5 pr-4">
+                  Se souvient que tu as fermé la carte de parrainage du tableau de bord
+                </td>
+                <td className="py-2.5 whitespace-nowrap">1 an</td>
+              </tr>
+              <tr className="border-b border-[var(--border-soft)]">
+                <td className="mono py-2.5 pr-4 text-[13px] text-[var(--text)]">
                   ap_upsell_hidden
                 </td>
                 <td className="py-2.5 pr-4">
