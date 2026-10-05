@@ -127,6 +127,18 @@ async function main() {
   check("filleul passe en Pro", f1.plan, "pro");
   const days = Math.round((new Date(f1.bonus_pro_until!).getTime() - Date.now()) / 86_400_000);
   check("mois offert de 30 jours", days, REFERRAL.bonusDays);
+  const { data: line } = await db
+    .from("subscriptions")
+    .select("id, provider, amount, next_renewal")
+    .eq("user_id", filleul.id)
+    .eq("metadata->>source", "adminpilot_billing")
+    .single();
+  check("ligne « AdminPilot Pro (offert) » à 0 €", [line?.provider, Number(line?.amount)], ["AdminPilot Pro (offert)", 0]);
+  const { count: bonusAlerts } = await db
+    .from("alerts")
+    .select("id", { count: "exact", head: true })
+    .eq("ref_id", line!.id);
+  check("rappels de fin du mois offert (J-7, J-1)", bonusAlerts, 2);
 
   // Compte existant : pas de rattachement.
   const ancien = await user("ancien");
@@ -197,6 +209,12 @@ async function main() {
   await runReferralTasks(db);
   const fin = await profile(filleul.id);
   check("mois écoulé → retour en gratuit", [fin.plan, fin.bonus_pro_until], ["free", null]);
+  const { count: lineLeft } = await db
+    .from("subscriptions")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", filleul.id)
+    .eq("metadata->>source", "adminpilot_billing");
+  check("ligne offerte retirée à la fin du mois", lineLeft, 0);
 }
 
 main()

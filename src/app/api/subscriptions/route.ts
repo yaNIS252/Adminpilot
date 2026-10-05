@@ -174,6 +174,34 @@ export async function PATCH(request: Request) {
   const { id, ...changes } = body.data;
   const supabase = await createClient();
 
+  // Montant corrigé à la main : la hausse ou la baisse « constatée » qui
+  // avait produit l'ancien montant était une erreur de lecture. On la
+  // retire, avec son alerte pas encore envoyée, pour qu'elle ne s'affiche
+  // plus (pastille, évolution des prix, récapitulatif).
+  if (changes.amount !== undefined) {
+    const { data: before } = await supabase
+      .from("subscriptions")
+      .select("amount")
+      .eq("id", id)
+      .maybeSingle();
+    const previous = before?.amount === null || before?.amount === undefined ? null : Number(before.amount);
+    if (previous !== null && changes.amount !== null && previous !== changes.amount) {
+      const db = createAdminClient();
+      const { data: wrong } = await db
+        .from("price_changes")
+        .select("id")
+        .eq("subscription_id", id)
+        .eq("user_id", auth.userId)
+        .eq("source", "invoice")
+        .eq("new_amount", previous);
+      const ids = (wrong ?? []).map((row) => row.id);
+      if (ids.length) {
+        await db.from("alerts").delete().in("price_change_id", ids).is("sent_at", null);
+        await db.from("price_changes").delete().in("id", ids);
+      }
+    }
+  }
+
   // Une correction manuelle vaut confirmation : si l'utilisateur prend la
   // peine de rectifier une valeur, la ligne n'est plus une simple supposition.
   // Couper les rappels n'est pas une correction des données extraites.

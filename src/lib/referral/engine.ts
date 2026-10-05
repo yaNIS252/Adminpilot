@@ -6,6 +6,7 @@ import { getStripe } from "@/lib/billing/stripe";
 import { coveredByHousehold, unlockHiddenSubscriptions } from "@/lib/billing/sync";
 import { PLAN_PRICES, REFERRAL } from "@/lib/constants";
 import { bonusActive } from "@/lib/referral/bonus";
+import { removeBonusLine, syncBonusLine } from "@/lib/referral/bonus-line";
 import { sendReferralValidated } from "@/lib/referral/email";
 import { fingerprint, normalizeEmail, refereeLabel } from "@/lib/referral/normalize";
 import type { createAdminClient } from "@/lib/supabase/admin";
@@ -164,6 +165,7 @@ export async function runReferralTasks(db: Db) {
       expired += 1;
     }
     await db.from("profiles").update(update).eq("id", profile.id);
+    await removeBonusLine(db, profile.id);
   }
 
   // 2. Parrains à valider : filleul actif depuis au moins une semaine.
@@ -249,6 +251,9 @@ async function grantBonus(db: Db, userId: string): Promise<Date | null> {
     .eq("id", userId);
 
   if (profile.plan === "free") await unlockHiddenSubscriptions(db, userId);
+  // Pro offert à un compte sans abonnement : la ligne AdminPilot et ses
+  // rappels de fin. Un membre de foyer garde Premium, rien à afficher.
+  if (profile.plan === "free" || bonusActive(profile)) await syncBonusLine(db, userId, until);
   return until;
 }
 

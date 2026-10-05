@@ -176,3 +176,37 @@ export function buildManualEmail(input: {
     text: `${input.title}${input.message ? `\n${input.message}` : ""}\n\n${input.dashboardUrl}`,
   };
 }
+
+/**
+ * Rappel d'abonnement au texte choisi par le service : fin d'essai gratuit,
+ * fin du mois de Pro offert… Le modèle « X € prélevés dans N jours » n'y a
+ * pas sa place.
+ */
+export function buildNoticeEmail(input: {
+  title: string;
+  message: string;
+  label: string;
+  actionLabel: string;
+  actionUrl: string;
+}): AlertEmail {
+  const html = `<!doctype html>
+<html lang="fr"><body style="margin:0;padding:24px;background:#f5f5fa;font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1a1a2e">
+  <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:10px;padding:28px">
+    <p style="margin:0 0 8px;font-size:13px;color:#6b6b80">${escapeHtml(input.label)}</p>
+    <h1 style="margin:0 0 16px;font-size:22px;font-weight:700">${escapeHtml(input.title)}</h1>
+    <p style="margin:0;font-size:15px;line-height:1.6;white-space:pre-line">${escapeHtml(input.message)}</p>
+    <p style="margin:24px 0 0">
+      <a href="${input.actionUrl}" style="display:inline-block;background:#6c5ce7;color:#fff;text-decoration:none;padding:11px 20px;border-radius:7px;font-size:14px;font-weight:600">${escapeHtml(input.actionLabel)}</a>
+    </p>
+  </div>
+</body></html>`;
+
+  return {
+    subject: input.title,
+    html,
+    text: `${input.title}
+${input.message}
+
+${input.actionUrl}`,
+  };
+}

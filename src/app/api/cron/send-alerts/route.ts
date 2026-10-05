@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import {
   buildDeadlineEmail,
   buildManualEmail,
+  buildNoticeEmail,
   buildPriceChangeEmail,
   buildRenewalEmail,
 } from "@/lib/alerts/email";
@@ -90,7 +91,7 @@ export async function GET(request: Request) {
       ? db
           .from("subscriptions")
           .select(
-            "id, user_id, provider, amount, currency, next_renewal, confirmed_by_user",
+            "id, user_id, provider, amount, currency, next_renewal, confirmed_by_user, metadata",
           )
           .in("id", subIds)
       : Promise.resolve({ data: [] as never[] }),
@@ -187,7 +188,21 @@ export async function GET(request: Request) {
           // plus d'alerte.
           if (!sub?.next_renewal) continue;
 
-          email = buildRenewalEmail({
+          const ownLine =
+            (sub.metadata as { source?: string } | null)?.source === "adminpilot_billing";
+          // Titre propre (fin d'essai, fin du mois offert) : son texte à lui,
+          // pas le modèle de renouvellement.
+          if (alert.title !== `${sub.provider} se renouvelle`) {
+            email = buildNoticeEmail({
+              title: alert.title,
+              message: alert.message,
+              label: ownLine ? "Ton abonnement AdminPilot" : "Rappel",
+              actionLabel: ownLine ? "Voir les formules" : "Voir mes options",
+              actionUrl: ownLine
+                ? `${base}/reglages#formules`
+                : `${base}/abonnements/${sub.id}/resilier`,
+            });
+          } else email = buildRenewalEmail({
             provider: sub.provider,
             amount: sub.amount,
             currency: sub.currency,

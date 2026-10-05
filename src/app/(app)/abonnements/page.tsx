@@ -63,7 +63,7 @@ export default async function SubscriptionsPage({
     // Changements des 90 derniers jours, du plus récent au plus ancien.
     supabase
       .from("price_changes")
-      .select("subscription_id, kind, old_amount, new_amount")
+      .select("subscription_id, kind, old_amount, new_amount, source, effective_date")
       .gte("created_at", isoDaysAgo(90))
       .order("created_at", { ascending: false }),
     supabase
@@ -91,9 +91,21 @@ export default async function SubscriptionsPage({
   const monthlySaved = cancelled.reduce((sum, item) => sum + item.monthly, 0);
 
   // Le premier rencontré par abonnement est le plus récent.
+  // Pastille ↑/↓ seulement si elle décrit encore le prix affiché : une
+  // facture qui l'a porté à ce montant, ou une hausse annoncée à venir depuis
+  // ce montant. Un prix corrigé à la main l'emporte sur la détection.
+  const currentAmount = new Map((data ?? []).map((sub) => [sub.id, Number(sub.amount)]));
+  const today = new Date().toISOString().slice(0, 10);
   const latestChange: Record<string, RecentPriceChange> = {};
   for (const change of changes ?? []) {
-    latestChange[change.subscription_id] ??= change;
+    if (latestChange[change.subscription_id]) continue;
+    const amount = currentAmount.get(change.subscription_id);
+    const stillTrue =
+      change.source === "announcement"
+        ? Boolean(change.effective_date && change.effective_date >= today) &&
+          Number(change.old_amount) === amount
+        : Number(change.new_amount) === amount;
+    if (stillTrue) latestChange[change.subscription_id] = change;
   }
 
   return (
