@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 
 import { rootDomain } from "@/lib/cancel/links";
 import { CONSUMER_MAIL_DOMAINS } from "@/lib/email/consumer-domains";
-import { EXCLUDED_QUERY, KEYWORD_QUERY } from "@/lib/gmail-filter";
+import { BILLING_SUBJECT, EXCLUDED_QUERY, KEYWORD_QUERY } from "@/lib/gmail-filter";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -49,7 +49,7 @@ export async function forwardingDomains(): Promise<string[]> {
  */
 export function filterFingerprint(criteria: string[]): string {
   return createHash("sha256")
-    .update(JSON.stringify([criteria, EXCLUDED_QUERY, KEYWORD_QUERY]))
+    .update(JSON.stringify([criteria, BILLING_SUBJECT, EXCLUDED_QUERY, KEYWORD_QUERY]))
     .digest("hex")
     .slice(0, 16);
 }

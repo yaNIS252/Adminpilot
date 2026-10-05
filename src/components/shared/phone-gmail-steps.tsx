@@ -3,7 +3,7 @@
 import { Smartphone } from "lucide-react";
 
 import { CopyBlock } from "@/components/shared/copy-block";
-import { EXCLUDED_QUERY, chunkDomains, fromCriteria } from "@/lib/gmail-filter";
+import { BILLING_SUBJECT, EXCLUDED_QUERY, chunkDomains, fromCriteria } from "@/lib/gmail-filter";
 
 /**
  * Création du filtre Gmail depuis un téléphone.
@@ -36,7 +36,8 @@ export function PhoneGmailSteps({ address, domains }: { address: string; domains
           <strong className="text-[var(--text)]">Créer un filtre</strong>.
         </li>
         <li>
-          Colle le champ <strong className="text-[var(--text)]">De</strong> et le champ{" "}
+          Colle les champs <strong className="text-[var(--text)]">De</strong>,{" "}
+          <strong className="text-[var(--text)]">Contient les mots</strong> et{" "}
           <strong className="text-[var(--text)]">Ne contient pas</strong> ci-dessous, puis{" "}
           <strong className="text-[var(--text)]">Créer un filtre</strong>.
         </li>
@@ -56,6 +57,7 @@ export function PhoneGmailSteps({ address, domains }: { address: string; domains
             {groups.length > 1 ? ` sur ${groups.length}` : ""}
           </span>
           <CopyBlock label="Champ « De »" value={fromCriteria(group)} multiline />
+          <CopyBlock label="Champ « Contient les mots »" value={BILLING_SUBJECT} multiline />
           <CopyBlock label="Champ « Ne contient pas »" value={EXCLUDED_QUERY} multiline />
         </div>
       ))}

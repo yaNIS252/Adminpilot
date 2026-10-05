@@ -16,11 +16,22 @@
 const DOMAINS_PER_FILTER = 25;
 
 /**
- * Objets typiques d'un e-mail de facturation. Limité à l'objet : dans le
- * corps, « abonnement » apparaît aussi au pied de chaque newsletter.
+ * Objet d'un e-mail de facturation chez un fournisseur connu. Exigé en plus
+ * de l'expéditeur : sans lui, le filtre transférait aussi toutes les
+ * publicités d'Apple, d'Amazon ou de Disney+ (une trentaine sur cinquante
+ * e-mails lors de l'examen blanc), lues par l'IA puis jetées.
+ */
+export const BILLING_SUBJECT =
+  'subject:(facture OR reçu OR "votre reçu" OR receipt OR invoice OR abonnement OR subscription OR prélèvement OR échéance OR renouvellement OR paiement OR payment OR tarif OR "essai gratuit" OR "free trial" OR résiliation OR bienvenue OR welcome)';
+
+/**
+ * Objet d'une facture chez un expéditeur inconnu (option « mots-clés ») :
+ * plus strict encore, car rien ne garantit que l'expéditeur soit une
+ * entreprise. « Prélèvement » seul attrapait par exemple des courriers
+ * administratifs sans rapport.
  */
 export const KEYWORD_QUERY =
-  'subject:(facture OR prélèvement OR échéance OR renouvellement OR "votre abonnement" OR "votre reçu" OR "nouveau tarif")';
+  'subject:(facture OR "votre reçu" OR "reçu de paiement" OR "votre abonnement" OR renouvellement OR invoice OR receipt)';
 
 /**
  * Jamais transférés, quel que soit le filtre : codes de connexion, alertes de
@@ -33,7 +44,7 @@ export const KEYWORD_QUERY =
  * en boucle (`isOwnMessage` les arrête aussi à la réception).
  */
 export const EXCLUDED_SUBJECT =
-  'subject:(code OR "mot de passe" OR "nouvel appareil" OR "nouvelle connexion" OR "tentative de connexion" OR "vérification" OR "verification" OR "sécurité" OR "security" OR "password" OR "sign-in" OR "login" OR OTP OR "authentification")';
+  'subject:(code OR "mot de passe" OR "nouvel appareil" OR "nouvelle connexion" OR "tentative de connexion" OR "vérification" OR "verification" OR "sécurité" OR "security" OR "password" OR "sign-in" OR "login" OR OTP OR "authentification" OR "clé d\'accès" OR passkey OR "récupération de compte" OR "commande")';
 
 export const EXCLUDED_QUERY = `${EXCLUDED_SUBJECT} OR AdminPilot`;
 
@@ -83,6 +94,7 @@ export function buildGmailFilterXml(input: {
   const entries = chunkDomains(input.domains).map((group) =>
     entry({
       from: fromCriteria(group),
+      hasTheWord: BILLING_SUBJECT,
       doesNotHaveTheWord: EXCLUDED_QUERY,
       forwardTo: input.forwardTo,
     }),
@@ -114,6 +126,7 @@ ${entries.join("\n")}
  */
 export function historySearchQuery(domains: string[]): string {
   const senders = chunkDomains(domains).flat();
-  const from = senders.length ? `from:(${fromCriteria(senders)}) OR ` : "";
-  return `(${from}${KEYWORD_QUERY}) -${EXCLUDED_SUBJECT} -AdminPilot newer_than:1y`;
+  const known = senders.length ? `(from:(${fromCriteria(senders)}) ${BILLING_SUBJECT}) OR ` : "";
+  // Onglet Promotions exclu : les publicités y sont rangées par Gmail.
+  return `(${known}${KEYWORD_QUERY}) -${EXCLUDED_SUBJECT} -AdminPilot -category:promotions -category:social newer_than:1y`;
 }

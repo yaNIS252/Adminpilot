@@ -163,7 +163,12 @@ export async function processEmailJob(job: {
   // Email non transactionnel : rien à créer, le job est clos proprement.
   // L'abonnement AdminPilot lui-même est suivi depuis Stripe, jamais relu
   // dans un e-mail : ce serait un doublon.
-  if (data.type === "skip" || !data.provider || isAdminPilotProvider(data.provider)) {
+  // Un achat ponctuel (commande, recharge de crédit, billet) n'est pas un
+  // abonnement : il n'a ni échéance ni rappel à suivre. Ses PDF éventuels
+  // sont rangés à part, comme documents.
+  const oneOffPurchase =
+    data.billing_cycle === "one_time" && data.type !== "trial" && data.type !== "price_change";
+  if (data.type === "skip" || !data.provider || isAdminPilotProvider(data.provider) || oneOffPurchase) {
     await db
       .from("ingestion_jobs")
       .update({ status: "done", ...common })

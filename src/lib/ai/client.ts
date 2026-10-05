@@ -57,7 +57,20 @@ export function getMistral(): Mistral {
   if (!apiKey || !usableKey(apiKey)) throw new Error("MISTRAL_API_KEY manquante ou invalide");
   // Le pipeline est asynchrone : une requête lente n'immobilise personne.
   // Mieux vaut patienter que multiplier les tentatives.
-  mistral ??= new Mistral({ apiKey, timeoutMs: 120_000 });
+  //
+  // Limite de débit (429) : réessai automatique avec attente croissante. Un
+  // import d'historique envoie des dizaines d'e-mails d'un coup, et plusieurs
+  // passages de la file peuvent se chevaucher ; sans ce réessai, les appels
+  // refusés partaient en échec et attendaient la tâche du lendemain.
+  mistral ??= new Mistral({
+    apiKey,
+    timeoutMs: 120_000,
+    retryConfig: {
+      strategy: "backoff",
+      backoff: { initialInterval: 1_000, maxInterval: 10_000, exponent: 2, maxElapsedTime: 45_000 },
+      retryConnectionErrors: true,
+    },
+  });
   return mistral;
 }
 
