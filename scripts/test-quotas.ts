@@ -247,14 +247,18 @@ async function main() {
   check("facture moins chère → baisse enregistrée, sans alerte", (await state()).changes.at(-1), "decrease:invoice:15.49->14.49");
   check("toujours une seule alerte", (await state()).alerts, 1);
 
-  await send(bill("Votre abonnement par mois passe de 14,49 € à 16,99 € à compter du 01/12/2026."));
+  // Date d'effet toujours à deux mois : le rappel « 7 jours avant » existe.
+  const effect = new Date(Date.now() + 60 * 86_400_000);
+  const effectFr = `${String(effect.getUTCDate()).padStart(2, "0")}/${String(effect.getUTCMonth() + 1).padStart(2, "0")}/${effect.getUTCFullYear()}`;
+  await send(bill(`Votre abonnement par mois passe de 14,49 € à 16,99 € à compter du ${effectFr}.`));
   let st = await state();
-  check("annonce de hausse → alerte avant la facture", { last: st.changes.at(-1), alerts: st.alerts }, { last: "increase:announcement:14.49->16.99", alerts: 2 });
+  // Hausse annoncée : une alerte tout de suite, une autre 7 jours avant.
+  check("annonce de hausse → alerte immédiate + rappel 7 jours avant", { last: st.changes.at(-1), alerts: st.alerts }, { last: "increase:announcement:14.49->16.99", alerts: 3 });
   check("annonce → prix actuel inchangé jusqu'à la date d'effet", st.amount, 14.49);
 
   await send(bill("Montant prélevé : 16,99 € par mois."));
   st = await state();
-  check("1re facture au prix annoncé → pas de doublon, prix mis à jour", { amount: st.amount, n: st.changes.length, alerts: st.alerts }, { amount: 16.99, n: 3, alerts: 2 });
+  check("1re facture au prix annoncé → pas de doublon, prix mis à jour", { amount: st.amount, n: st.changes.length, alerts: st.alerts }, { amount: 16.99, n: 3, alerts: 3 });
 
   await send(bill("Montant prélevé : 169,90 € par mois."));
   st = await state();
