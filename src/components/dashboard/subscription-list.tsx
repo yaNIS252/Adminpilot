@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Check, LogOut, Pencil, Trash2, X } from "lucide-react";
 import { useState } from "react";
 
@@ -32,6 +33,7 @@ export function SubscriptionList({
   reviewMode: boolean;
   priceChanges?: Record<string, RecentPriceChange>;
 }) {
+  const router = useRouter();
   const [items, setItems] = useState(initial);
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -63,6 +65,8 @@ export function SubscriptionList({
         : current.map((item) => (item.id === id ? subscription : item)),
     );
     setEditing(null);
+    // Pastille « à vérifier » de la barre latérale, totaux.
+    router.refresh();
   }
 
   async function remove(id: string) {
@@ -77,6 +81,7 @@ export function SubscriptionList({
       return;
     }
     setItems((current) => current.filter((item) => item.id !== id));
+    router.refresh();
   }
 
   if (items.length === 0) {

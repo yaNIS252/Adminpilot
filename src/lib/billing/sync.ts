@@ -181,12 +181,26 @@ async function syncOwnSubscription(
   if (id) {
     await db.from("subscriptions").update(row).eq("id", id);
   } else if (active) {
-    const { data } = await db
+    const { data, error } = await db
       .from("subscriptions")
       .insert({ ...row, user_id: userId })
       .select("id")
       .single();
     id = data?.id ?? null;
+    // Un événement Stripe parallèle l'a créée entre-temps (index unique,
+    // migration 0022) : on met à jour la sienne au lieu d'en créer une autre.
+    if (error?.code === "23505") {
+      const { data: winner } = await db
+        .from("subscriptions")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("metadata->>source", OWN_SUBSCRIPTION_SOURCE)
+        .maybeSingle();
+      id = winner?.id ?? null;
+      if (id) await db.from("subscriptions").update(row).eq("id", id);
+    } else if (error) {
+      throw error;
+    }
   }
   if (!id) return;
 

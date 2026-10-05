@@ -264,7 +264,7 @@ export function PlanPicker({
 
       <p className="m-0 text-xs text-[var(--text-faint)]">
         {mode === "checkout"
-          ? "Paiement sécurisé par Stripe. Un code promo se saisit sur la page de paiement ; si la formule est offerte, aucune carte n’est demandée. Sans engagement : résiliable à tout moment depuis cette page. TVA non applicable, art. 293 B du CGI."
+          ? "Paiement sécurisé par Stripe. TVA non applicable, art. 293 B du CGI."
           : "Montée en gamme facturée tout de suite au prorata des jours restants ; descente déduite de la prochaine facture. TVA non applicable, art. 293 B du CGI."}
       </p>
 
