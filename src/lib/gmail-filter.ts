@@ -32,8 +32,10 @@ export const KEYWORD_QUERY =
  * AdminPilot, déjà suivi depuis Stripe, reviendraient sinon en doublon — ou
  * en boucle (`isOwnMessage` les arrête aussi à la réception).
  */
-export const EXCLUDED_QUERY =
-  'subject:(code OR "mot de passe" OR "nouvel appareil" OR "nouvelle connexion" OR "tentative de connexion" OR "vérification" OR "verification" OR "sécurité" OR "security" OR "password" OR "sign-in" OR "login" OR OTP OR "authentification") OR AdminPilot';
+export const EXCLUDED_SUBJECT =
+  'subject:(code OR "mot de passe" OR "nouvel appareil" OR "nouvelle connexion" OR "tentative de connexion" OR "vérification" OR "verification" OR "sécurité" OR "security" OR "password" OR "sign-in" OR "login" OR OTP OR "authentification")';
+
+export const EXCLUDED_QUERY = `${EXCLUDED_SUBJECT} OR AdminPilot`;
 
 function escapeXml(value: string): string {
   return value
@@ -101,4 +103,17 @@ export function buildGmailFilterXml(input: {
 ${entries.join("\n")}
 </feed>
 `;
+}
+
+/**
+ * Recherche Gmail des factures déjà reçues, à coller dans la barre de
+ * recherche avant un « Transférer en tant que pièce jointe » groupé : les
+ * fournisseurs connus et les objets de facturation des douze derniers mois,
+ * sans codes de sécurité ni e-mails d'AdminPilot. L'utilisateur voit la
+ * liste et décoche ce qu'il ne veut pas envoyer avant de transférer.
+ */
+export function historySearchQuery(domains: string[]): string {
+  const senders = chunkDomains(domains).flat();
+  const from = senders.length ? `from:(${fromCriteria(senders)}) OR ` : "";
+  return `(${from}${KEYWORD_QUERY}) -${EXCLUDED_SUBJECT} -AdminPilot newer_than:1y`;
 }

@@ -39,7 +39,7 @@ type Attachment = {
   content_id: string | null;
 };
 
-function isDocumentAttachment(attachment: Attachment): boolean {
+function isDocumentAttachment(attachment: Omit<Attachment, "id">): boolean {
   const type = attachment.content_type.toLowerCase().split(";")[0]?.trim() ?? "";
   if (type === "application/pdf" || type === "application/octet-stream") {
     // Certains logiciels de facturation envoient leurs PDF en type générique.
@@ -48,6 +48,54 @@ function isDocumentAttachment(attachment: Attachment): boolean {
   if (!(type in EXTENSIONS)) return false;
   // Image : seulement une vraie pièce jointe, pas un logo inséré dans le corps.
   return attachment.content_disposition?.toLowerCase() === "attachment" && !attachment.content_id;
+}
+
+/**
+ * Range un fichier reçu (pièce jointe) comme document, exactement comme un
+ * dépôt manuel. Vrai si un nouveau document a été mis en file.
+ */
+export async function ingestDocumentBuffer(input: {
+  userId: string;
+  plan: Enums<"plan">;
+  buffer: Buffer;
+  filename: string;
+}): Promise<boolean> {
+  if (input.buffer.length > MAX_UPLOAD_BYTES) return false;
+  const quota = await checkLimit(input.userId, input.plan, "documents");
+  if (!quota.allowed) return false;
+
+  // Le type annoncé vient de l'expéditeur : seul le contenu réel compte.
+  const actualType = sniffMimeType(input.buffer);
+  if (!actualType || !(actualType in EXTENSIONS)) return false;
+
+  const contentHash = hashFile(input.buffer);
+  const key = buildKey({
+    userId: input.userId,
+    source: "upload",
+    contentHash,
+    extension: EXTENSIONS[actualType] ?? "bin",
+  });
+  await uploadRaw({ key, body: input.buffer, contentType: actualType });
+
+  const result = await enqueue({
+    userId: input.userId,
+    source: "upload",
+    contentHash,
+    rawUrl: key,
+    mimeType: actualType,
+    originalFilename: input.filename,
+  });
+  return result.status !== "duplicate";
+}
+
+/** Vrai pour une pièce jointe qui ressemble à un document à ranger. */
+export function isDocumentPart(part: {
+  filename: string | null;
+  content_type: string;
+  content_disposition: string | null;
+  content_id: string | null;
+}): boolean {
+  return isDocumentAttachment(part);
 }
 
 /** Nombre de documents mis en file. Ne lève pas : l'e-mail reste traité. */
@@ -63,9 +111,6 @@ export async function ingestAttachments(input: {
 
   for (const attachment of candidates) {
     try {
-      const quota = await checkLimit(input.userId, input.plan, "documents");
-      if (!quota.allowed) break;
-
       const { data, error } = await input.resend.emails.receiving.attachments.get({
         emailId: input.emailId,
         id: attachment.id,
@@ -74,31 +119,13 @@ export async function ingestAttachments(input: {
 
       const response = await fetch(data.download_url);
       if (!response.ok) continue;
-      const buffer = Buffer.from(await response.arrayBuffer());
-      if (buffer.length > MAX_UPLOAD_BYTES) continue;
-
-      // Le type annoncé vient de l'expéditeur : seul le contenu réel compte.
-      const actualType = sniffMimeType(buffer);
-      if (!actualType || !(actualType in EXTENSIONS)) continue;
-
-      const contentHash = hashFile(buffer);
-      const key = buildKey({
+      const added = await ingestDocumentBuffer({
         userId: input.userId,
-        source: "upload",
-        contentHash,
-        extension: EXTENSIONS[actualType] ?? "bin",
+        plan: input.plan,
+        buffer: Buffer.from(await response.arrayBuffer()),
+        filename: attachment.filename ?? data.filename ?? "piece-jointe",
       });
-      await uploadRaw({ key, body: buffer, contentType: actualType });
-
-      const result = await enqueue({
-        userId: input.userId,
-        source: "upload",
-        contentHash,
-        rawUrl: key,
-        mimeType: actualType,
-        originalFilename: attachment.filename ?? data.filename ?? "piece-jointe",
-      });
-      if (result.status !== "duplicate") queued += 1;
+      if (added) queued += 1;
     } catch (error) {
       console.error("[inbound] pièce jointe:", error);
     }

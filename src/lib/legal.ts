@@ -10,7 +10,7 @@ export const LEGAL = {
   /** Nom commercial du service. */
   tradeName: "AdminPilot",
   /** « Prénom Nom », entrepreneur individuel (EI). */
-  editorName: null as string | null,
+  editorName: "Yanis Le Port",
   /** 9 chiffres, sur l'avis de situation INSEE. */
   siren: null as string | null,
   /** Adresse de domiciliation de l'entreprise (une adresse personnelle est possible). */

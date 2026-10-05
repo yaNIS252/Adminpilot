@@ -9,7 +9,9 @@ import { useGmailConfirmation, type GmailConfirmation } from "@/components/onboa
 import { ProfileEditor } from "@/components/profile/profile-editor";
 import { ShareActions } from "@/components/referral/share-actions";
 import { ForwardingSetup, type Mailbox } from "@/components/shared/forwarding-setup";
+import { HistoryImport } from "@/components/shared/history-import";
 import { InboxAddress } from "@/components/shared/inbox-address";
+import { useIsPhone } from "@/components/shared/use-is-phone";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -139,6 +141,7 @@ function TourDialog({
   );
   const [saving, setSaving] = useState(false);
   const confirmation = useGmailConfirmation(userId, initialConfirmation);
+  const phone = useIsPhone();
 
   function go(next: number) {
     setStep(next);
@@ -288,7 +291,9 @@ function TourDialog({
               {mailbox === "gmail" ? (
                 <>
                   <StepTitle title="Branche Gmail">
-                    Trois gestes, sur ordinateur de préférence.
+                    {phone
+                      ? "L’application Gmail n’a pas ces réglages : ouvre mail.google.com dans ton navigateur, puis menu ⋮ (ou « aA » sur iPhone) → Version pour ordinateur."
+                      : "Trois gestes, et tes factures arriveront toutes seules."}
                   </StepTitle>
                   <Numbered n={1} title="Copie ton adresse AdminPilot">
                     <InboxAddress address={address} />
@@ -326,8 +331,11 @@ function TourDialog({
                       </p>
                     )}
                   </Numbered>
-                  <Numbered n={3} title="Rends le transfert automatique" last>
+                  <Numbered n={3} title="Rends le transfert automatique">
                     <ForwardingSetup address={address} domains={domains} mailbox="gmail" />
+                  </Numbered>
+                  <Numbered n={4} title="Récupère tes anciennes factures (facultatif)" last>
+                    <HistoryImport address={address} domains={domains} />
                   </Numbered>
                 </>
               ) : (

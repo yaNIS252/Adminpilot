@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Forward, Gift, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
+import { Forward, Gift, History, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 
 import { ManageSubscription, PlanPicker } from "@/components/billing/plan-picker";
 import {
@@ -12,6 +12,7 @@ import { ReferralPanel } from "@/components/referral/referral-panel";
 import { ThemePicker } from "@/components/profile/theme-picker";
 import { AccountActions } from "@/components/shared/account-actions";
 import { ForwardingSetup } from "@/components/shared/forwarding-setup";
+import { HistoryImport } from "@/components/shared/history-import";
 import { InboxAddress } from "@/components/shared/inbox-address";
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
 import { getStripe, planFromPriceId } from "@/lib/billing/stripe";
@@ -171,6 +172,16 @@ export default async function SettingsPage({
           }
         />
       </Card>
+
+      <section id="historique" className="scroll-mt-6">
+        <Card
+          icon={<History className="size-4" />}
+          title="Récupérer mes anciennes factures"
+          subtitle="Un an d’historique en une seule manipulation"
+        >
+          <HistoryImport address={inboxAddress(profile)} domains={domains} />
+        </Card>
+      </section>
 
       {/* Cible du bouton « Géré dans Réglages » de la ligne AdminPilot :
           la formule en cours et « Gérer mon abonnement ». */}

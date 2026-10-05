@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { Webhook } from "svix";
 import { z } from "zod";
@@ -12,6 +12,7 @@ import {
 import { enqueue } from "@/lib/ingest/pipeline";
 import { wakeDrain } from "@/lib/ingest/wake";
 import { ingestAttachments } from "@/lib/ingest/attachments";
+import { ingestForwardedMessages, isForwardedMessage } from "@/lib/ingest/forwarded-batch";
 import { isOwnMessage } from "@/lib/ingest/sender-learning";
 import { isSecurityEmail } from "@/lib/ingest/sensitive";
 import { consume, tooManyRequests } from "@/lib/rate-limit";
@@ -177,6 +178,29 @@ export async function POST(request: Request) {
 
   if (!(await consume("inbound", token))) {
     return tooManyRequests("inbound");
+  }
+
+  // Import de l'historique : des e-mails joints (« Transférer en tant que
+  // pièce jointe »). Chacun est traité comme un transfert à part ; le
+  // message qui les porte n'a rien à analyser. Le travail se fait après la
+  // réponse, pour ne pas faire attendre Resend sur un gros lot.
+  const forwarded = (received.data.attachments ?? []).filter(isForwardedMessage);
+  if (forwarded.length > 0) {
+    after(async () => {
+      await ingestForwardedMessages({
+        resend,
+        emailId: event.data.email_id,
+        userId: profile.id,
+        plan: profile.plan,
+        attachments: received.data.attachments ?? [],
+      });
+      await fetch(new URL("/api/cron/process-jobs", request.url), {
+        method: "POST",
+        headers: { authorization: `Bearer ${process.env.CRON_SECRET}` },
+      }).catch(() => {});
+    });
+    await activateReferral(db, profile.id).catch(() => {});
+    return NextResponse.json({ status: "batch", messages: forwarded.length }, { status: 202 });
   }
 
   const contentHash = hashEmail({

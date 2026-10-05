@@ -1,7 +1,11 @@
 "use client";
 
-import { Check, Copy, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { useState } from "react";
+
+import { CopyBlock } from "@/components/shared/copy-block";
+import { PhoneGmailSteps } from "@/components/shared/phone-gmail-steps";
+import { useIsPhone } from "@/components/shared/use-is-phone";
 
 /**
  * Mise en place du transfert automatique des factures, par messagerie.
@@ -34,6 +38,8 @@ export function ForwardingSetup({
 }) {
   const [chosenMailbox, setMailbox] = useState<Mailbox>("gmail");
   const mailbox = fixedMailbox ?? chosenMailbox;
+  // Sur téléphone, pas d'import de fichier : filtre créé à la main.
+  const phone = useIsPhone();
   // Décoché par défaut (protection des données dès la conception, art. 25
   // du RGPD) : ce filtre capte des expéditeurs inconnus, donc parfois des
   // e-mails personnels. L'utilisateur l'active en connaissance de cause.
@@ -76,6 +82,10 @@ export function ForwardingSetup({
               télécharge et importe le nouveau ci-dessous.
             </p>
           )}
+          {phone ? (
+            <PhoneGmailSteps address={address} domains={domains} />
+          ) : (
+          <>
           <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[var(--text-dim)]">
             <input
               type="checkbox"
@@ -128,10 +138,11 @@ export function ForwardingSetup({
             Les codes de connexion et alertes de sécurité ne sont jamais
             transférés. Ton adresse AdminPilot doit déjà être validée comme adresse de
             transfert dans Gmail. Le filtre vaut pour les e-mails qui arrivent
-            ensuite : transfère tes factures récentes à la main une fois.
-            L’import se fait depuis un ordinateur, pas depuis l’application
-            mobile.
+            ensuite ; pour les anciennes, utilise « Récupérer mes anciennes
+            factures ». Sur téléphone, ouvre Gmail en version pour ordinateur.
           </p>
+          </>
+          )}
         </div>
       )}
 
@@ -170,47 +181,6 @@ export function ForwardingSetup({
           <CopyBlock label="Expéditeurs à transférer" value={domains.join(", ")} multiline />
         </div>
       )}
-    </div>
-  );
-}
-
-function CopyBlock({
-  label,
-  value,
-  multiline = false,
-}: {
-  label: string;
-  value: string;
-  multiline?: boolean;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-xs text-[var(--text-dim)]">{label}</span>
-        <button type="button" onClick={copy} className="btn-link flex items-center gap-1 p-0 text-xs">
-          {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-          {copied ? "Copié" : "Copier"}
-        </button>
-      </div>
-      <div
-        className={`mono rounded-[8px] border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-[12px] text-[var(--text-muted)] ${
-          multiline ? "max-h-24 overflow-y-auto break-words" : "overflow-x-auto whitespace-nowrap"
-        }`}
-      >
-        {value}
-      </div>
     </div>
   );
 }

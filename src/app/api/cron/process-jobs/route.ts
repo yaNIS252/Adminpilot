@@ -8,6 +8,7 @@ import {
   processDocumentJob,
   processEmailJob,
 } from "@/lib/ingest/pipeline";
+import { wakeDrain } from "@/lib/ingest/wake";
 import { deleteRaw, getRaw } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -98,11 +99,22 @@ async function drain() {
   return { claimed: jobs.length, processed, failed };
 }
 
+/**
+ * Lot plein : il en reste sans doute (import de l'historique, plusieurs
+ * dizaines d'e-mails d'un coup). On relance un passage juste après la
+ * réponse, au lieu d'attendre la tâche planifiée du lendemain.
+ */
+async function drainAndChain(request: Request) {
+  const result = await drain();
+  if ("claimed" in result && result.claimed === BATCH_SIZE) wakeDrain(request.url);
+  return result;
+}
+
 export async function POST(request: Request) {
   if (!authorize(request)) {
     return NextResponse.json({ error: "non autorisé" }, { status: 401 });
   }
-  return NextResponse.json(await drain());
+  return NextResponse.json(await drainAndChain(request));
 }
 
 /** Vercel Cron appelle en GET. */
@@ -110,5 +122,5 @@ export async function GET(request: Request) {
   if (!authorize(request)) {
     return NextResponse.json({ error: "non autorisé" }, { status: 401 });
   }
-  return NextResponse.json(await drain());
+  return NextResponse.json(await drainAndChain(request));
 }
