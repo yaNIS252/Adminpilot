@@ -107,6 +107,16 @@ export async function POST(request: Request) {
     originalFilename: file.name,
   });
 
+  // Réveil immédiat de l'analyse, comme à la réception d'un e-mail : sans
+  // lui, le document attendait la tâche planifiée du lendemain matin.
+  // Échec sans conséquence : la tâche planifiée rattrapera.
+  if (result.status !== "duplicate") {
+    void fetch(new URL("/api/cron/process-jobs", request.url), {
+      method: "POST",
+      headers: { authorization: `Bearer ${process.env.CRON_SECRET}` },
+    }).catch(() => {});
+  }
+
   // Le même fichier envoyé deux fois n'est pas une erreur : on le signale
   // plutôt que de faire croire à un nouvel ajout.
   return NextResponse.json(
