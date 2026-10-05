@@ -437,10 +437,14 @@ export async function processDocumentJob(job: {
   // La facture PDF complète l'abonnement du même fournisseur : un e-mail
   // qui dit « votre facture est jointe » sans montant donnait sinon un
   // abonnement vide à côté d'un document qui, lui, avait tout.
+  // L'IA classe parfois un contrat en « autre » tout en le nommant
+  // « Contrat_… » : le nom qu'elle a choisi fait foi.
+  const isContract = data.category === "contrat" || /^contrat_/i.test(data.suggested_name);
+  let linkedSubscription = false;
   if (data.provider && !needsReview) {
-    await completeSubscriptionFromDocument(db, job.user_id, {
+    linkedSubscription = await completeSubscriptionFromDocument(db, job.user_id, {
       provider: data.provider,
-      category: data.category,
+      category: isContract ? "contrat" : data.category,
       amount: data.amount,
       cycle: data.billing_cycle,
       documentDate: data.document_date,
@@ -449,14 +453,25 @@ export async function processDocumentJob(job: {
     });
   }
 
-  if (data.deadline && !needsReview) {
+  // La facture d'un abonnement suivi n'a pas besoin de son propre rappel :
+  // celui de l'abonnement (prochain prélèvement) le couvre déjà, et deux
+  // alertes pour un même paiement font du bruit. Un avis d'impôt, une fin
+  // de contrat ou une facture isolée gardent le leur.
+  const coveredBySubscription = data.category === "facture" && linkedSubscription;
+  if (data.deadline && !needsReview && !coveredBySubscription) {
     await scheduleDeadlineAlerts({
       userId: job.user_id,
       refType: "document",
       refId: inserted.id,
       deadline: data.deadline,
-      title: data.suggested_name,
-      message: `Échéance le ${data.deadline}.`,
+      // Un nom de fichier ne dit pas ce qu'il faut faire : on nomme l'action.
+      title:
+        isContract && data.provider
+          ? `Fin d'engagement ${data.provider}`
+          : data.suggested_name,
+      message: isContract
+        ? `Ton engagement se termine le ${data.deadline} : tu pourras résilier sans frais à partir de cette date.`
+        : `Échéance le ${data.deadline}.`,
     });
   }
 
@@ -822,13 +837,13 @@ async function completeSubscriptionFromDocument(
     deadline: string | null;
     confidence: number;
   },
-) {
+): Promise<boolean> {
   // Le nom lu sur un PDF est souvent la raison sociale (« Fitness Park
   // Lyon », « IONOS SE ») : correspondance exacte, puis par préfixe.
   const existing =
     (await findExistingSubscription(db, userId, doc.provider)) ??
     (await findSubscriptionByPrefix(db, userId, doc.provider));
-  if (!existing) return;
+  if (!existing) return false;
 
   const today = new Date().toISOString().slice(0, 10);
   const patch: TablesUpdate<"subscriptions"> = {};
@@ -869,7 +884,7 @@ async function completeSubscriptionFromDocument(
     patch.confidence = Math.max(existing.confidence, Math.min(doc.confidence, 0.95));
   }
 
-  if (Object.keys(patch).length === 0) return;
+  if (Object.keys(patch).length === 0) return true;
   await db.from("subscriptions").update(patch).eq("id", existing.id);
 
   if (patch.next_renewal && !existing.over_quota) {
@@ -882,6 +897,7 @@ async function completeSubscriptionFromDocument(
       message: `Prochaine échéance le ${patch.next_renewal}.`,
     });
   }
+  return true;
 }
 
 async function findSubscriptionByPrefix(db: Db, userId: string, provider: string) {

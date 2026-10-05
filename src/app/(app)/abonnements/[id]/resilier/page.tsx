@@ -56,7 +56,7 @@ export default async function CancelPage({
 
   // L'abonnement AdminPilot se résilie depuis les réglages, en un clic.
   const meta = sub.metadata && typeof sub.metadata === "object" && !Array.isArray(sub.metadata) ? sub.metadata : {};
-  if ((meta as Record<string, unknown>).source === "adminpilot_billing") redirect("/reglages#formules");
+  if ((meta as Record<string, unknown>).source === "adminpilot_billing") redirect("/reglages#abonnement");
 
   const catalogue = sub.known_providers as unknown as {
     name: string;

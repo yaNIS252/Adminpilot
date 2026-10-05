@@ -160,6 +160,9 @@ export default async function SettingsPage({
         />
       </Card>
 
+      {/* Cible du bouton « Géré dans Réglages » de la ligne AdminPilot :
+          la formule en cours et « Gérer mon abonnement ». */}
+      <section id="abonnement" className="scroll-mt-6">
       <Card
         icon={<Sparkles className="size-4" />}
         title={`Formule ${PLAN_LABELS[profile.plan]}`}
@@ -185,6 +188,7 @@ export default async function SettingsPage({
           </div>
         )}
       </Card>
+      </section>
 
       {!isMember && (
         <section id="formules" className="scroll-mt-6">

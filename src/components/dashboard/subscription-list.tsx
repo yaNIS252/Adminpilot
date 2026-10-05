@@ -159,7 +159,7 @@ export function SubscriptionList({
 
                   {isOwnSubscription(sub) ? (
                     <Link
-                      href="/reglages#formules"
+                      href="/reglages#abonnement"
                       className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3 py-2 text-sm text-[var(--text-muted)] no-underline transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-white"
                     >
                       Géré dans Réglages
