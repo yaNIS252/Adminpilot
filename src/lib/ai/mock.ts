@@ -132,6 +132,7 @@ export async function mockExtractFromEmail(input: {
       manage_url: null,
       previous_amount: null,
       effective_date: end ? `${end[3]}-${end[2]}-${end[1]}` : null,
+      trial_end: null,
     };
   }
 
@@ -152,6 +153,7 @@ export async function mockExtractFromEmail(input: {
       manage_url: null,
       previous_amount: null,
       effective_date: null,
+      trial_end: null,
     };
   }
 
@@ -168,8 +170,12 @@ export async function mockExtractFromEmail(input: {
       .map((match) => match[0])
       .find((url) => /resili|gerer|manage|account|compte|abonnement/i.test(url)) ?? null;
 
+  // Essai gratuit souscrit : « essai gratuit … jusqu'au 12/11/2026 ».
+  const trial = /essai gratuit|p[ée]riode d'essai|free trial|mois offert/i.test(text);
+  const trialEnd = trial ? findNextRenewal(text) : null;
+
   return {
-    type: change ? "price_change" : cycle === "unknown" ? "invoice" : "subscription",
+    type: trial ? "trial" : change ? "price_change" : cycle === "unknown" ? "invoice" : "subscription",
     provider: provider.name,
     amount: change ? Number(change[2].replace(",", ".")) : amount,
     previous_amount: change ? Number(change[1].replace(",", ".")) : null,
@@ -182,6 +188,7 @@ export async function mockExtractFromEmail(input: {
     confidence: MOCK_CONFIDENCE,
     reasoning: "simulation : extraction par heuristiques, sans modèle",
     manage_url: manageUrl,
+    trial_end: trialEnd,
   };
 }
 

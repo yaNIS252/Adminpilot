@@ -77,6 +77,11 @@ export const EmailExtractionSchema = z.object({
     "price_change",
     /** Confirmation qu'un abonnement est résilié ; `effective_date` = fin d'accès. */
     "cancellation",
+    /**
+     * Essai gratuit souscrit, qui deviendra payant : `trial_end` = fin de
+     * l'essai (premier prélèvement), `amount` = prix qui suivra.
+     */
+    "trial",
     "skip",
   ]),
   provider: z.string().nullable(),
@@ -104,6 +109,8 @@ export const EmailExtractionSchema = z.object({
   previous_amount: z.number().nullable().default(null),
   /** Date d'application d'un nouveau tarif annoncé. */
   effective_date: isoDate.default(null),
+  /** Fin d'un essai gratuit : date du premier prélèvement. */
+  trial_end: isoDate.default(null),
 });
 
 export type EmailExtraction = z.infer<typeof EmailExtractionSchema>;

@@ -88,3 +88,14 @@ export function isoDaysAgo(days: number): string {
 export function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
+
+/**
+ * Fin d'un essai gratuit en cours, lue dans les métadonnées d'un abonnement,
+ * ou `null` s'il n'y en a pas (ou plus).
+ */
+export function activeTrialUntil(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
+  const until = (metadata as Record<string, unknown>).trial_until;
+  if (typeof until !== "string") return null;
+  return until >= new Date().toISOString().slice(0, 10) ? until : null;
+}

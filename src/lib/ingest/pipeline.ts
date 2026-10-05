@@ -10,7 +10,7 @@ import { cycleFromGap, isPeriodic, resolveRenewal } from "@/lib/ingest/schedule"
 import { isAdminPilotProvider, learnSender, originalSender } from "@/lib/ingest/sender-learning";
 import { CONSUMER_MAIL_DOMAINS } from "@/lib/email/consumer-domains";
 import { trackPriceChange } from "@/lib/ingest/price-tracker";
-import { PLAN_LIMITS } from "@/lib/constants";
+import { PLAN_LIMITS, TRIAL_ALERT_OFFSETS_DAYS } from "@/lib/constants";
 
 /**
  * Cœur du pipeline. Les deux sources — mail transféré et document uploadé —
@@ -232,7 +232,11 @@ export async function processEmailJob(job: {
       ? cycleFromGap(previousInvoice, data.invoice_date)
       : null;
   const cycle = inferredCycle ?? data.billing_cycle;
-  const nextRenewal = resolveRenewal({
+  // Essai gratuit en cours : la prochaine échéance est sa fin, date du
+  // premier prélèvement. Un essai déjà terminé se traite comme le reste.
+  const trialEnd = data.type === "trial" ? (data.trial_end ?? data.next_renewal) : null;
+  const activeTrial = Boolean(trialEnd && trialEnd >= new Date().toISOString().slice(0, 10));
+  const nextRenewal = activeTrial ? trialEnd : resolveRenewal({
     nextRenewal: data.next_renewal,
     cycle: isPeriodic(cycle) ? cycle : (existing?.cycle ?? cycle),
     invoiceDate: data.invoice_date,
@@ -322,6 +326,7 @@ export async function processEmailJob(job: {
           ...(manageUrl ? { manage_url: manageUrl } : {}),
           ...(siteUrl ? { site_url: siteUrl } : {}),
           ...(data.invoice_date ? { last_invoice_date: data.invoice_date } : {}),
+          ...(activeTrial ? { trial_until: trialEnd } : {}),
         },
       });
 
@@ -331,20 +336,39 @@ export async function processEmailJob(job: {
       manageUrl,
       siteUrl,
       lastInvoiceDate: data.invoice_date,
+      // Essai en cours : mémorisé. Facture réelle : l'essai est fini.
+      trialUntil: activeTrial ? trialEnd : data.type === "trial" ? undefined : null,
     });
   }
 
   // Une échéance connue vaut une alerte, sauf si l'extraction est trop peu
   // sûre : alerter sur une date inventée est pire que ne pas alerter.
   if (nextRenewal && !needsReview && !overQuota) {
-    await scheduleDeadlineAlerts({
-      userId: job.user_id,
-      refType: "subscription",
-      refId: inserted.id,
-      deadline: nextRenewal,
-      title: `${data.provider} se renouvelle`,
-      message: `Prochaine échéance le ${nextRenewal}.`,
-    });
+    // Fin d'essai : le piège classique (on oublie, on est prélevé). Rappel
+    // 3 jours puis la veille, avec le montant qui va tomber.
+    await scheduleDeadlineAlerts(
+      activeTrial
+        ? {
+            userId: job.user_id,
+            refType: "subscription",
+            refId: inserted.id,
+            deadline: nextRenewal,
+            title: `Fin de l'essai gratuit ${data.provider}`,
+            message:
+              data.amount !== null
+                ? `${data.amount.toFixed(2).replace(".", ",")} € seront prélevés le ${nextRenewal} si tu ne résilies pas avant.`
+                : `Le premier prélèvement aura lieu le ${nextRenewal} si tu ne résilies pas avant.`,
+            offsets: TRIAL_ALERT_OFFSETS_DAYS,
+          }
+        : {
+            userId: job.user_id,
+            refType: "subscription",
+            refId: inserted.id,
+            deadline: nextRenewal,
+            title: `${data.provider} se renouvelle`,
+            message: `Prochaine échéance le ${nextRenewal}.`,
+          },
+    );
   }
 
   await db
@@ -779,9 +803,19 @@ async function attachLinks(
     manageUrl: string | null;
     siteUrl?: string | null;
     lastInvoiceDate?: string | null;
+    /** Date de fin d'essai ; `null` l'efface (essai terminé), absent n'y touche pas. */
+    trialUntil?: string | null;
   },
 ) {
-  if (!links.providerId && !links.manageUrl && !links.siteUrl && !links.lastInvoiceDate) return;
+  if (
+    !links.providerId &&
+    !links.manageUrl &&
+    !links.siteUrl &&
+    !links.lastInvoiceDate &&
+    links.trialUntil === undefined
+  ) {
+    return;
+  }
 
   const { data: current } = await db
     .from("subscriptions")
@@ -806,9 +840,15 @@ async function attachLinks(
   const invoiceAdvances =
     links.lastInvoiceDate && (!previous || links.lastInvoiceDate > previous);
   const newSite = links.siteUrl && !metadataString(current.metadata, "site_url");
-  if (links.manageUrl || invoiceAdvances || newSite) {
+  const currentTrial = metadataString(current.metadata, "trial_until");
+  const trialChange =
+    links.trialUntil !== undefined && (links.trialUntil ?? null) !== currentTrial;
+  if (links.manageUrl || invoiceAdvances || newSite || trialChange) {
+    const base: Record<string, unknown> = { ...(metadata as Record<string, unknown>) };
+    if (trialChange) delete base.trial_until;
     patch.metadata = {
-      ...metadata,
+      ...base,
+      ...(trialChange && links.trialUntil ? { trial_until: links.trialUntil } : {}),
       ...(links.manageUrl ? { manage_url: links.manageUrl } : {}),
       ...(newSite ? { site_url: links.siteUrl } : {}),
       ...(invoiceAdvances ? { last_invoice_date: links.lastInvoiceDate } : {}),

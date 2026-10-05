@@ -27,6 +27,7 @@ import { PLAN_LABELS, SHARE_COOKIE, TOUR_MAILBOX_STEP, UPSELL_COOKIE } from "@/l
 import { OWN_SUBSCRIPTION_SOURCE } from "@/lib/billing/sync";
 import { periodsPerYear } from "@/lib/ingest/price-tracker";
 import {
+  activeTrialUntil,
   daysUntil,
   formatAmount,
   formatCycle,
@@ -465,7 +466,9 @@ export default async function DashboardPage({
                         )}
                       </div>
                       <div className="text-[11px] text-[var(--text-faint)]">
-                        {formatCycle(sub.cycle) || "périodicité inconnue"}
+                        {activeTrialUntil(sub.metadata)
+                          ? "fin de l’essai gratuit"
+                          : formatCycle(sub.cycle) || "périodicité inconnue"}
                       </div>
                     </div>
                     <div className="text-right">

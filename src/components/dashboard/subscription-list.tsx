@@ -7,7 +7,7 @@ import { useState } from "react";
 
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { BILLING_CYCLES } from "@/lib/ai/schemas";
-import { formatAmount, formatCycle, formatDate } from "@/lib/format";
+import { activeTrialUntil, formatAmount, formatCycle, formatDate } from "@/lib/format";
 import type { Subscription } from "@/lib/supabase/types";
 
 /**
@@ -108,6 +108,7 @@ export function SubscriptionList({
       <ul className="m-0 list-none space-y-2.5 p-0">
         {items.map((sub) => {
           const uncertain = !sub.confirmed_by_user && sub.confidence < 0.7;
+          const trialUntil = activeTrialUntil(sub.metadata);
 
           return (
             <li
@@ -134,6 +135,14 @@ export function SubscriptionList({
                           currency={sub.currency}
                         />
                       )}
+                      {trialUntil && (
+                        <span
+                          title="Le premier prélèvement aura lieu à la fin de l'essai"
+                          className="rounded-full bg-[rgba(63,207,149,.15)] px-1.5 text-[10px] font-semibold text-[var(--positive-light)]"
+                        >
+                          Essai gratuit
+                        </span>
+                      )}
                       {uncertain && (
                         <span
                           title="Détecté automatiquement, non vérifié"
@@ -144,12 +153,16 @@ export function SubscriptionList({
                       )}
                     </div>
                     <div className="text-xs text-[var(--text-faint)]">
-                      {[
-                        formatCycle(sub.cycle) || "périodicité inconnue",
-                        sub.next_renewal
-                          ? `prochaine échéance le ${formatDate(sub.next_renewal)}`
-                          : "échéance inconnue",
-                      ].join(" · ")}
+                      {trialUntil
+                        ? `essai gratuit jusqu’au ${formatDate(trialUntil)}, puis ${
+                            formatAmount(sub.amount, sub.currency) ?? "montant inconnu"
+                          } ${formatCycle(sub.cycle)}`.trim()
+                        : [
+                            formatCycle(sub.cycle) || "périodicité inconnue",
+                            sub.next_renewal
+                              ? `prochaine échéance le ${formatDate(sub.next_renewal)}`
+                              : "échéance inconnue",
+                          ].join(" · ")}
                     </div>
                   </div>
 

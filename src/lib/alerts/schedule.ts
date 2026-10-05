@@ -29,6 +29,8 @@ export async function scheduleDeadlineAlerts(input: {
   deadline: string;
   title: string;
   message: string;
+  /** Jours avant l'échéance ; par défaut, ceux des rappels de renouvellement. */
+  offsets?: readonly number[];
 }): Promise<number> {
   const db = createAdminClient();
   const today = formatDate(new Date());
@@ -44,7 +46,7 @@ export async function scheduleDeadlineAlerts(input: {
     if (sub?.reminders_muted) return 0;
   }
 
-  const rows = ALERT_OFFSETS_DAYS.map((offset) => ({
+  const rows = (input.offsets ?? ALERT_OFFSETS_DAYS).map((offset) => ({
     user_id: input.userId,
     ref_type: input.refType,
     ref_id: input.refId,

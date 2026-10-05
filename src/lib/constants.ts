@@ -179,6 +179,9 @@ export const RAW_RETENTION_DAYS = 30;
 /** Jours avant échéance déclenchant une alerte automatique. */
 export const ALERT_OFFSETS_DAYS = [7, 1] as const;
 
+/** Rappels de fin d'essai gratuit : un essai dure souvent 7 jours. */
+export const TRIAL_ALERT_OFFSETS_DAYS = [3, 1] as const;
+
 // ---------------------------------------------------------------- résiliation
 
 export const LEGAL_BASIS_LABELS: Record<Enums<"legal_basis">, string> = {

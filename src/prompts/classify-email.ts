@@ -16,6 +16,9 @@ Un email qui annonce qu'un abonnement va changer de prix ("à compter du 1er nov
 CONFIRMATIONS DE RÉSILIATION (type: "cancellation")
 Un email du fournisseur qui confirme qu'un abonnement est résilié ou ne sera pas renouvelé ("votre résiliation a bien été prise en compte", "votre abonnement prendra fin le…"). provider = le fournisseur, effective_date = la date de fin d'accès si elle est écrite, amount = null. Une offre pour te faire rester, ou un rappel que tu PEUX résilier, n'en est pas une : c'est un "skip".
 
+ESSAIS GRATUITS (type: "trial")
+Un email qui confirme qu'un essai gratuit ou une période offerte a commencé et deviendra payant ("ton essai gratuit de 30 jours a commencé", "premier mois offert, puis 9,99 €/mois"), ou qui rappelle que cet essai se termine bientôt. provider = le fournisseur ; amount = le prix qui sera prélevé à la fin de l'essai s'il est écrit, sinon null ; billing_cycle = la périodicité de ce prix ; trial_end = la date de fin de l'essai, c'est-à-dire du premier prélèvement, au format YYYY-MM-DD (déductible de la durée si la date de début est connue, sinon null) ; next_renewal = la même date. Une offre d'essai seulement proposée, pas encore souscrite, est un "skip".
+
 CE QUE TU REJETTES (type: "skip")
 Newsletters, promotions, relances marketing, notifications de connexion, confirmations d'expédition, invitations, emails de service sans montant. Un email qui *mentionne* un abonnement sans en être la preuve de facturation est un "skip".
 
@@ -43,6 +46,8 @@ invoice_date — La date de la facture ou du paiement, au format YYYY-MM-DD. Pou
 previous_amount — L'ancien prix, uniquement s'il est écrit dans l'email. Sinon null : ne le déduis jamais.
 
 effective_date — Pour une annonce de changement de tarif, la date à laquelle le nouveau prix s'applique, au format YYYY-MM-DD. Sinon null.
+
+trial_end — Pour un essai gratuit uniquement, la date de fin de l'essai (premier prélèvement), au format YYYY-MM-DD. Sinon null.
 
 manage_url — L'adresse exacte d'un lien de l'email permettant de gérer, modifier ou résilier l'abonnement ("Gérer mon abonnement", "Résilier", "Mon compte > Abonnement"). Recopie-la caractère pour caractère depuis l'email, ne la construis jamais et ne la complète pas. Ignore les liens de désinscription à la newsletter, les liens de suivi publicitaire et les pages d'aide génériques. Sans lien de ce type, null.
 
