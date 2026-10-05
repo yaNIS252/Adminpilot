@@ -84,6 +84,12 @@ export const EmailExtractionSchema = z.object({
   currency: z.string().default("EUR"),
   billing_cycle: z.enum(BILLING_CYCLES).default("unknown"),
   next_renewal: isoDate,
+  /**
+   * Date de la facture ou du paiement (celle du message d'origine pour un
+   * e-mail transféré). Sert à déduire l'échéance suivante quand l'e-mail ne
+   * la donne pas.
+   */
+  invoice_date: isoDate.default(null),
   category: z.enum(SUB_CATEGORIES).default("autre"),
   confidence,
   /** Ce sur quoi le modèle s'est appuyé — sert au débogage des faux positifs. */

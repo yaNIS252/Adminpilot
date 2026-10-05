@@ -30,7 +30,7 @@ amount — Le montant effectivement facturé à l'utilisateur, en nombre décima
   · en cas de remise, retenir le montant réellement prélevé
   · si aucun montant n'est lisible, retourner null plutôt que deviner
 
-billing_cycle — Déduit d'une mention explicite ("par mois", "abonnement annuel") ou d'un libellé de période. Sans indice, "unknown" — ne pas supposer "monthly" par défaut.
+billing_cycle — Déduit d'une mention explicite ("par mois", "abonnement annuel") ou d'un libellé de période ("du 18/09 au 18/10" = mensuel). Sans indice, "unknown" — ne pas supposer "monthly" par défaut. "one_time" est réservé à un achat ponctuel explicite (une commande, un billet) : la facture d'un service (hébergement, télécom, énergie, logiciel, assurance) sans période écrite est "unknown", jamais "one_time".
 
 next_renewal — La date de la PROCHAINE échéance, au format YYYY-MM-DD, jamais la date de la facture en cours. Si l'email donne la période facturée et le cycle, elle est déductible. Sinon null. C'est le champ le plus souvent absent : null est une réponse correcte et attendue.
 
@@ -38,11 +38,16 @@ confidence — Ta certitude réelle sur l'ensemble de l'extraction, de 0 à 1. S
 
 reasoning — En une phrase, ce sur quoi tu t'es appuyé. Sert au débogage, pas à l'utilisateur.
 
+invoice_date — La date de la facture ou du paiement, au format YYYY-MM-DD. Pour un email transféré, prends la date du message d'origine ou celle écrite sur la facture, jamais la date du transfert. Sinon null.
+
 previous_amount — L'ancien prix, uniquement s'il est écrit dans l'email. Sinon null : ne le déduis jamais.
 
 effective_date — Pour une annonce de changement de tarif, la date à laquelle le nouveau prix s'applique, au format YYYY-MM-DD. Sinon null.
 
 manage_url — L'adresse exacte d'un lien de l'email permettant de gérer, modifier ou résilier l'abonnement ("Gérer mon abonnement", "Résilier", "Mon compte > Abonnement"). Recopie-la caractère pour caractère depuis l'email, ne la construis jamais et ne la complète pas. Ignore les liens de désinscription à la newsletter, les liens de suivi publicitaire et les pages d'aide génériques. Sans lien de ce type, null.
+
+EMAILS TRANSFÉRÉS
+Beaucoup d'emails te parviennent transférés par l'utilisateur ("Fwd:", "TR:", "---------- Forwarded message ---------"). Le vrai fournisseur et la vraie date figurent dans l'en-tête du message transféré ("De :", "Date :") : c'est eux qui comptent, pas l'adresse ni la date du transfert.
 
 Les montants sont en euros sauf mention contraire explicite.`;
 

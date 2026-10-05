@@ -6,6 +6,7 @@ import { REVIEW_THRESHOLD } from "@/lib/ai/schemas";
 import { extractFromDocument, extractFromEmail } from "@/lib/ai/extract";
 import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
 import { matchCatalogue, senderDomain, trustedLink } from "@/lib/cancel/links";
+import { cycleFromGap, isPeriodic, resolveRenewal } from "@/lib/ingest/schedule";
 import { isAdminPilotProvider, learnSender } from "@/lib/ingest/sender-learning";
 import { trackPriceChange } from "@/lib/ingest/price-tracker";
 import { PLAN_LIMITS } from "@/lib/constants";
@@ -221,6 +222,25 @@ export async function processEmailJob(job: {
     }
   }
 
+  // Périodicité et échéance complétées par des règles vérifiables (voir
+  // schedule.ts) : l'écart avec la facture précédente du même fournisseur,
+  // la date de facture + une période, une échéance passée avancée.
+  const previousInvoice = metadataString(existing?.metadata, "last_invoice_date");
+  const inferredCycle =
+    !isPeriodic(data.billing_cycle) && previousInvoice && data.invoice_date
+      ? cycleFromGap(previousInvoice, data.invoice_date)
+      : null;
+  const cycle = inferredCycle ?? data.billing_cycle;
+  const nextRenewal = resolveRenewal({
+    nextRenewal: data.next_renewal,
+    cycle: isPeriodic(cycle) ? cycle : (existing?.cycle ?? cycle),
+    invoiceDate: data.invoice_date,
+  });
+  // Un abonnement sans montant ou sans échéance est à vérifier : il ne
+  // sert à rien tant que l'utilisateur ne l'a pas complété.
+  const confidence =
+    data.amount === null || !nextRenewal ? Math.min(data.confidence, 0.6) : data.confidence;
+
   // Au-delà du quota de la formule, l'abonnement est enregistré mais masqué.
   // Une mise à jour d'un abonnement déjà connu ne change jamais ce statut : un
   // abonnement visible le reste, un abonnement en réserve aussi.
@@ -269,20 +289,20 @@ export async function processEmailJob(job: {
         // connu ne change pas avant la première facture au nouveau prix.
         amount: announcement || implausible ? null : data.amount,
         currency: data.currency,
-        cycle: data.billing_cycle,
+        cycle,
         category: data.category,
-        nextRenewal: data.next_renewal,
-        confidence: data.confidence,
+        nextRenewal,
+        confidence,
       })
     : await insertSubscription(db, {
         userId: job.user_id,
         provider: data.provider,
         amount: data.amount,
         currency: data.currency,
-        cycle: data.billing_cycle,
+        cycle,
         category: data.category,
-        nextRenewal: data.next_renewal,
-        confidence: data.confidence,
+        nextRenewal,
+        confidence,
         sourceJobId: job.id,
         overQuota,
         providerId: catalogue?.id ?? null,
@@ -290,6 +310,7 @@ export async function processEmailJob(job: {
           reasoning: data.reasoning,
           detected_type: data.type,
           ...(manageUrl ? { manage_url: manageUrl } : {}),
+          ...(data.invoice_date ? { last_invoice_date: data.invoice_date } : {}),
         },
       });
 
@@ -297,19 +318,20 @@ export async function processEmailJob(job: {
     await attachLinks(db, existing.id, {
       providerId: catalogue?.id ?? null,
       manageUrl,
+      lastInvoiceDate: data.invoice_date,
     });
   }
 
   // Une échéance connue vaut une alerte, sauf si l'extraction est trop peu
   // sûre : alerter sur une date inventée est pire que ne pas alerter.
-  if (data.next_renewal && !needsReview && !overQuota) {
+  if (nextRenewal && !needsReview && !overQuota) {
     await scheduleDeadlineAlerts({
       userId: job.user_id,
       refType: "subscription",
       refId: inserted.id,
-      deadline: data.next_renewal,
+      deadline: nextRenewal,
       title: `${data.provider} se renouvelle`,
-      message: `Prochaine échéance le ${data.next_renewal}.`,
+      message: `Prochaine échéance le ${nextRenewal}.`,
     });
   }
 
@@ -453,7 +475,7 @@ export async function findExistingSubscription(
   const { data } = await db
     .from("subscriptions")
     .select(
-      "id, provider, amount, cycle, category, next_renewal, confidence, confirmed_by_user, over_quota",
+      "id, provider, amount, cycle, category, next_renewal, confidence, confirmed_by_user, over_quota, metadata",
     )
     .eq("user_id", userId)
     .eq("status", "active");
@@ -511,7 +533,8 @@ async function refreshSubscription(
   if (!existing.confirmed_by_user && next.confidence >= existing.confidence) {
     if (next.amount !== null) patch.amount = next.amount;
     if (next.currency) patch.currency = next.currency;
-    if (next.cycle)
+    // « Inconnu » n'efface pas une périodicité déjà connue.
+    if (next.cycle && isPeriodic(next.cycle))
       patch.cycle = next.cycle as TablesUpdate<"subscriptions">["cycle"];
     if (next.category) patch.category = next.category;
     patch.confidence = next.confidence;
@@ -703,9 +726,9 @@ async function chargeAfterCancellation(
 async function attachLinks(
   db: Db,
   subscriptionId: string,
-  links: { providerId: string | null; manageUrl: string | null },
+  links: { providerId: string | null; manageUrl: string | null; lastInvoiceDate?: string | null },
 ) {
-  if (!links.providerId && !links.manageUrl) return;
+  if (!links.providerId && !links.manageUrl && !links.lastInvoiceDate) return;
 
   const { data: current } = await db
     .from("subscriptions")
@@ -717,18 +740,35 @@ async function attachLinks(
   const patch: TablesUpdate<"subscriptions"> = {};
   if (links.providerId && !current.provider_id)
     patch.provider_id = links.providerId;
-  if (links.manageUrl) {
-    const metadata =
-      current.metadata &&
-      typeof current.metadata === "object" &&
-      !Array.isArray(current.metadata)
-        ? current.metadata
-        : {};
-    patch.metadata = { ...metadata, manage_url: links.manageUrl };
+
+  const metadata =
+    current.metadata &&
+    typeof current.metadata === "object" &&
+    !Array.isArray(current.metadata)
+      ? current.metadata
+      : {};
+  // Date de la dernière facture : c'est elle qui permet, à la suivante, de
+  // déduire la périodicité. Seulement si elle avance.
+  const previous = metadataString(current.metadata, "last_invoice_date");
+  const invoiceAdvances =
+    links.lastInvoiceDate && (!previous || links.lastInvoiceDate > previous);
+  if (links.manageUrl || invoiceAdvances) {
+    patch.metadata = {
+      ...metadata,
+      ...(links.manageUrl ? { manage_url: links.manageUrl } : {}),
+      ...(invoiceAdvances ? { last_invoice_date: links.lastInvoiceDate } : {}),
+    };
   }
   if (Object.keys(patch).length > 0) {
     await db.from("subscriptions").update(patch).eq("id", subscriptionId);
   }
+}
+
+/** Valeur texte d'une clé des métadonnées JSON, ou `null`. */
+function metadataString(metadata: unknown, key: string): string | null {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
+  const value = (metadata as Record<string, unknown>)[key];
+  return typeof value === "string" ? value : null;
 }
 
 async function insertSubscription(

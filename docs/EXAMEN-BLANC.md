@@ -14,8 +14,8 @@ Légende : **Toi** = action côté client · **Moi** = contrôle technique ·
 
 | # | Quoi | Qui | Comment vérifier |
 |---|---|---|---|
-| 0.1 | Clé `ANTHROPIC_API_KEY` sur Vercel + redéploiement | Toi | Moi : `/api/health` → `ai: true` |
-| 0.2 | SMTP personnalisé réactivé dans Supabase (Resend) | Toi | Moi : lien de connexion reçu sur une adresse hors équipe Supabase |
+| 0.1 | Clé `MISTRAL_API_KEY` sur Vercel + redéploiement | ✅ fait | Moi : `/api/health` → `ai: true`, `ai_provider: mistral` |
+| 0.2 | SMTP personnalisé dans Supabase (Resend, `connexion@`) | ✅ fait | E-mail de connexion reçu en français |
 | 0.3 | Webhook de réception Resend → `adminpilot-ashen.vercel.app/api/inbound` | ✅ fait | Moi : `last_email_received_at` change au premier transfert |
 | 0.4 | Portail client Stripe activé, produit renommé « Premium » | ✅ fait (toi) | Moi : bouton « Gérer mon abonnement » ouvre le portail |
 | 0.5 | Deux adresses Gmail de test neuves (A = client, B = proche) | Toi | — |

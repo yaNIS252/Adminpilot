@@ -10,6 +10,7 @@ import {
   forwardingSourceAddress,
 } from "@/lib/ingest/gmail-confirmation";
 import { enqueue } from "@/lib/ingest/pipeline";
+import { ingestAttachments } from "@/lib/ingest/attachments";
 import { isOwnMessage } from "@/lib/ingest/sender-learning";
 import { isSecurityEmail } from "@/lib/ingest/sensitive";
 import { consume, tooManyRequests } from "@/lib/rate-limit";
@@ -104,7 +105,7 @@ export async function POST(request: Request) {
   const db = createAdminClient();
   const { data: profile } = await db
     .from("profiles")
-    .select("id")
+    .select("id, plan")
     .eq("inbox_token", token)
     .is("deleted_at", null)
     .maybeSingle();
@@ -209,6 +210,18 @@ export async function POST(request: Request) {
     rawUrl: key,
     mimeType: "message/rfc822",
   });
+
+  // Factures jointes (PDF) : chacune devient un document rangé, comme un
+  // dépôt manuel. Seulement pour un nouvel e-mail, pas un renvoi.
+  if (result.status !== "duplicate" && received.data.attachments?.length) {
+    await ingestAttachments({
+      resend,
+      emailId: event.data.email_id,
+      userId: profile.id,
+      plan: profile.plan,
+      attachments: received.data.attachments,
+    });
+  }
 
   // Messageries sans demande de validation (règles Outlook, etc.) : le
   // premier e-mail transféré prouve, lui aussi, que le transfert fonctionne.
