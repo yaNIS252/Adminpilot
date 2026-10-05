@@ -168,7 +168,10 @@ export async function processEmailJob(job: {
   // sont rangés à part, comme documents.
   const oneOffPurchase =
     data.billing_cycle === "one_time" && data.type !== "trial" && data.type !== "price_change";
-  if (data.type === "skip" || !data.provider || isAdminPilotProvider(data.provider) || oneOffPurchase) {
+  // Passage à une formule gratuite (« repassé à la formule Standard ») :
+  // rien à payer, rien à suivre. Un essai gratuit, lui, deviendra payant.
+  const freePlan = data.amount === 0 && data.type !== "trial" && data.type !== "cancellation";
+  if (data.type === "skip" || !data.provider || isAdminPilotProvider(data.provider) || oneOffPurchase || freePlan) {
     await db
       .from("ingestion_jobs")
       .update({ status: "done", ...common })
