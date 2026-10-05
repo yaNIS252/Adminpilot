@@ -191,7 +191,7 @@ export default async function SettingsPage({
           <Limit label="Documents" value={limits.documents} />
           <Limit label="Alertes par mois" value={limits.alerts} />
           <Limit label="Recherches par mois" value={limits.searches} />
-          <Limit label="Résiliations par mois" value={limits.cancellations} />
+          <Limit label="Messages de négociation" value={limits.cancellations} />
         </ul>
 
         {subscriber && (
@@ -210,7 +210,7 @@ export default async function SettingsPage({
             subtitle={
               subscriber
                 ? "Pro pour toi seul, Premium pour toi et tes proches"
-                : "Recherche en langage courant, lettres de résiliation, tout illimité"
+                : "Recherche en langage courant, négociation avant résiliation, tout illimité"
             }
           >
             {onBonus && (

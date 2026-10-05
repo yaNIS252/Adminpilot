@@ -133,7 +133,7 @@ export const OWN_SUBSCRIPTION_SOURCE = "adminpilot_billing";
  * serait mal placé pour inspirer confiance.
  *
  * Tenu à jour uniquement depuis Stripe : l'utilisateur ne le saisit pas, et sa
- * résiliation passe par les réglages, pas par une lettre.
+ * résiliation passe par les réglages, en un clic.
  */
 async function syncOwnSubscription(
   db: Db,

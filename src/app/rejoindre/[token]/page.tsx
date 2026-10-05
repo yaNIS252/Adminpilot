@@ -104,7 +104,7 @@ export default async function JoinPage({
             <p className="mt-4 text-[15px] leading-[1.65] text-[var(--text-dim)]">
               Tu profites de sa formule Premium sur ton propre compte :
               abonnements, documents et alertes illimités, recherche et
-              lettres de résiliation.
+              messages de négociation.
             </p>
             <p className="mt-0 flex items-start gap-2 text-[13px] leading-[1.6] text-[var(--text-faint)]">
               <Lock className="mt-0.5 size-3.5 shrink-0" />

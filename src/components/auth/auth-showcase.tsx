@@ -59,7 +59,7 @@ export function AuthShowcase() {
             <Check className="size-[18px]" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-semibold">Lettre de résiliation prête</div>
+            <div className="text-[13px] font-semibold">Message de négociation prêt</div>
             <div className="text-xs text-[var(--text-dim)]">Basic-Fit · Loi Chatel</div>
           </div>
         </div>

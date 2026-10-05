@@ -36,7 +36,7 @@ export function UpsellBanner() {
         </div>
         <p className="m-0 mt-0.5 text-[13px] leading-[1.5] text-[var(--text-dim)]">
           Abonnements et documents illimités, recherche en langage courant,
-          lettres de résiliation prêtes à envoyer. En couple ou en famille,
+          messages pour négocier une remise avant de résilier. En couple ou en famille,
           Premium couvre jusqu’à 5 comptes.
         </p>
       </div>

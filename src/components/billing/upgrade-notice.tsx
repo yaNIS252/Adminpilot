@@ -4,7 +4,7 @@ import { ArrowRight, Lock } from "lucide-react";
 /**
  * Encart affiché quand une limite de la formule gratuite retient quelque
  * chose : abonnements détectés mais masqués, document refusé, recherche ou
- * lettre réservée.
+ * négociation réservée.
  *
  * Il dit précisément ce qui est retenu, jamais un vague « passez Premium » :
  * c'est la valeur concrète déjà trouvée qui donne envie de payer, pas une liste

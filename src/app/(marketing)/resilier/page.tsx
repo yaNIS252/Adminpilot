@@ -80,7 +80,7 @@ export default async function CancelIndexPage() {
         </h2>
         <p className="m-0 mb-3 text-sm">
           AdminPilot repère tes abonnements dans tes emails, t’alerte avant
-          chaque reconduction et prépare la lettre à ta place.
+          chaque reconduction et prépare un message pour négocier une remise avant de partir.
         </p>
         <Link
           href="/login"

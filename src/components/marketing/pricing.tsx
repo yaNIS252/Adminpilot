@@ -85,7 +85,7 @@ export function Pricing() {
           features={[
             "Abonnements, documents et alertes illimités",
             "Recherche en langage courant",
-            "Lettres de résiliation illimitées",
+            "Messages de négociation avant résiliation",
             "Récap mensuel par e-mail",
           ]}
           cta="Passer Pro"

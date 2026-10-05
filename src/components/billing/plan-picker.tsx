@@ -20,7 +20,7 @@ type Plan = "pro" | "family";
 type Cycle = "monthly" | "yearly";
 
 const PITCH: Record<Plan, string> = {
-  pro: "Tout illimité, recherche et lettres de résiliation.",
+  pro: "Tout illimité, recherche et messages de négociation.",
   family: `Tout le Pro, et jusqu’à ${FAMILY_SEATS - 1} proches invités avec chacun son compte. Idéal en couple ou en famille.`,
 };
 

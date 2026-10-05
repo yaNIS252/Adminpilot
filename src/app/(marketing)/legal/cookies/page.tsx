@@ -129,17 +129,6 @@ export default function CookiesPage() {
                 </td>
                 <td className="py-2.5 whitespace-nowrap">30 jours</td>
               </tr>
-              <tr>
-                <td className="mono py-2.5 pr-4 text-[13px] text-[var(--text)]">
-                  ap_letter_sender
-                </td>
-                <td className="py-2.5 pr-4">
-                  Garde dans ton navigateur (stockage local, jamais envoyé à nos
-                  serveurs hors lettre) l’adresse saisie pour tes lettres de
-                  résiliation
-                </td>
-                <td className="py-2.5 whitespace-nowrap">Jusqu’à effacement</td>
-              </tr>
             </tbody>
           </table>
         </div>

@@ -29,8 +29,8 @@ const QUESTIONS = [
     a: "Chaque email transféré est analysé : fournisseur, montant, périodicité et prochaine échéance sont extraits. Quand la confiance est faible, la détection est marquée « à vérifier » plutôt que présentée comme un fait.",
   },
   {
-    q: "La lettre de résiliation est-elle vraiment valable ?",
-    a: "Elle cite la base légale adaptée à ton contrat — loi Hamon, loi Chatel, résiliation infra-annuelle ou contrat sans engagement — et reprend les références extraites de tes factures.",
+    q: "Comment AdminPilot m'aide-t-il à payer moins cher ?",
+    a: "Il t'alerte avant chaque reconduction et à chaque hausse de prix, te montre le lien pour résilier en ligne et, avec Pro, prépare un message de négociation appuyé sur une offre concurrente : les fournisseurs accordent souvent une remise à qui montre qu'il est prêt à partir.",
   },
   {
     q: "Que deviennent mes données ?",

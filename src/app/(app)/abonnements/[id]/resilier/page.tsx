@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, ExternalLink, FileText, Globe, Lock, Scale } from "lucide-react";
+import { ArrowLeft, CircleCheck, ExternalLink, Globe, Handshake, Lock, Scale } from "lucide-react";
 
+import { CancelStatus } from "@/components/cancel/cancel-status";
 import { CategoryTip, GuideSteps } from "@/components/cancel/cancel-guide";
-import { LetterForm } from "@/components/cancel/letter-form";
+import { NegotiationHelper } from "@/components/cancel/negotiation-helper";
 import { OfferList } from "@/components/cancel/offer-list";
-import { LetterTracker } from "@/components/cancel/letter-tracker";
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { requireUser } from "@/lib/auth/require-user";
 import { parseGuide } from "@/lib/cancel/guides";
 import { trustedLink } from "@/lib/cancel/links";
+import { buildNegotiation } from "@/lib/cancel/negotiation";
 import { LEGAL_TEMPLATES } from "@/lib/cancel/templates";
 import { readUuid } from "@/lib/http/request";
 import { formatAmount, formatCycle, formatDate, monthlyEquivalent } from "@/lib/format";
@@ -22,8 +23,12 @@ export const metadata = { title: "Résilier — AdminPilot" };
 /**
  * Résiliation d'un abonnement, dans l'ordre où elle coûte le moins d'effort :
  *  1. le lien de résiliation en ligne, quand on en connaît un — ouvert à tous ;
- *  2. la lettre, prête à imprimer — formules payantes ;
- *  3. le suivi : envoyée, puis confirmée, ce qui retire l'abonnement du total.
+ *  2. négocier avant de partir : un message prêt à envoyer au service client,
+ *     appuyé sur une offre concurrente réelle — formules payantes ;
+ *  3. « J'ai résilié », qui retire l'abonnement du total.
+ *
+ * Plus de lettre : personne ne résilie plus par courrier, et un message de
+ * négociation fait souvent mieux que partir — garder le service, moins cher.
  */
 export default async function CancelPage({
   params,
@@ -37,21 +42,14 @@ export default async function CancelPage({
   if (!auth) notFound();
 
   const supabase = await createClient();
-  const [{ data: sub }, { data: letter }] = await Promise.all([
-    supabase
-      .from("subscriptions")
-      .select(
-        "id, provider, amount, currency, cycle, category, next_renewal, status, metadata, known_providers(name, domain, category, seo_slug, cancel_method, cancel_url, cancel_address, cancel_guide, legal_basis)",
-      )
-      .eq("id", id)
-      .eq("over_quota", false)
-      .maybeSingle(),
-    supabase
-      .from("cancellations")
-      .select("id, status, sent_at, created_at, template_used")
-      .eq("subscription_id", id)
-      .maybeSingle(),
-  ]);
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select(
+      "id, provider, amount, currency, cycle, category, next_renewal, status, metadata, known_providers(name, domain, category, seo_slug, cancel_method, cancel_url, cancel_email, cancel_guide, legal_basis)",
+    )
+    .eq("id", id)
+    .eq("over_quota", false)
+    .maybeSingle();
   if (!sub) notFound();
 
   // L'abonnement AdminPilot se résilie depuis les réglages, en un clic.
@@ -64,7 +62,7 @@ export default async function CancelPage({
     seo_slug: string;
     cancel_method: "courrier" | "email" | "en_ligne" | null;
     cancel_url: string | null;
-    cancel_address: string | null;
+    cancel_email: string | null;
     category: string;
     cancel_guide: Json | null;
     legal_basis: keyof typeof LEGAL_TEMPLATES;
@@ -118,6 +116,29 @@ export default async function CancelPage({
   });
   const paid = auth.profile.plan !== "free";
   const cancelled = sub.status === "cancelled";
+
+  // Engagement en cours (lu sur le contrat) : la loi « sans engagement » ne
+  // s'applique pas avant sa fin, et la négociation devient le bon levier.
+  const today = new Date().toISOString().slice(0, 10);
+  const commitmentEnd =
+    typeof metadata.commitment_end === "string" && metadata.commitment_end > today
+      ? metadata.commitment_end
+      : null;
+
+  const best = offers[0] ?? null;
+  const negotiation = buildNegotiation({
+    provider: name,
+    category,
+    monthly: currentMonthly > 0 ? currentMonthly : null,
+    priceLabel: sub.amount !== null
+      ? [formatAmount(sub.amount, sub.currency), formatCycle(sub.cycle)].filter(Boolean).join(" ")
+      : null,
+    competitor: best
+      ? { provider: best.provider_name, name: best.name, monthly: best.monthly_price }
+      : null,
+    commitmentEnd,
+    userName: auth.profile.name,
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -205,7 +226,7 @@ export default async function CancelPage({
             Pas de lien de résiliation connu pour {name}.
             {catalogue?.cancel_method === "en_ligne"
               ? " Elle se fait depuis ton espace client, rubrique abonnement ou contrat."
-              : " La lettre ci-dessous fonctionne dans tous les cas."}{" "}
+              : " Elle se fait le plus souvent depuis ton espace client, ou par le service client."}{" "}
             Si un e-mail de {name} contient un lien « gérer mon abonnement »,
             transfère-le : il apparaîtra ici.
           </p>
@@ -214,13 +235,23 @@ export default async function CancelPage({
 
       {!cancelled && <OfferList offers={offers} category={category} />}
 
-      <Card icon={<Scale className="size-4" />} title={`Ce que dit la loi · ${template.label}`}>
-        <p className="m-0 text-sm text-[var(--text-dim)]">{template.timing}</p>
-        {!catalogue && (
+      <Card
+        icon={<Scale className="size-4" />}
+        title={
+          commitmentEnd
+            ? `Ce que dit ton contrat · engagement jusqu’au ${formatDate(commitmentEnd)}`
+            : `Ce que dit la loi · ${template.label}`
+        }
+      >
+        <p className="m-0 text-sm text-[var(--text-dim)]">
+          {commitmentEnd
+            ? `Résilier avant le ${formatDate(commitmentEnd)} peut te coûter les mensualités restantes ou des frais prévus au contrat. Après cette date, tu peux résilier librement. D’ici là, négocier est souvent plus rentable.`
+            : template.timing}
+        </p>
+        {!catalogue && !commitmentEnd && (
           <p className="m-0 mt-2 text-xs text-[var(--text-faint)]">
-            {name} n’est pas encore dans notre catalogue vérifié : la lettre
-            s’appuie sur tes conditions générales, sans citer de loi qui
-            pourrait ne pas s’appliquer.
+            {name} n’est pas encore dans notre catalogue vérifié : vérifie le
+            préavis prévu par tes conditions générales.
           </p>
         )}
         {catalogue && (
@@ -233,40 +264,44 @@ export default async function CancelPage({
         )}
       </Card>
 
-      <Card icon={<FileText className="size-4" />} title="Par lettre">
-        {letter && (
-          <LetterTracker
-            id={letter.id}
-            status={letter.status}
-            sentAt={letter.sent_at}
-            provider={name}
-          />
-        )}
+      {!cancelled && (
+        <Card icon={<Handshake className="size-4" />} title="Négocier avant de partir">
+          {paid ? (
+            <>
+              <p className="m-0 mb-3.5 text-sm text-[var(--text-dim)]">
+                Montrer que tu es prêt à partir suffit souvent à obtenir une
+                remise : les fournisseurs ont un service dédié pour retenir
+                leurs clients. Voici un message prêt à envoyer
+                {best ? `, appuyé sur l’offre de ${best.provider_name}` : ""}.
+              </p>
+              <NegotiationHelper
+                subject={negotiation.subject}
+                body={negotiation.body}
+                tips={negotiation.tips}
+                email={catalogue?.cancel_email ?? null}
+              />
+            </>
+          ) : (
+            <div className="flex flex-wrap items-center gap-4">
+              <Lock className="size-5 shrink-0 text-[var(--accent-lighter)]" />
+              <p className="m-0 min-w-[220px] flex-1 text-sm text-[var(--text-dim)]">
+                Avec <strong className="text-[var(--text)]">Pro</strong>, un
+                message de négociation prêt à envoyer, appuyé sur les offres
+                concurrentes, pour obtenir une remise au lieu de partir.
+              </p>
+              <Link href="/reglages?formule=pro#formules" className="btn-primary h-10 px-4 text-[13px]">
+                Passer Pro
+              </Link>
+            </div>
+          )}
+        </Card>
+      )}
 
-        {paid ? (
-          !cancelled && (
-            <LetterForm
-              subscriptionId={sub.id}
-              provider={name}
-              defaultName={auth.profile.name ?? ""}
-              recipientAddress={catalogue?.cancel_address ?? ""}
-              regenerate={Boolean(letter)}
-              registered={catalogue?.cancel_method !== "en_ligne"}
-            />
-          )
-        ) : (
-          <div className="flex flex-wrap items-center gap-4">
-            <Lock className="size-5 shrink-0 text-[var(--accent-lighter)]" />
-            <p className="m-0 min-w-[220px] flex-1 text-sm text-[var(--text-dim)]">
-              Avec <strong className="text-[var(--text)]">Pro</strong>, ta lettre
-              de résiliation est prête en trente secondes : base légale
-              exacte, mise en page conforme, PDF à imprimer.
-            </p>
-            <Link href="/reglages?formule=pro#formules" className="btn-primary h-10 px-4 text-[13px]">
-              Passer Pro
-            </Link>
-          </div>
-        )}
+      <Card
+        icon={<CircleCheck className="size-4" />}
+        title={cancelled ? "Résilié" : "Tu as résilié ?"}
+      >
+        <CancelStatus subscriptionId={sub.id} provider={name} cancelled={cancelled} />
       </Card>
     </div>
   );

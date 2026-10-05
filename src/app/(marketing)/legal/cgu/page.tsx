@@ -30,7 +30,7 @@ export default function TermsPage() {
     <LegalLayout
       title="Conditions d’utilisation"
       intro="Ce que le service s’engage à faire, ce qu’il ne garantit pas, et comment y mettre fin."
-      updated="4 octobre 2026"
+      updated="5 octobre 2026"
       current="/legal/cgu"
     >
       <Block title="1. Objet">
@@ -38,7 +38,7 @@ export default function TermsPage() {
           AdminPilot est un service en ligne qui analyse les emails et documents
           que l’utilisateur lui transfère, afin d’en extraire ses abonnements,
           de l’alerter avant leurs échéances, de classer ses documents et de
-          l’aider à rédiger des lettres de résiliation.
+          l’aider à résilier ou à négocier ses abonnements.
         </p>
         <p>
           L’utilisation du service implique l’acceptation des présentes
@@ -154,13 +154,14 @@ export default function TermsPage() {
         </p>
       </Block>
 
-      <Block title="6. Lettres de résiliation">
+      <Block title="6. Aide à la résiliation et à la négociation">
         <p>
-          Les lettres générées citent la base légale correspondant au type de
-          contrat renseigné. Elles constituent une aide à la rédaction et non un
-          conseil juridique. AdminPilot n’est pas un cabinet d’avocats et ne
-          procède à aucune démarche à la place de l’utilisateur : l’envoi, les
-          délais et les preuves restent à sa charge.
+          AdminPilot indique, lorsqu’il les connaît, le lien de résiliation en
+          ligne, la base légale applicable et les étapes à suivre, et propose un
+          message de négociation à adresser au fournisseur. Ces éléments
+          constituent une aide et non un conseil juridique ; aucun résultat
+          n’est garanti. AdminPilot ne procède à aucune démarche à la place de
+          l’utilisateur : l’envoi, les délais et les preuves restent à sa charge.
         </p>
       </Block>
 

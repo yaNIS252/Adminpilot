@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, LogOut, Pencil, Trash2, X } from "lucide-react";
+import { ArrowUpDown, Check, LogOut, Pencil, Trash2, X } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
+import { SelectMenu } from "@/components/shared/select-menu";
 import { BILLING_CYCLES } from "@/lib/ai/schemas";
 import {
   activeTrialUntil,
@@ -24,12 +25,12 @@ import type { Subscription } from "@/lib/supabase/types";
  * toucher.
  */
 const SORTS = {
-  price_desc: "Du plus cher au moins cher",
-  price_asc: "Du moins cher au plus cher",
+  price_desc: "Prix décroissant",
+  price_asc: "Prix croissant",
   renewal_asc: "Échéance la plus proche",
   renewal_desc: "Échéance la plus lointaine",
-  name_asc: "Ordre alphabétique (A → Z)",
-  name_desc: "Ordre alphabétique (Z → A)",
+  name_asc: "Nom, de A à Z",
+  name_desc: "Nom, de Z à A",
 } as const;
 
 type Sort = keyof typeof SORTS;
@@ -176,20 +177,15 @@ export function SubscriptionList({
       )}
 
       {items.length > 1 && (
-        <label className="mb-3 flex items-center justify-end gap-2 text-xs text-[var(--text-dim)]">
-          Trier
-          <select
+        <div className="mb-3 flex justify-end">
+          <SelectMenu
+            label="Trier"
+            icon={<ArrowUpDown className="size-3.5" />}
             value={sort}
-            onChange={(event) => writeSort(event.target.value as Sort)}
-            className="h-9 rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--accent)]"
-          >
-            {(Object.keys(SORTS) as Sort[]).map((value) => (
-              <option key={value} value={value}>
-                {SORTS[value]}
-              </option>
-            ))}
-          </select>
-        </label>
+            options={(Object.keys(SORTS) as Sort[]).map((value) => ({ value, label: SORTS[value] }))}
+            onChange={writeSort}
+          />
+        </div>
       )}
 
       <ul className="m-0 list-none space-y-2.5 p-0">

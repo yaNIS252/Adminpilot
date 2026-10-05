@@ -42,8 +42,8 @@ export async function generateMetadata({
   const provider = await getProvider((await params).slug);
   if (!provider) return {};
 
-  const title = `Comment résilier ${provider.name} en 2026 — modèle de lettre`;
-  const description = `Procédure de résiliation ${provider.name} : base légale applicable, méthode acceptée, délais à respecter et lettre type à télécharger.`;
+  const title = `Comment résilier ${provider.name} en 2026`;
+  const description = `Procédure de résiliation ${provider.name} : base légale applicable, méthode acceptée, délais à respecter et lien vers l’espace client.`;
 
   return {
     title,
@@ -145,7 +145,7 @@ export default async function CancelGuidePage({
           </h2>
           <p className="m-0 mb-3 text-sm">
             AdminPilot repère tes abonnements dans tes emails, t’alerte avant
-            chaque reconduction et génère la lettre conforme à ta place.
+            chaque reconduction et prépare un message pour négocier une remise avant de partir.
           </p>
           <Link href="/login" className="btn-primary h-10 px-4 text-sm">
             Essayer gratuitement

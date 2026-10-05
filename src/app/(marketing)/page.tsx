@@ -117,17 +117,17 @@ export default function LandingPage() {
 
           <Feature
             index="04"
-            title="Lettres de résiliation"
-            body="Loi Hamon, loi Chatel, résiliation infra-annuelle : la base légale est citée mot pour mot, la lettre est prête à envoyer en recommandé."
+            title="Négocier avant de partir"
+            body="Un message prêt à envoyer au service client, appuyé sur une offre concurrente réelle. Montrer qu’on est prêt à partir suffit souvent à obtenir une remise."
           >
             <div className="mono text-[12px] leading-[1.75] text-[var(--text-faint)]">
               <div className="text-[var(--text)]">
-                Objet : résiliation du contrat n° 48‑2291
+                Objet : mon abonnement, avant de résilier
               </div>
-              <div>Madame, Monsieur,</div>
+              <div>Je suis client depuis mars 2023, pour 34,99 € par mois.</div>
               <div>
-                Conformément à l&apos;article L113‑15‑2 du Code des
-                assurances…
+                Un concurrent me propose 22,99 €. Pouvez-vous me faire une
+                proposition ?
               </div>
             </div>
           </Feature>

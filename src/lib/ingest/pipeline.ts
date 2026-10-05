@@ -670,7 +670,7 @@ async function exceedsDocumentQuota(db: Db, userId: string): Promise<boolean> {
 /**
  * Passe un abonnement en « résilié » : il sort du total, ses rappels
  * d'échéance automatiques disparaissent (les rappels créés à la main restent),
- * et une lettre en cours de suivi est marquée confirmée.
+ * et une ancienne lettre de résiliation en cours de suivi est marquée confirmée.
  */
 export async function markCancelled(
   db: Db,

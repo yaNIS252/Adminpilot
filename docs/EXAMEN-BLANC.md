@@ -66,7 +66,7 @@ Légende : **Toi** = action côté client · **Moi** = contrôle technique ·
 | 4.2 | Déposer 11 documents | Le 11ᵉ refusé, encart Pro |
 | 4.3 | Page Alertes | Compteur x / 3, cadenas « Illimité avec Pro » |
 | 4.4 | Page Documents | Barre de recherche verrouillée |
-| 4.5 | Page Résilier | Lien en ligne visible, lettre verrouillée |
+| 4.5 | Page Résilier | Lien en ligne visible, négociation verrouillée |
 | 4.6 | Changer le thème | 2 fonds et 2 couleurs, le reste verrouillé |
 | 4.7 | Fermer la bannière « Passe Pro » puis recharger | Elle reste fermée |
 
@@ -127,8 +127,8 @@ Cartes : `4242 4242 4242 4242` (OK) · `4000 0000 0000 0002` (refusée) ·
 | # | Toi | ✅ Attendu | Moi |
 |---|---|---|---|
 | 8.1 | Abonnement → « Résilier » | Lien officiel, guide pas à pas, astuce de la catégorie | — |
-| 8.2 | Créer la lettre (Pro) | PDF propre, bonne base légale | Fichier stocké, ancien remplacé |
-| 8.3 | « Je l'ai envoyée » puis « a confirmé » | Abonnement dans « Résiliés », hors total | Rappels supprimés |
+| 8.2 | « Négocier avant de partir » (Pro) | Message prêt, prix réel, offre concurrente citée si le comparateur en a une, conseils selon la catégorie ; « Copier » et « Envoyer par e-mail » marchent | — |
+| 8.3 | « J'ai résilié » | Abonnement dans « Résiliés », hors total | Rappels supprimés |
 | 8.4 | Transférer un vrai e-mail de confirmation de résiliation | Passage automatique en « Résiliés » | `cancelled_via: email` |
 | 8.5 | « Reprendre le suivi » | Revient dans les actifs, rappels recréés | — |
 
@@ -154,7 +154,7 @@ boutons atteignables, aucune page qui déborde.
 
 ## 12. Contrôles techniques (moi)
 
-- Accès croisés : ouvrir les identifiants (abonnement, document, lettre) d'un
+- Accès croisés : ouvrir les identifiants (abonnement, document) d'un
   autre compte → 404 partout.
 - Écritures directes Supabase avec la clé publique → refusées.
 - `/api/health` → `ok: true` hormis les mentions légales.

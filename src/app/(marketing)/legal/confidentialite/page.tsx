@@ -68,9 +68,8 @@ export default function PrivacyPage() {
         </p>
         <p>
           Les documents que tu déposes toi-même t’appartiennent et restent dans
-          ton espace jusqu’à ce que tu les supprimes. Les données extraites, les
-          lettres de résiliation générées, ta photo de profil et tes
-          préférences sont conservées tant que ton compte est actif, et
+          ton espace jusqu’à ce que tu les supprimes. Les données extraites, ta
+          photo de profil et tes préférences sont conservées tant que ton compte est actif, et
           effacées avec lui.
         </p>
         <p>

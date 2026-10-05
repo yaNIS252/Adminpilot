@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CircleCheck, FileText } from "lucide-react";
+import { CircleCheck } from "lucide-react";
 
 import {
   CancelledList,
@@ -20,13 +20,6 @@ import {
 } from "@/components/billing/upgrade-notice";
 
 export const metadata = { title: "Abonnements — AdminPilot" };
-
-const LETTER_STATUS = {
-  draft: "Brouillon",
-  generated: "Lettre prête",
-  sent: "Envoyée",
-  confirmed: "Confirmée",
-} as const;
 
 /**
  * Liste des abonnements, avec un mode « revue » pour les extractions douteuses.
@@ -59,7 +52,6 @@ export default async function SubscriptionsPage({
   const [
     { data },
     { count: hiddenCount },
-    { data: letters },
     { data: changes },
     { data: cancelledRows },
   ] = await Promise.all([
@@ -68,10 +60,6 @@ export default async function SubscriptionsPage({
       .from("subscriptions")
       .select("id", { count: "exact", head: true })
       .eq("over_quota", true),
-    supabase
-      .from("cancellations")
-      .select("id, status, created_at, sent_at, subscription_id, subscriptions(provider)")
-      .order("created_at", { ascending: false }),
     // Changements des 90 derniers jours, du plus récent au plus ancien.
     supabase
       .from("price_changes")
@@ -162,49 +150,6 @@ export default async function SubscriptionsPage({
         </section>
       )}
 
-      {!reviewMode && (letters ?? []).length > 0 && (
-        <section className="card-sheen anim-up rounded-[var(--radius-xl)] border border-[var(--border)] p-5">
-          <h2 className="mt-0 mb-3 flex items-center gap-2 text-[15px] font-semibold">
-            <FileText className="size-4 text-[var(--accent-light)]" />
-            Mes résiliations
-          </h2>
-          <ul className="m-0 list-none p-0">
-            {(letters ?? []).map((letter) => {
-              const provider =
-                (letter.subscriptions as unknown as { provider: string } | null)?.provider ??
-                "Abonnement";
-              return (
-                <li
-                  key={letter.id}
-                  className="flex flex-wrap items-center gap-3 border-b border-[var(--border-soft)] py-2.5 last:border-b-0"
-                >
-                  <Link
-                    href={`/abonnements/${letter.subscription_id}/resilier`}
-                    className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--text)] no-underline hover:text-[var(--accent-lighter)]"
-                  >
-                    {provider}
-                  </Link>
-                  <span className="text-xs text-[var(--text-faint)]">
-                    {LETTER_STATUS[letter.status]}
-                    {" · "}
-                    {new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(
-                      new Date(letter.sent_at ?? letter.created_at),
-                    )}
-                  </span>
-                  <a
-                    href={`/api/cancel/${letter.id}`}
-                    target="_blank"
-                    rel="noopener"
-                    className="text-xs"
-                  >
-                    PDF
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
     </div>
   );
 }
