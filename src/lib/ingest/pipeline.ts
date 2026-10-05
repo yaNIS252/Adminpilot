@@ -7,7 +7,8 @@ import { extractFromDocument, extractFromEmail } from "@/lib/ai/extract";
 import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
 import { matchCatalogue, senderDomain, trustedLink } from "@/lib/cancel/links";
 import { cycleFromGap, isPeriodic, resolveRenewal } from "@/lib/ingest/schedule";
-import { isAdminPilotProvider, learnSender } from "@/lib/ingest/sender-learning";
+import { isAdminPilotProvider, learnSender, originalSender } from "@/lib/ingest/sender-learning";
+import { CONSUMER_MAIL_DOMAINS } from "@/lib/email/consumer-domains";
 import { trackPriceChange } from "@/lib/ingest/price-tracker";
 import { PLAN_LIMITS } from "@/lib/constants";
 
@@ -255,10 +256,19 @@ export async function processEmailJob(job: {
     provider: data.provider,
     from: job.payload.from,
   });
+  // Expéditeur réel (fournisseur), y compris dans un transfert manuel.
+  const realSender = originalSender(job.payload.from, job.payload.body);
+  const realDomain = realSender ? senderDomain(realSender) : null;
+  const providerDomain =
+    realDomain && !CONSUMER_MAIL_DOMAINS.has(realDomain) ? realDomain : null;
   const manageUrl = trustedLink(data.manage_url, [
     catalogue?.domain,
     senderDomain(job.payload.from),
+    providerDomain,
   ]);
+  // Sans lien « gérer mon abonnement », le site du fournisseur : la page de
+  // résiliation y renvoie, l'espace client s'y trouve toujours.
+  const siteUrl = providerDomain ? `https://www.${providerDomain}` : null;
 
   // Changement de prix, comparé AVANT la mise à jour : c'est l'ancien montant
   // qui sert de référence. Seulement sur une extraction assez sûre — alerter
@@ -310,6 +320,7 @@ export async function processEmailJob(job: {
           reasoning: data.reasoning,
           detected_type: data.type,
           ...(manageUrl ? { manage_url: manageUrl } : {}),
+          ...(siteUrl ? { site_url: siteUrl } : {}),
           ...(data.invoice_date ? { last_invoice_date: data.invoice_date } : {}),
         },
       });
@@ -318,6 +329,7 @@ export async function processEmailJob(job: {
     await attachLinks(db, existing.id, {
       providerId: catalogue?.id ?? null,
       manageUrl,
+      siteUrl,
       lastInvoiceDate: data.invoice_date,
     });
   }
@@ -339,6 +351,11 @@ export async function processEmailJob(job: {
     .from("ingestion_jobs")
     .update({ status: needsReview ? "needs_review" : "done", ...common })
     .eq("id", job.id);
+
+  // Incomplet : sa facture PDF, peut-être déjà analysée, a les réponses.
+  if (data.amount === null || !nextRenewal) {
+    await completeFromRecentDocument(db, job.user_id, data.provider);
+  }
 
   // Adresse d'envoi retenue pour enrichir le catalogue, donc le filtre de
   // tous. Seulement sur une lecture sûre d'un fournisseur.
@@ -409,12 +426,28 @@ export async function processDocumentJob(job: {
         currency: data.currency,
         document_date: data.document_date,
         reference: data.reference,
+        billing_cycle: data.billing_cycle,
       },
     })
     .select("id")
     .single();
 
   if (error) throw error;
+
+  // La facture PDF complète l'abonnement du même fournisseur : un e-mail
+  // qui dit « votre facture est jointe » sans montant donnait sinon un
+  // abonnement vide à côté d'un document qui, lui, avait tout.
+  if (data.provider && !needsReview) {
+    await completeSubscriptionFromDocument(db, job.user_id, {
+      provider: data.provider,
+      category: data.category,
+      amount: data.amount,
+      cycle: data.billing_cycle,
+      documentDate: data.document_date,
+      deadline: data.deadline,
+      confidence: data.confidence,
+    });
+  }
 
   if (data.deadline && !needsReview) {
     await scheduleDeadlineAlerts({
@@ -459,7 +492,7 @@ function normalizeProvider(name: string): string {
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .replace(
-      /\b(sas|sasu|sa|sarl|bv|b\.v\.|inc|ltd|llc|gmbh|international)\b/g,
+      /\b(sas|sasu|sa|se|sarl|bv|b\.v\.|inc|ltd|llc|gmbh|international)\b/g,
       "",
     )
     .replace(/[^a-z0-9]/g, "")
@@ -726,9 +759,14 @@ async function chargeAfterCancellation(
 async function attachLinks(
   db: Db,
   subscriptionId: string,
-  links: { providerId: string | null; manageUrl: string | null; lastInvoiceDate?: string | null },
+  links: {
+    providerId: string | null;
+    manageUrl: string | null;
+    siteUrl?: string | null;
+    lastInvoiceDate?: string | null;
+  },
 ) {
-  if (!links.providerId && !links.manageUrl && !links.lastInvoiceDate) return;
+  if (!links.providerId && !links.manageUrl && !links.siteUrl && !links.lastInvoiceDate) return;
 
   const { data: current } = await db
     .from("subscriptions")
@@ -752,16 +790,147 @@ async function attachLinks(
   const previous = metadataString(current.metadata, "last_invoice_date");
   const invoiceAdvances =
     links.lastInvoiceDate && (!previous || links.lastInvoiceDate > previous);
-  if (links.manageUrl || invoiceAdvances) {
+  const newSite = links.siteUrl && !metadataString(current.metadata, "site_url");
+  if (links.manageUrl || invoiceAdvances || newSite) {
     patch.metadata = {
       ...metadata,
       ...(links.manageUrl ? { manage_url: links.manageUrl } : {}),
+      ...(newSite ? { site_url: links.siteUrl } : {}),
       ...(invoiceAdvances ? { last_invoice_date: links.lastInvoiceDate } : {}),
     };
   }
   if (Object.keys(patch).length > 0) {
     await db.from("subscriptions").update(patch).eq("id", subscriptionId);
   }
+}
+
+/**
+ * Complète l'abonnement suivi d'un fournisseur avec ce que sa facture PDF
+ * contient : montant, périodicité, prochaine échéance. Ne remplit que ce qui
+ * manque — une valeur déjà connue, a fortiori corrigée par l'utilisateur,
+ * n'est jamais écrasée.
+ */
+async function completeSubscriptionFromDocument(
+  db: Db,
+  userId: string,
+  doc: {
+    provider: string;
+    category: string;
+    amount: number | null;
+    cycle: string;
+    documentDate: string | null;
+    deadline: string | null;
+    confidence: number;
+  },
+) {
+  // Le nom lu sur un PDF est souvent la raison sociale (« Fitness Park
+  // Lyon », « IONOS SE ») : correspondance exacte, puis par préfixe.
+  const existing =
+    (await findExistingSubscription(db, userId, doc.provider)) ??
+    (await findSubscriptionByPrefix(db, userId, doc.provider));
+  if (!existing) return;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const patch: TablesUpdate<"subscriptions"> = {};
+
+  const amount = existing.amount ?? doc.amount;
+  if (existing.amount === null && doc.amount !== null) patch.amount = doc.amount;
+
+  const cycle = isPeriodic(existing.cycle) ? existing.cycle : doc.cycle;
+  if (!isPeriodic(existing.cycle) && isPeriodic(doc.cycle)) {
+    patch.cycle = doc.cycle as TablesUpdate<"subscriptions">["cycle"];
+  }
+
+  const invoice = doc.category === "facture";
+  let renewal = existing.next_renewal;
+  if (!renewal && invoice) {
+    // Date de facture + une période ; à défaut, l'échéance de paiement de
+    // la facture quand elle est à venir (souvent le prochain prélèvement).
+    renewal =
+      resolveRenewal({ nextRenewal: null, cycle, invoiceDate: doc.documentDate }) ??
+      (doc.deadline && doc.deadline >= today ? doc.deadline : null);
+    if (renewal) patch.next_renewal = renewal;
+  }
+
+  // L'échéance d'un contrat est sa fin d'engagement, pas un prélèvement :
+  // gardée à part, elle dit jusqu'à quand on ne peut pas résilier sans frais.
+  if (doc.category === "contrat" && doc.deadline && doc.deadline >= today) {
+    const metadata =
+      existing.metadata && typeof existing.metadata === "object" && !Array.isArray(existing.metadata)
+        ? existing.metadata
+        : {};
+    if (!metadataString(existing.metadata, "commitment_end")) {
+      patch.metadata = { ...metadata, commitment_end: doc.deadline };
+    }
+  }
+
+  // Désormais complet : il n'a plus de raison de rester « à vérifier ».
+  if (!existing.confirmed_by_user && amount !== null && renewal && isPeriodic(cycle)) {
+    patch.confidence = Math.max(existing.confidence, Math.min(doc.confidence, 0.95));
+  }
+
+  if (Object.keys(patch).length === 0) return;
+  await db.from("subscriptions").update(patch).eq("id", existing.id);
+
+  if (patch.next_renewal && !existing.over_quota) {
+    await scheduleDeadlineAlerts({
+      userId,
+      refType: "subscription",
+      refId: existing.id,
+      deadline: patch.next_renewal,
+      title: `${existing.provider} se renouvelle`,
+      message: `Prochaine échéance le ${patch.next_renewal}.`,
+    });
+  }
+}
+
+async function findSubscriptionByPrefix(db: Db, userId: string, provider: string) {
+  const target = normalizeProvider(provider);
+  if (target.length < 4) return null;
+  const { data } = await db
+    .from("subscriptions")
+    .select(
+      "id, provider, amount, cycle, category, next_renewal, confidence, confirmed_by_user, over_quota, metadata",
+    )
+    .eq("user_id", userId)
+    .eq("status", "active");
+  const matches = (data ?? []).filter((row) => {
+    const name = normalizeProvider(row.provider);
+    return name.length >= 4 && (name.startsWith(target) || target.startsWith(name));
+  });
+  // Ambigu (deux abonnements possibles) : on ne devine pas.
+  return matches.length === 1 ? matches[0] : null;
+}
+
+/**
+ * Au moment où l'abonnement est créé ou mis à jour depuis un e-mail, sa
+ * facture PDF a peut-être déjà été analysée (ordre de traitement, nouvel
+ * essai) : on la retrouve pour compléter.
+ */
+async function completeFromRecentDocument(db: Db, userId: string, provider: string) {
+  const { data: docs } = await db
+    .from("documents")
+    .select("category, confidence, deadline, extracted_data")
+    .eq("user_id", userId)
+    .gte("created_at", new Date(Date.now() - 2 * 86_400_000).toISOString())
+    .order("created_at", { ascending: false })
+    .limit(20);
+  const target = normalizeProvider(provider);
+  const doc = (docs ?? []).find((row) => {
+    const name = normalizeProvider(metadataString(row.extracted_data, "provider") ?? "");
+    return name.length >= 3 && (name === target || name.startsWith(target) || target.startsWith(name));
+  });
+  if (!doc) return;
+  const extracted = doc.extracted_data as Record<string, unknown>;
+  await completeSubscriptionFromDocument(db, userId, {
+    provider,
+    category: doc.category,
+    amount: typeof extracted.amount === "number" ? extracted.amount : null,
+    cycle: typeof extracted.billing_cycle === "string" ? extracted.billing_cycle : "unknown",
+    documentDate: metadataString(extracted, "document_date"),
+    deadline: doc.deadline,
+    confidence: doc.confidence,
+  });
 }
 
 /** Valeur texte d'une clé des métadonnées JSON, ou `null`. */

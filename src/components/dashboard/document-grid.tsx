@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { ExternalLink, FileText, Trash2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -30,7 +31,15 @@ const CATEGORY_LABELS: Record<string, string> = {
  * valable une heure. Le bucket n'est jamais public.
  */
 export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
+  const router = useRouter();
   const [items, setItems] = useState(initial);
+  // Liste renvoyée par le serveur après un rafraîchissement (document
+  // analysé) : reprise telle quelle, sans perdre le message affiché.
+  const [previousInitial, setPreviousInitial] = useState(initial);
+  if (initial !== previousInitial) {
+    setPreviousInitial(initial);
+    setItems(initial);
+  }
   const [category, setCategory] = useState<string>("");
   const [status, setStatus] = useState<string | null>(null);
   // Limite de documents atteinte : un encart pour passer Pro plutôt que le
@@ -51,6 +60,7 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
 
   async function upload(files: FileList | null) {
     if (!files?.length) return;
+    let accepted = 0;
 
     for (const file of Array.from(files)) {
       if (!(ACCEPTED_MIME_TYPES as readonly string[]).includes(file.type)) {
@@ -93,11 +103,20 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
       // L'analyse est asynchrone : le document existe, mais son classement
       // arrivera dans quelques secondes. Le dire évite que l'utilisateur
       // recharge en pensant que rien ne s'est passé.
+      if (body.status !== "duplicate") accepted += 1;
       setStatus(
         body.status === "duplicate"
           ? `${file.name} était déjà dans ton coffre-fort.`
           : `${file.name} reçu — analyse en cours, il apparaîtra dans un instant.`,
       );
+    }
+
+    // L'analyse prend quelques secondes : la liste et le compteur de la
+    // barre latérale se mettent à jour d'eux-mêmes, sans recharger.
+    if (accepted > 0) {
+      for (const delay of [4_000, 10_000, 20_000]) {
+        setTimeout(() => router.refresh(), delay);
+      }
     }
   }
 
@@ -118,6 +137,8 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
       return;
     }
     setItems((current) => current.filter((doc) => doc.id !== id));
+    // Compteur de la barre latérale.
+    router.refresh();
   }
 
   return (

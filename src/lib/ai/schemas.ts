@@ -120,6 +120,11 @@ export const DocumentExtractionSchema = z.object({
   document_date: isoDate,
   /** Échéance de paiement ou d'action détectée dans le document. */
   deadline: isoDate,
+  /**
+   * Périodicité facturée, quand le document l'indique (« abonnement
+   * mensuel », période du 1er au 30). Sert à compléter l'abonnement suivi.
+   */
+  billing_cycle: z.enum(BILLING_CYCLES).default("unknown"),
   reference: z.string().nullable(),
   confidence,
 });

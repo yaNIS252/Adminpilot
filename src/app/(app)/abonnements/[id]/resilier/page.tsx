@@ -83,13 +83,21 @@ export default async function CancelPage({
       ? (sub.metadata as Record<string, unknown>)
       : {};
   const emailUrl = typeof metadata.manage_url === "string" ? metadata.manage_url : null;
-  const onlineUrl =
+  const siteUrl = typeof metadata.site_url === "string" ? metadata.site_url : null;
+  const directUrl =
     // Le catalogue est vérifié à la main : son lien peut vivre sur un autre
     // domaine que celui des e-mails (espace client séparé).
     trustedLink(catalogue?.cancel_url, [hostOf(catalogue?.cancel_url ?? null)]) ??
     trustedLink(emailUrl, [hostOf(emailUrl)]);
+  // À défaut de lien de gestion, le site du fournisseur : on y trouve
+  // l'espace client. Domaine du catalogue ou de l'expéditeur des factures.
+  const homeUrl = directUrl
+    ? null
+    : trustedLink(siteUrl, [hostOf(siteUrl)]) ??
+      (catalogue?.domain ? `https://www.${catalogue.domain.replace(/^www\./, "")}` : null);
+  const onlineUrl = directUrl ?? homeUrl;
   const onlineHost = onlineUrl ? new URL(onlineUrl).hostname.replace(/^www\./, "") : null;
-  const fromEmail = !catalogue?.cancel_url && Boolean(onlineUrl);
+  const fromEmail = !catalogue?.cancel_url && Boolean(directUrl);
 
   const guide = parseGuide(catalogue?.cancel_guide);
   const category = catalogue?.category ?? sub.category;
@@ -132,6 +140,9 @@ export default async function CancelPage({
               formatAmount(sub.amount, sub.currency),
               formatCycle(sub.cycle),
               sub.next_renewal ? `prochaine échéance le ${formatDate(sub.next_renewal)}` : null,
+              typeof metadata.commitment_end === "string"
+                ? `engagement jusqu’au ${formatDate(metadata.commitment_end)}`
+                : null,
             ]
               .filter(Boolean)
               .join(" · ") || "Montant et échéance inconnus"}
@@ -157,11 +168,13 @@ export default async function CancelPage({
         {onlineUrl ? (
           <div className="flex flex-col gap-3">
             <p className="m-0 text-sm text-[var(--text-dim)]">
-              {fromEmail
-                ? `Lien de gestion trouvé dans un e-mail de ${name}.`
-                : `Page officielle de résiliation de ${name}.`}{" "}
-              Connecte-toi à ton compte, puis suis la procédure jusqu’à la
-              confirmation.
+              {homeUrl
+                ? `Pas de lien direct de résiliation connu : voici le site de ${name}. Connecte-toi à ton espace client, rubrique abonnement ou contrat, puis suis la procédure jusqu’à la confirmation.`
+                : `${
+                    fromEmail
+                      ? `Lien de gestion trouvé dans un e-mail de ${name}.`
+                      : `Page officielle de résiliation de ${name}.`
+                  } Connecte-toi à ton compte, puis suis la procédure jusqu’à la confirmation.`}
             </p>
             <a
               href={onlineUrl}

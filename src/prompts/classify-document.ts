@@ -14,11 +14,13 @@ CATÉGORIES
 facture · contrat · assurance · impots · banque · logement · sante · vehicule · identite · travail · autre
 Choisis la plus spécifique qui s'applique. "autre" est un aveu d'échec : ne l'emploie que si aucune autre ne convient.
 
-suggested_name — Un nom de fichier que l'utilisateur reconnaîtra dans une liste, six mois plus tard. Forme : Type_Fournisseur_AAAA-MM.ext, en conservant l'extension d'origine. Exemples : Facture_EDF_2026-09.pdf, Contrat_MAIF_Habitation_2026-03.pdf, Avis_Impots_2026.pdf. Sans accents ni espaces.
+suggested_name — Un nom de fichier que l'utilisateur reconnaîtra dans une liste, six mois plus tard. Forme : Type_Fournisseur_AAAA-MM.ext, en conservant l'extension d'origine. Exemples : Facture_EDF_2026-09.pdf, Contrat_MAIF_Habitation_2026-03.pdf, Avis_Impots_2026.pdf. Sans accents ni espaces. La date vient du document lui-même : si aucune date n'y est lisible, omets-la (Photo_Facture.jpg) plutôt que d'inventer une année.
 
 deadline — Une date d'échéance de PAIEMENT ou d'ACTION, au format YYYY-MM-DD : date limite de règlement, fin de contrat, échéance de déclaration, expiration de garantie. À ne pas confondre avec document_date, qui est la date d'émission. Si le document n'impose aucune échéance, null.
 
 amount — Le montant TTC à payer. Au format français la virgule est décimale. Sur une facture, retenir le net à payer, pas le sous-total ni le report. Si le document ne réclame aucun paiement, null.
+
+billing_cycle — La périodicité facturée si le document l'indique ("abonnement mensuel", "cotisation annuelle", période du 01/09 au 30/09 = mensuel) : monthly, yearly, quarterly, weekly. "one_time" pour un achat ponctuel explicite. Sans indice, "unknown".
 
 reference — Numéro de facture, de contrat ou de police, tel qu'imprimé. C'est ce que l'utilisateur devra citer face au fournisseur, donc reproduis-le exactement.
 

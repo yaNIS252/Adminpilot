@@ -196,6 +196,7 @@ export function mockExtractFromDocument(input: {
     currency: "EUR",
     document_date: new Date().toISOString().slice(0, 10),
     deadline: null,
+    billing_cycle: "unknown",
     reference: null,
     confidence: MOCK_CONFIDENCE,
   };
