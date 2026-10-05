@@ -160,20 +160,48 @@ export async function trackPriceChange(
     const when = input.effectiveDate
       ? ` à partir du ${new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" }).format(new Date(`${input.effectiveDate}T00:00:00Z`))}`
       : "";
-    await db.from("alerts").upsert(
+    const today = new Date().toISOString().slice(0, 10);
+    const future = Boolean(input.effectiveDate && input.effectiveDate > today);
+    const longDate = input.effectiveDate
+      ? new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(
+          new Date(`${input.effectiveDate}T00:00:00Z`),
+        )
+      : null;
+    const base = {
+      user_id: input.userId,
+      ref_type: "subscription" as const,
+      ref_id: sub.id,
+      kind: "price_change" as const,
+      price_change_id: change.id,
+    };
+    const rows = [
+      // Tout de suite : une hausse annoncée ouvre souvent un droit de
+      // résilier sans frais avant sa date d'effet. Attendre la veille ferait
+      // perdre ce délai.
       {
-        user_id: input.userId,
-        ref_type: "subscription",
-        ref_id: sub.id,
-        kind: "price_change",
-        price_change_id: change.id,
-        title: `${sub.provider} augmente`,
+        ...base,
+        title: future ? `${sub.provider} va augmenter le ${longDate}` : `${sub.provider} augmente`,
         message: `${formatEuros(previous)} → ${formatEuros(newAmount)}${when}, soit ${formatEuros(yearly)} de plus par an.`,
-        alert_date: new Date().toISOString().slice(0, 10),
+        alert_date: today,
         dedup_key: `prix:${change.id}`,
       },
-      { onConflict: "dedup_key", ignoreDuplicates: true },
-    );
+    ];
+    // Hausse à venir : second rappel une semaine avant qu'elle s'applique.
+    if (future && input.effectiveDate) {
+      const reminder = new Date(`${input.effectiveDate}T00:00:00Z`);
+      reminder.setUTCDate(reminder.getUTCDate() - 7);
+      const reminderDate = reminder.toISOString().slice(0, 10);
+      if (reminderDate > today) {
+        rows.push({
+          ...base,
+          title: `${sub.provider} augmente dans 7 jours`,
+          message: `Le ${longDate}, ${formatEuros(previous)} → ${formatEuros(newAmount)}. Dernier moment pour résilier ou changer d'offre avant la hausse.`,
+          alert_date: reminderDate,
+          dedup_key: `prix:${change.id}:j-7`,
+        });
+      }
+    }
+    await db.from("alerts").upsert(rows, { onConflict: "dedup_key", ignoreDuplicates: true });
   }
 
   return { recorded: true, kind, id: change.id, alerted };
