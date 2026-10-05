@@ -113,10 +113,10 @@ export default function CookiesPage() {
               </tr>
               <tr className="border-b border-[var(--border-soft)]">
                 <td className="mono py-2.5 pr-4 text-[13px] text-[var(--text)]">
-                  ap_tour_step, ap_tour_dismissed
+                  ap_tour_step, ap_tour_dismissed, ap_subscriptions_sort
                 </td>
                 <td className="py-2.5 pr-4">
-                  Stockage local : l’étape atteinte dans la présentation de bienvenue, et le fait de l’avoir fermée pour la connexion en cours
+                  Stockage local : l’étape atteinte dans la présentation de bienvenue, le fait de l’avoir fermée pour la connexion en cours, et le tri choisi pour tes abonnements
                 </td>
                 <td className="py-2.5 whitespace-nowrap">Jusqu’à la fin de la présentation</td>
               </tr>

@@ -3,11 +3,17 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, LogOut, Pencil, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { BILLING_CYCLES } from "@/lib/ai/schemas";
-import { activeTrialUntil, formatAmount, formatCycle, formatDate } from "@/lib/format";
+import {
+  activeTrialUntil,
+  formatAmount,
+  formatCycle,
+  formatDate,
+  monthlyEquivalent,
+} from "@/lib/format";
 import type { Subscription } from "@/lib/supabase/types";
 
 /**
@@ -17,6 +23,67 @@ import type { Subscription } from "@/lib/supabase/types";
  * l'interface ne fait jamais autorité sur ce que l'utilisateur a le droit de
  * toucher.
  */
+const SORTS = {
+  price_desc: "Du plus cher au moins cher",
+  price_asc: "Du moins cher au plus cher",
+  renewal_asc: "Échéance la plus proche",
+  renewal_desc: "Échéance la plus lointaine",
+  name_asc: "Ordre alphabétique (A → Z)",
+  name_desc: "Ordre alphabétique (Z → A)",
+} as const;
+
+type Sort = keyof typeof SORTS;
+
+const SORT_KEY = "ap_subscriptions_sort";
+
+function readSort(): Sort {
+  try {
+    const saved = window.localStorage.getItem(SORT_KEY);
+    return saved && saved in SORTS ? (saved as Sort) : "price_desc";
+  } catch {
+    return "price_desc";
+  }
+}
+
+const sortListeners = new Set<() => void>();
+
+function subscribeSort(listener: () => void) {
+  sortListeners.add(listener);
+  return () => sortListeners.delete(listener);
+}
+
+function writeSort(sort: Sort) {
+  try {
+    window.localStorage.setItem(SORT_KEY, sort);
+  } catch {
+    // Stockage indisponible : le tri vaut pour la visite en cours seulement.
+  }
+  sortListeners.forEach((listener) => listener());
+}
+
+/**
+ * Comparaison selon le tri choisi. Les montants sont ramenés au mois (un
+ * annuel à 120 € coûte autant qu'un mensuel à 10 €) ; une échéance ou un
+ * montant inconnu passe toujours en dernier, quel que soit le sens.
+ */
+function compare(sort: Sort, a: Subscription, b: Subscription): number {
+  const byName = a.provider.localeCompare(b.provider, "fr", { sensitivity: "base" });
+  if (sort === "name_asc") return byName;
+  if (sort === "name_desc") return -byName;
+
+  if (sort === "price_desc" || sort === "price_asc") {
+    const pa = a.amount === null ? null : monthlyEquivalent(a.amount, a.cycle);
+    const pb = b.amount === null ? null : monthlyEquivalent(b.amount, b.cycle);
+    if (pa === null || pb === null) return pa === pb ? byName : pa === null ? 1 : -1;
+    return (sort === "price_desc" ? pb - pa : pa - pb) || byName;
+  }
+
+  const ra = a.next_renewal;
+  const rb = b.next_renewal;
+  if (!ra || !rb) return ra === rb ? byName : !ra ? 1 : -1;
+  return (sort === "renewal_asc" ? ra.localeCompare(rb) : rb.localeCompare(ra)) || byName;
+}
+
 /** Dernier changement de prix d'un abonnement, s'il est récent. */
 export type RecentPriceChange = {
   kind: string;
@@ -35,6 +102,9 @@ export function SubscriptionList({
 }) {
   const router = useRouter();
   const [items, setItems] = useState(initial);
+  // Tri mémorisé dans le navigateur ; le serveur rend l'ordre par défaut.
+  const sort = useSyncExternalStore(subscribeSort, readSort, () => "price_desc" as Sort);
+  const sorted = [...items].sort((a, b) => compare(sort, a, b));
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -105,8 +175,25 @@ export function SubscriptionList({
         </p>
       )}
 
+      {items.length > 1 && (
+        <label className="mb-3 flex items-center justify-end gap-2 text-xs text-[var(--text-dim)]">
+          Trier
+          <select
+            value={sort}
+            onChange={(event) => writeSort(event.target.value as Sort)}
+            className="h-9 rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--accent)]"
+          >
+            {(Object.keys(SORTS) as Sort[]).map((value) => (
+              <option key={value} value={value}>
+                {SORTS[value]}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
       <ul className="m-0 list-none space-y-2.5 p-0">
-        {items.map((sub) => {
+        {sorted.map((sub) => {
           const uncertain = !sub.confirmed_by_user && sub.confidence < 0.7;
           const trialUntil = activeTrialUntil(sub.metadata);
 
