@@ -73,14 +73,26 @@ export default async function SettingsPage({
   const subscriber = profile.plan !== "free" && Boolean(profile.stripe_sub_id) && !onBonus;
   const membership = subscriber ? null : await membershipOf(db, auth.userId);
   const isMember = Boolean(membership) && profile.plan === "family";
+  // Rattaché à un foyer dont le titulaire n'est plus Premium : conservé,
+  // en pause, mais visible — sinon impossible de le quitter.
+  const pausedMember = Boolean(membership) && !isMember && membership?.owner?.plan !== "family";
   const householdOwner = subscriber && profile.plan === "family";
 
-  const [billing, ownAvatar, household, domains, referrals] = await Promise.all([
+  const [billing, ownAvatar, household, domains, referrals, pausedHousehold] = await Promise.all([
     subscriber && profile.stripe_sub_id ? currentBilling(profile.stripe_sub_id) : null,
     avatarUrl(profile.avatar_path),
     householdOwner ? householdOf(db, auth.userId) : Promise.resolve([]),
     forwardingDomains(),
     referralOverview(db, auth.userId),
+    // Titulaire repassé en Pro : ses membres sont conservés, en pause.
+    subscriber && !householdOwner
+      ? db
+          .from("family_members")
+          .select("id", { count: "exact", head: true })
+          .eq("owner_id", auth.userId)
+          .not("member_id", "is", null)
+          .then(({ count }) => count ?? 0)
+      : Promise.resolve(0),
   ]);
   const memberAvatars = await avatarUrls(household.map((row) => row.member?.avatar_path ?? null));
 
@@ -246,17 +258,29 @@ export default async function SettingsPage({
                 : null,
             }))}
           />
-        ) : isMember && membership ? (
+        ) : (isMember || pausedMember) && membership ? (
           <HouseholdMembership
             ownerName={membership.owner?.name ?? membership.owner?.email ?? "ton foyer"}
+            paused={pausedMember}
           />
         ) : (
           <div className="flex flex-wrap items-center gap-4">
             <Lock className="size-5 shrink-0 text-[var(--accent-lighter)]" />
             <p className="m-0 min-w-[220px] flex-1 text-sm text-[var(--text-dim)]">
-              Avec <strong className="text-[var(--text)]">Premium</strong>,
-              invite jusqu’à {INVITE_SLOTS} proches : chacun a son compte, ses
-              alertes et ses documents, pour le prix d’un seul abonnement.
+              {pausedHousehold > 0 ? (
+                <>
+                  Ton foyer est <strong className="text-[var(--text)]">en pause</strong> :{" "}
+                  {pausedHousehold} proche{pausedHousehold > 1 ? "s ont" : " a"} perdu
+                  Premium. Repasse en Premium et {pausedHousehold > 1 ? "ils le retrouvent" : "il le retrouve"}{" "}
+                  aussitôt, sans nouvelle invitation.
+                </>
+              ) : (
+                <>
+                  Avec <strong className="text-[var(--text)]">Premium</strong>,
+                  invite jusqu’à {INVITE_SLOTS} proches : chacun a son compte, ses
+                  alertes et ses documents, pour le prix d’un seul abonnement.
+                </>
+              )}
             </p>
             <Link
               href="/reglages?formule=family#formules"

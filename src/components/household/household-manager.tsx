@@ -252,13 +252,23 @@ function MemberLine({
 }
 
 /** Vue d'un membre invité : de qui il tient sa formule, et comment partir. */
-export function HouseholdMembership({ ownerName }: { ownerName: string }) {
+export function HouseholdMembership({
+  ownerName,
+  paused = false,
+}: {
+  ownerName: string;
+  /** Le titulaire n'est plus en Premium : le foyer est conservé, en pause. */
+  paused?: boolean;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function leave() {
-    if (!window.confirm(`Quitter le foyer de ${ownerName} ? Ton compte repassera en formule gratuite.`)) {
+    const message = paused
+      ? `Quitter le foyer de ${ownerName} ? Tu ne retrouveras plus Premium automatiquement s’il y revient.`
+      : `Quitter le foyer de ${ownerName} ? Ton compte repassera en formule gratuite.`;
+    if (!window.confirm(message)) {
       return;
     }
     setBusy(true);
@@ -274,10 +284,22 @@ export function HouseholdMembership({ ownerName }: { ownerName: string }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="m-0 text-sm text-[var(--text-dim)]">
-        Ta formule Premium est offerte par{" "}
-        <strong className="text-[var(--text)]">{ownerName}</strong>. Tes
-        données restent privées : personne dans le foyer ne voit tes documents
-        ni tes abonnements.
+        {paused ? (
+          <>
+            Tu fais partie du foyer de{" "}
+            <strong className="text-[var(--text)]">{ownerName}</strong>, en pause :{" "}
+            {ownerName} n’a plus Premium. Tu le retrouveras automatiquement s’il
+            y revient. Tu peux aussi quitter ce foyer, par exemple pour en
+            rejoindre un autre.
+          </>
+        ) : (
+          <>
+            Ta formule Premium est offerte par{" "}
+            <strong className="text-[var(--text)]">{ownerName}</strong>. Tes
+            données restent privées : personne dans le foyer ne voit tes
+            documents ni tes abonnements.
+          </>
+        )}
       </p>
       <button
         type="button"
