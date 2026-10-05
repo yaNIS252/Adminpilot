@@ -10,6 +10,7 @@ import {
   forwardingSourceAddress,
 } from "@/lib/ingest/gmail-confirmation";
 import { enqueue } from "@/lib/ingest/pipeline";
+import { wakeDrain } from "@/lib/ingest/wake";
 import { ingestAttachments } from "@/lib/ingest/attachments";
 import { isOwnMessage } from "@/lib/ingest/sender-learning";
 import { isSecurityEmail } from "@/lib/ingest/sensitive";
@@ -229,11 +230,8 @@ export async function POST(request: Request) {
     console.error("[inbound] parrainage:", error),
   );
 
-  // Réveil immédiat du drain. Échec sans conséquence : le cron rattrapera.
-  void fetch(new URL("/api/cron/process-jobs", request.url), {
-    method: "POST",
-    headers: { authorization: `Bearer ${process.env.CRON_SECRET}` },
-  }).catch(() => {});
+  // Réveil immédiat de l'analyse, une fois la réponse envoyée.
+  wakeDrain(request.url);
 
   return NextResponse.json(result, { status: 202 });
 }

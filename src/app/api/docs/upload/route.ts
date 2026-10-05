@@ -5,6 +5,7 @@ import { checkLimit } from "@/lib/billing/quotas";
 import { ACCEPTED_MIME_TYPES, MAX_UPLOAD_BYTES } from "@/lib/constants";
 import { hashFile } from "@/lib/ingest/dedupe";
 import { enqueue } from "@/lib/ingest/pipeline";
+import { wakeDrain } from "@/lib/ingest/wake";
 import { sniffMimeType } from "@/lib/ingest/sniff";
 import { consume, tooManyRequests } from "@/lib/rate-limit";
 import { buildKey, uploadRaw } from "@/lib/storage";
@@ -111,10 +112,7 @@ export async function POST(request: Request) {
   // lui, le document attendait la tâche planifiée du lendemain matin.
   // Échec sans conséquence : la tâche planifiée rattrapera.
   if (result.status !== "duplicate") {
-    void fetch(new URL("/api/cron/process-jobs", request.url), {
-      method: "POST",
-      headers: { authorization: `Bearer ${process.env.CRON_SECRET}` },
-    }).catch(() => {});
+    wakeDrain(request.url);
   }
 
   // Le même fichier envoyé deux fois n'est pas une erreur : on le signale
