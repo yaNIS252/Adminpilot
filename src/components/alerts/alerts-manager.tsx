@@ -19,6 +19,12 @@ export type UpcomingAlert = {
   title: string;
   alert_date: string;
   kind: string;
+  /** Échéance visée (renouvellement, fin d'engagement…), si connue. */
+  due: string | null;
+  /** Fréquence de l'abonnement, pour un renouvellement. */
+  cycle: string | null;
+  /** Rappels d'une même échéance (7 jours avant, la veille) : une seule ligne. */
+  group: string;
 };
 
 export type Target = { id: string; type: "subscription" | "document"; label: string };
@@ -28,6 +34,13 @@ export type ReminderSetting = {
   provider: string;
   next_renewal: string | null;
   reminders_muted: boolean;
+};
+
+const RECURRENCE: Record<string, string> = {
+  monthly: "chaque mois",
+  yearly: "chaque année",
+  quarterly: "chaque trimestre",
+  weekly: "chaque semaine",
 };
 
 const KIND_LABELS: Record<string, string> = {
@@ -41,12 +54,14 @@ export function UpcomingAlerts({ alerts }: { alerts: UpcomingAlert[] }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function cut(id: string) {
-    setBusy(id);
+  async function cut(ids: string[], key: string) {
+    setBusy(key);
     setError(null);
-    const response = await fetch(`/api/alerts?id=${id}`, { method: "DELETE" }).catch(() => null);
+    const responses = await Promise.all(
+      ids.map((id) => fetch(`/api/alerts?id=${id}`, { method: "DELETE" }).catch(() => null)),
+    );
     setBusy(null);
-    if (response?.ok) router.refresh();
+    if (responses.every((response) => response?.ok)) router.refresh();
     else setError("L’alerte n’a pas pu être coupée. Réessaie.");
   }
 
@@ -58,6 +73,12 @@ export function UpcomingAlerts({ alerts }: { alerts: UpcomingAlert[] }) {
     );
   }
 
+  // Une ligne par échéance, ses rappels (déjà triés par date) regroupés.
+  const groups = [...alerts.reduce((map, alert) => {
+    map.set(alert.group, [...(map.get(alert.group) ?? []), alert]);
+    return map;
+  }, new Map<string, UpcomingAlert[]>()).entries()];
+
   return (
     <>
       {error && (
@@ -66,39 +87,49 @@ export function UpcomingAlerts({ alerts }: { alerts: UpcomingAlert[] }) {
         </p>
       )}
       <ul className="m-0 list-none space-y-0.5 p-0">
-        {alerts.map((alert) => (
-          <li
-            key={alert.id}
-            className="flex items-center gap-3 rounded-[var(--radius-sm)] px-2 py-2.5 transition-colors hover:bg-[rgba(255,255,255,.04)]"
-          >
-            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[rgba(255,255,255,.05)] text-[var(--accent-light)]">
-              {alert.kind === "price_change" ? (
-                <TrendingUp className="size-3.5 text-[var(--warning-light)]" />
-              ) : (
-                <Bell className="size-3.5" />
-              )}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium">{alert.title}</div>
-              <div className="text-xs text-[var(--text-faint)]">
-                {KIND_LABELS[alert.kind] ?? "Alerte"} · {formatDate(alert.alert_date)}
-              </div>
-            </div>
-            <span className="hidden shrink-0 rounded-full bg-[rgba(255,255,255,.05)] px-2.5 py-1 text-[11px] text-[var(--text-dim)] sm:inline">
-              {formatRelativeDeadline(alert.alert_date)}
-            </span>
-            <button
-              type="button"
-              onClick={() => cut(alert.id)}
-              disabled={busy === alert.id}
-              title="Couper cette alerte"
-              aria-label={`Couper l’alerte « ${alert.title} »`}
-              className="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--text-faint)] transition-colors hover:bg-[rgba(240,113,104,.12)] hover:text-[var(--danger)] disabled:opacity-50"
+        {groups.map(([key, items]) => {
+          const first = items[0];
+          const target = first.due ?? first.alert_date;
+          const cycle = first.cycle ? (RECURRENCE[first.cycle] ?? null) : null;
+          const reminders = items.map((item) => formatDate(item.alert_date)).join(" et ");
+          return (
+            <li
+              key={key}
+              className="flex items-center gap-3 rounded-[var(--radius-sm)] px-2 py-2.5 transition-colors hover:bg-[rgba(255,255,255,.04)]"
             >
-              <X className="size-4" />
-            </button>
-          </li>
-        ))}
+              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[rgba(255,255,255,.05)] text-[var(--accent-light)]">
+                {first.kind === "price_change" ? (
+                  <TrendingUp className="size-3.5 text-[var(--warning-light)]" />
+                ) : (
+                  <Bell className="size-3.5" />
+                )}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">{first.title}</div>
+                <div className="text-xs text-[var(--text-faint)]">
+                  {KIND_LABELS[first.kind] ?? "Alerte"} · {formatDate(target)}
+                  {cycle ? ` · ${cycle}` : ""}
+                </div>
+                <div className="text-xs text-[var(--text-faint)]">
+                  {items.length > 1 ? "Rappels" : "Rappel"} le {reminders}
+                </div>
+              </div>
+              <span className="hidden shrink-0 rounded-full bg-[rgba(255,255,255,.05)] px-2.5 py-1 text-[11px] text-[var(--text-dim)] sm:inline">
+                {formatRelativeDeadline(target)}
+              </span>
+              <button
+                type="button"
+                onClick={() => cut(items.map((item) => item.id), key)}
+                disabled={busy === key}
+                title="Couper ces rappels"
+                aria-label={`Couper les rappels « ${first.title} »`}
+                className="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--text-faint)] transition-colors hover:bg-[rgba(240,113,104,.12)] hover:text-[var(--danger)] disabled:opacity-50"
+              >
+                <X className="size-4" />
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </>
   );

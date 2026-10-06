@@ -46,7 +46,7 @@ export default async function AlertsPage() {
       .maybeSingle(),
     supabase
       .from("subscriptions")
-      .select("id, provider, next_renewal, reminders_muted")
+      .select("id, provider, next_renewal, reminders_muted, cycle")
       .eq("status", "active")
       .eq("over_quota", false)
       .order("provider"),
@@ -67,6 +67,7 @@ export default async function AlertsPage() {
   ];
 
   const sentThisMonth = usage?.alerts_count ?? 0;
+  const cycles = new Map((subscriptions ?? []).map((sub) => [sub.id, sub.cycle]));
 
   return (
     <div className="flex flex-col gap-5">
@@ -113,12 +114,24 @@ export default async function AlertsPage() {
         </h2>
 
         <UpcomingAlerts
-          alerts={(upcoming ?? []).map((alert) => ({
-            id: alert.id,
-            title: alert.title,
-            alert_date: alert.alert_date,
-            kind: alert.kind,
-          }))}
+          alerts={(upcoming ?? []).map((alert) => {
+            // La clé de dédoublonnage porte l'échéance visée :
+            // « subscription:<id>:2026-10-17:j-7 ».
+            const due = /:(\d{4}-\d{2}-\d{2}):/.exec(alert.dedup_key ?? "")?.[1] ?? null;
+            const cycle =
+              alert.ref_type === "subscription" && alert.kind === "deadline"
+                ? (cycles.get(alert.ref_id) ?? null)
+                : null;
+            return {
+              id: alert.id,
+              title: alert.title,
+              alert_date: alert.alert_date,
+              kind: alert.kind,
+              due,
+              cycle,
+              group: `${alert.ref_type}:${alert.ref_id}:${alert.kind}:${due ?? alert.id}:${alert.title}`,
+            };
+          })}
         />
         <div className="mt-4 flex flex-col">
           <NewReminder targets={targets} today={todayIso()} />
