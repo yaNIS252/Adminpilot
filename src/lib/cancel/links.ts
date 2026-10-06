@@ -69,13 +69,31 @@ function normalize(name: string): string {
     .replace(/[^a-z0-9]/g, "");
 }
 
+/** Mots significatifs d'un nom commercial (« Amazon Prime » → amazon, prime). */
+function words(name: string): string[] {
+  return name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((word) => word.length >= 3);
+}
+
+/** Les deux noms partagent au moins un mot significatif. */
+function sameBrand(a: string, b: string): boolean {
+  const left = new Set(words(a));
+  return words(b).some((word) => left.has(word));
+}
+
 export type CatalogueMatch = { id: string; domain: string };
 
 /**
  * Fournisseur du catalogue correspondant à un abonnement détecté.
  *
- * Par ordre de fiabilité : adresse d'expédition connue, domaine d'expédition,
- * puis nom commercial. Sans ce rattachement, la base légale et le lien
+ * Nom commercial exact d'abord ; sinon adresse ou domaine d'expédition, mais
+ * seulement si les noms se recoupent : un même expéditeur vend plusieurs
+ * services (amazon.fr envoie Prime, Audible, Kindle…), et rattacher Audible à
+ * « Amazon Prime » affichait le guide de résiliation de Prime. Sans ce rattachement, la base légale et le lien
  * officiel de résiliation — vérifiés à la main dans le catalogue — restaient
  * inaccessibles pour tout abonnement détecté automatiquement.
  */
@@ -94,9 +112,16 @@ export async function matchCatalogue(
   const name = normalize(input.provider);
 
   const found =
-    providers.find((p) => address && p.sender_emails.some((e) => e.toLowerCase() === address)) ??
-    providers.find((p) => domain && rootDomain(p.domain) === domain) ??
-    providers.find((p) => normalize(p.name) === name);
+    providers.find((p) => normalize(p.name) === name) ??
+    providers.find(
+      (p) =>
+        address &&
+        p.sender_emails.some((e) => e.toLowerCase() === address) &&
+        sameBrand(p.name, input.provider),
+    ) ??
+    providers.find(
+      (p) => domain && rootDomain(p.domain) === domain && sameBrand(p.name, input.provider),
+    );
 
   return found ? { id: found.id, domain: rootDomain(found.domain) } : null;
 }
