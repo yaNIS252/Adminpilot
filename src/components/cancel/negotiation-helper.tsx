@@ -3,6 +3,8 @@
 import { Check, Copy, Lightbulb, Mail } from "lucide-react";
 import { useState } from "react";
 
+import { useIsPhone } from "@/components/shared/use-is-phone";
+
 /**
  * Message de négociation, modifiable, avec copie en un geste et ouverture
  * dans la messagerie. Les conseils servent pour un appel ou un chat.
@@ -32,7 +34,12 @@ export function NegotiationHelper({
     }
   }
 
+  const phone = useIsPhone();
   const mailto = `mailto:${email ?? ""}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+  // Sur ordinateur, `mailto:` n'ouvre rien sans logiciel de messagerie
+  // installé, le cas de presque tout le monde : on ouvre Gmail dans le
+  // navigateur, le lien `mailto:` reste proposé pour les autres.
+  const gmail = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email ?? "")}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -53,10 +60,30 @@ export function NegotiationHelper({
           {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
           {copied ? "Message copié" : "Copier le message"}
         </button>
-        <a href={mailto} className="btn-secondary inline-flex h-10 items-center gap-1.5 px-4 text-[13px]">
-          <Mail className="size-4" />
-          {email ? "Envoyer par e-mail" : "Ouvrir dans ma messagerie"}
-        </a>
+        {phone ? (
+          <a href={mailto} className="btn-secondary inline-flex h-10 items-center gap-1.5 px-4 text-[13px]">
+            <Mail className="size-4" />
+            {email ? "Envoyer par e-mail" : "Ouvrir dans ma messagerie"}
+          </a>
+        ) : (
+          <>
+            <a
+              href={gmail}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary inline-flex h-10 items-center gap-1.5 px-4 text-[13px]"
+            >
+              <Mail className="size-4" />
+              Écrire dans Gmail
+            </a>
+            <a
+              href={mailto}
+              className="inline-flex h-10 items-center px-2 text-[13px] text-[var(--text-dim)] underline-offset-2 hover:text-[var(--text)] hover:underline"
+            >
+              Autre messagerie
+            </a>
+          </>
+        )}
       </div>
       <p className="m-0 text-xs text-[var(--text-faint)]">
         Colle-le dans le chat de ton espace client, envoie-le par e-mail, ou
