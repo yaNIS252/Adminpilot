@@ -24,7 +24,6 @@ import { ShareCard } from "@/components/referral/share-card";
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { requireUser } from "@/lib/auth/require-user";
 import { PLAN_LABELS, SHARE_COOKIE, TOUR_MAILBOX_STEP, UPSELL_COOKIE } from "@/lib/constants";
-import { OWN_SUBSCRIPTION_SOURCE } from "@/lib/billing/sync";
 import { periodsPerYear } from "@/lib/ingest/price-tracker";
 import {
   activeTrialUntil,
@@ -138,14 +137,14 @@ export default async function DashboardPage({
     0,
   );
 
-  // Montant de la carte de parrainage : les abonnements détectés, sans la
-  // ligne AdminPilot, qui n'a rien à faire dans « et tes proches ? ».
-  const detectedMonthly = subs
-    .filter(
-      (sub) =>
-        (sub.metadata as { source?: string } | null)?.source !== OWN_SUBSCRIPTION_SOURCE,
-    )
+  // Ce qui est réellement payé aujourd'hui : sans les essais gratuits en
+  // cours. Le total complet (ce que coûteront ces abonnements une fois les
+  // essais finis) s'affiche en petit dessous. Même chiffre sur la carte de
+  // parrainage, pour ne pas montrer deux montants différents à l'écran.
+  const trialMonthly = subs
+    .filter((sub) => activeTrialUntil(sub.metadata))
     .reduce((sum, sub) => sum + monthlyEquivalent(sub.amount, sub.cycle), 0);
+  const paidMonthly = monthlyTotal - trialMonthly;
 
   // Répartition par catégorie — calculée sur les données du moment, donc juste.
   // La maquette montrait une courbe d'évolution : elle demanderait un
@@ -287,10 +286,12 @@ export default async function DashboardPage({
           icon={<Wallet className="size-4 text-[var(--accent-light)]" />}
           tint="rgb(var(--accent-rgb) / "
           label="Dépenses mensuelles"
-          value={formatAmount(monthlyTotal) ?? "—"}
+          value={formatAmount(paidMonthly) ?? "—"}
           footer={
             <span className="text-xs text-[var(--text-faint)]">
-              montants annuels ramenés au mois
+              {trialMonthly > 0
+                ? `${formatAmount(monthlyTotal)} après les essais gratuits`
+                : "montants annuels ramenés au mois"}
             </span>
           }
         />
@@ -326,10 +327,10 @@ export default async function DashboardPage({
 
       {/* Partage après la première détection : c'est le chiffre qui donne
           envie d'en parler, pas une publicité. */}
-      {auth && detectedMonthly > 0 && !shareHidden && (
+      {auth && paidMonthly > 0 && !shareHidden && (
         <ShareCard
           link={`${siteUrl()}/p/${auth.profile.referral_code}`}
-          monthly={formatAmount(detectedMonthly) ?? ""}
+          monthly={formatAmount(paidMonthly) ?? ""}
         />
       )}
 
