@@ -9,6 +9,9 @@
  * les remplacer par des gris opaques l'aplatirait.
  */
 :root {
+  /* Interface sombre : les listes déroulantes natives et les barres de
+     défilement suivent, au lieu d'afficher un texte clair sur fond blanc. */
+  color-scheme: dark;
   --bg: #0a0a0f;
   --bg-elevated: #0e0e15;
   --bg-overlay: rgba(20, 20, 29, 0.92);
@@ -472,4 +475,10 @@
 }
 .anim-caret {
   animation: ap-caret 1s steps(1) infinite;
+}
+
+/* Options des listes déroulantes natives (Windows les dessine à part). */
+select option {
+  background-color: var(--bg-elevated);
+  color: var(--text);
 }

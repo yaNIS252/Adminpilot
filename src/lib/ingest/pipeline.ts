@@ -186,9 +186,12 @@ export async function processEmailJob(job: {
   // sur une lecture assez sûre — retirer à tort un abonnement du suivi
   // ferait manquer ses prochains rappels.
   if (data.type === "cancellation") {
+    // Nom exact, sinon un seul abonnement dont le nom commence pareil : la
+    // confirmation dit « MyParis Premium », l'utilisateur a saisi « My Paris ».
     const target = needsReview
       ? null
-      : await findExistingSubscription(db, job.user_id, data.provider);
+      : ((await findExistingSubscription(db, job.user_id, data.provider)) ??
+        (await findSubscriptionByPrefix(db, job.user_id, data.provider)));
     if (target) {
       await markCancelled(db, job.user_id, target.id, {
         effectiveDate: data.effective_date,
