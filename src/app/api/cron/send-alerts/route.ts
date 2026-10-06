@@ -10,6 +10,7 @@ import {
 } from "@/lib/alerts/email";
 import { sendMonthlyRecaps } from "@/lib/alerts/recap";
 import { currentPeriod, incrementUsage } from "@/lib/billing/quotas";
+import { sendFeedbackRequests } from "@/lib/feedback";
 import { PLAN_LIMITS } from "@/lib/constants";
 import { alertsAddress } from "@/lib/email/sender";
 import { runReferralTasks } from "@/lib/referral/engine";
@@ -65,6 +66,12 @@ export async function GET(request: Request) {
     return null;
   });
 
+  // Demande d'avis un mois après l'inscription. Même hébergement que le récap.
+  const feedback = await sendFeedbackRequests({ db, resend, siteUrl: base }).catch((error) => {
+    console.error("[cron] demande d'avis:", error);
+    return null;
+  });
+
   const { data: alerts, error } = await db
     .from("alerts")
     .select("*, profiles!inner(email, deleted_at, plan)")
@@ -74,7 +81,7 @@ export async function GET(request: Request) {
 
   if (error) throw error;
   if (!alerts?.length) {
-    return NextResponse.json({ candidates: 0, sent: 0, failed: 0, refused: 0, recap, referrals });
+    return NextResponse.json({ candidates: 0, sent: 0, failed: 0, refused: 0, recap, referrals, feedback });
   }
 
   // Les objets référencés sont chargés en deux requêtes, pas en deux par
@@ -266,5 +273,6 @@ export async function GET(request: Request) {
     capped,
     recap,
     referrals,
+    feedback,
   });
 }

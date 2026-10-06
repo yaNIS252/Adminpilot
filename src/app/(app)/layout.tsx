@@ -1,12 +1,14 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { FeedbackPrompt } from "@/components/feedback/feedback-prompt";
 import { WelcomeTour } from "@/components/onboarding/welcome-tour";
 import { ReferralBanner } from "@/components/referral/referral-banner";
 import { Sidebar } from "@/components/shared/sidebar";
 import { SESSION_COOKIE, readSession } from "@/lib/auth/session";
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
 import { PLAN_LIMITS, REFERRAL_BANNER_COOKIE } from "@/lib/constants";
+import { isFeedbackDue } from "@/lib/feedback";
 import { forwardingDomains } from "@/lib/forwarding-domains";
 import { siteUrl } from "@/lib/site-url";
 import { effectiveTheme } from "@/lib/profile/theme";
@@ -36,6 +38,9 @@ export default async function AppLayout({
   const session = readSession(cookieStore.get(SESSION_COOKIE)?.value);
   const bannerHidden = cookieStore.get(REFERRAL_BANNER_COOKIE)?.value === "1";
   const tourPending = !auth.profile.tour_completed_at;
+  // Demande d'avis au bout de deux semaines, tant qu'il n'a ni répondu ni
+  // refermé la carte. Elle remplace la bande de parrainage : une seule à la fois.
+  const feedbackDue = !tourPending && isFeedbackDue(auth.profile);
 
   const supabase = await createClient();
   const [{ count: reviewCount }, { count: documentsUsed }, photo, domains] = await Promise.all([
@@ -73,7 +78,7 @@ export default async function AppLayout({
       />
       <main className="min-w-0 flex-1 px-4 pt-6 pb-24 md:px-8 md:pb-10">
         <div className="mx-auto w-full max-w-5xl">
-          {!bannerHidden && <ReferralBanner />}
+          {feedbackDue ? <FeedbackPrompt /> : !bannerHidden && <ReferralBanner />}
           {children}
         </div>
       </main>

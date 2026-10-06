@@ -499,6 +499,11 @@ export type Database = {
           created_at: string;
           deleted_at: string | null;
           email: string;
+          feedback_at: string | null;
+          feedback_comment: string | null;
+          feedback_dismissed_at: string | null;
+          feedback_email_sent_at: string | null;
+          feedback_rating: number | null;
           forwarding_source_hash: string | null;
           gmail_confirmation: Json | null;
           gmail_confirmation_at: string | null;
@@ -524,6 +529,11 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           email: string;
+          feedback_at?: string | null;
+          feedback_comment?: string | null;
+          feedback_dismissed_at?: string | null;
+          feedback_email_sent_at?: string | null;
+          feedback_rating?: number | null;
           forwarding_source_hash?: string | null;
           gmail_confirmation?: Json | null;
           gmail_confirmation_at?: string | null;
@@ -549,6 +559,11 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           email?: string;
+          feedback_at?: string | null;
+          feedback_comment?: string | null;
+          feedback_dismissed_at?: string | null;
+          feedback_email_sent_at?: string | null;
+          feedback_rating?: number | null;
           forwarding_source_hash?: string | null;
           gmail_confirmation?: Json | null;
           gmail_confirmation_at?: string | null;

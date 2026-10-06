@@ -132,6 +132,13 @@ export const SHARE_COOKIE = "ap_share_hidden";
  */
 export const TOUR_MAILBOX_STEP = 2;
 /** Bande de parrainage en haut de l'application refermée. */
+/**
+ * Demande d'avis : carte dans l'application au bout de deux semaines, e-mail
+ * au bout d'un mois si l'utilisateur n'a toujours pas répondu.
+ */
+export const FEEDBACK_PROMPT_DAYS = 14;
+export const FEEDBACK_EMAIL_DAYS = 30;
+
 export const REFERRAL_BANNER_COOKIE = "ap_referral_banner_hidden";
 
 /**
