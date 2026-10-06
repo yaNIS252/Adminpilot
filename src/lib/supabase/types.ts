@@ -254,6 +254,7 @@ export type Database = {
           original_filename: string | null;
           processed_at: string | null;
           raw_url: string | null;
+          result: Json | null;
           source: Database["public"]["Enums"]["job_source"];
           status: Database["public"]["Enums"]["job_status"];
           tokens_in: number | null;
@@ -272,6 +273,7 @@ export type Database = {
           original_filename?: string | null;
           processed_at?: string | null;
           raw_url?: string | null;
+          result?: Json | null;
           source: Database["public"]["Enums"]["job_source"];
           status?: Database["public"]["Enums"]["job_status"];
           tokens_in?: number | null;
@@ -290,6 +292,7 @@ export type Database = {
           original_filename?: string | null;
           processed_at?: string | null;
           raw_url?: string | null;
+          result?: Json | null;
           source?: Database["public"]["Enums"]["job_source"];
           status?: Database["public"]["Enums"]["job_status"];
           tokens_in?: number | null;

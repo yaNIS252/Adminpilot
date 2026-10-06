@@ -5,26 +5,28 @@ import { useRouter } from "next/navigation";
 import { Forward, Plus, X } from "lucide-react";
 import { useState } from "react";
 
+import { SelectMenu } from "@/components/shared/select-menu";
+
 const CYCLES = [
-  ["monthly", "par mois"],
-  ["yearly", "par an"],
-  ["quarterly", "par trimestre"],
-  ["weekly", "par semaine"],
+  { value: "monthly", label: "par mois" },
+  { value: "yearly", label: "par an" },
+  { value: "quarterly", label: "par trimestre" },
+  { value: "weekly", label: "par semaine" },
 ] as const;
 
 const CATEGORIES = [
-  ["streaming", "Streaming"],
-  ["telecom", "Télécom"],
-  ["energie", "Énergie"],
-  ["assurance", "Assurance"],
-  ["logiciel", "Logiciels"],
-  ["presse", "Presse"],
-  ["sport", "Sport"],
-  ["transport", "Transport"],
-  ["logement", "Logement"],
-  ["sante", "Santé"],
-  ["banque", "Banque"],
-  ["autre", "Autre"],
+  { value: "streaming", label: "Streaming" },
+  { value: "telecom", label: "Télécom" },
+  { value: "energie", label: "Énergie" },
+  { value: "assurance", label: "Assurance" },
+  { value: "logiciel", label: "Logiciels" },
+  { value: "presse", label: "Presse" },
+  { value: "sport", label: "Sport" },
+  { value: "transport", label: "Transport" },
+  { value: "logement", label: "Logement" },
+  { value: "sante", label: "Santé" },
+  { value: "banque", label: "Banque" },
+  { value: "autre", label: "Autre" },
 ] as const;
 
 const field =
@@ -154,30 +156,14 @@ export function AddSubscription({ inboxAddress }: { inboxAddress: string }) {
             className={field}
           />
         </label>
-        <label className="flex flex-col gap-1.5 text-[13px] font-medium">
+        <div className="flex flex-col gap-1.5 text-[13px] font-medium">
           Fréquence
-          <select value={cycle} onChange={(event) => setCycle(event.target.value)} className={field}>
-            {CYCLES.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1.5 text-[13px] font-medium">
+          <SelectMenu block label="Fréquence" value={cycle} options={CYCLES} onChange={setCycle} />
+        </div>
+        <div className="flex flex-col gap-1.5 text-[13px] font-medium">
           Catégorie
-          <select
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
-            className={field}
-          >
-            {CATEGORIES.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
+          <SelectMenu block label="Catégorie" value={category} options={CATEGORIES} onChange={setCategory} />
+        </div>
         <label className="flex flex-col gap-1.5 text-[13px] font-medium">
           Prochain prélèvement <span className="font-normal text-[var(--text-faint)]">(facultatif)</span>
           <input

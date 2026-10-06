@@ -150,7 +150,23 @@ export async function processEmailJob(job: {
 }) {
   const db = createAdminClient();
 
-  const result = await extractFromEmail(job.payload);
+  let result = await extractFromEmail(job.payload);
+  // Seconde lecture par le modèle le plus capable quand le rapide écarte un
+  // e-mail qui a tout d'une confirmation de résiliation : rare, donc peu
+  // coûteux, et un abonnement résilié qui reste suivi fait envoyer de faux
+  // rappels.
+  if (
+    result.data.type === "skip" &&
+    CANCELLATION_HINT.test(`${job.payload.subject}
+${job.payload.body.slice(0, 6000)}`)
+  ) {
+    const second = await extractFromEmail(job.payload, { accurate: true });
+    result = {
+      ...second,
+      tokensIn: result.tokensIn + second.tokensIn,
+      tokensOut: result.tokensOut + second.tokensOut,
+    };
+  }
   const { data } = result;
 
   const common = {
@@ -158,6 +174,8 @@ export async function processEmailJob(job: {
     tokens_in: result.tokensIn,
     tokens_out: result.tokensOut,
     processed_at: new Date().toISOString(),
+    // Ce que l'IA a compris, pour comprendre après coup un e-mail sans effet.
+    result: { type: data.type, provider: data.provider, confidence: data.confidence },
   };
 
   // Email non transactionnel : rien à créer, le job est clos proprement.
@@ -549,6 +567,10 @@ function normalizeProvider(name: string): string {
     .replace(/[^a-z0-9]/g, "")
     .trim();
 }
+
+/** Tournures d'une confirmation de résiliation (voir la seconde lecture). */
+const CANCELLATION_HINT =
+  /confirm\w*\s+(?:de\s+)?(?:la\s+|votre\s+)?r[ée]siliation|r[ée]siliation\s+(?:a\s+bien\s+été\s+)?(?:prise\s+en\s+compte|confirm[ée]e|enregistr[ée]e)|confirmation of cancellation|has been cancel+ed/i;
 
 /** Abonnement actif du même fournisseur, s'il en existe un. */
 export async function findExistingSubscription(

@@ -16,8 +16,11 @@ export function SelectMenu<T extends string>({
   value,
   options,
   onChange,
+  block = false,
 }: {
   label: string;
+  /** Champ de formulaire : pleine largeur, libellé affiché au-dessus par le parent. */
+  block?: boolean;
   icon?: React.ReactNode;
   value: T;
   options: readonly { value: T; label: string }[];
@@ -69,7 +72,7 @@ export function SelectMenu<T extends string>({
   }
 
   return (
-    <div ref={root} className="relative inline-block">
+    <div ref={root} className={block ? "relative w-full" : "relative inline-block"}>
       <button
         type="button"
         aria-haspopup="listbox"
@@ -78,15 +81,15 @@ export function SelectMenu<T extends string>({
         aria-label={`${label} : ${current?.label}`}
         onClick={toggle}
         onKeyDown={onKeyDown}
-        className={`inline-flex h-9 items-center gap-2 rounded-[9px] border px-3 text-[13px] transition-colors ${
+        className={`${block ? "flex h-10 w-full text-sm" : "inline-flex h-9 text-[13px]"} items-center gap-2 rounded-[9px] border px-3 transition-colors ${
           open
             ? "border-[rgb(var(--accent-rgb)/.55)] bg-[var(--accent-soft)] text-[var(--text)]"
             : "border-[var(--border)] bg-[rgba(255,255,255,.03)] text-[var(--text-dim)] hover:border-[var(--border-strong)] hover:text-[var(--text)]"
         }`}
       >
         {icon && <span className="text-[var(--accent-light)]">{icon}</span>}
-        <span className="text-[var(--text-faint)]">{label}</span>
-        <span className="font-medium text-[var(--text)]">{current?.label}</span>
+        {!block && <span className="text-[var(--text-faint)]">{label}</span>}
+        <span className={`font-medium text-[var(--text)] ${block ? "flex-1 text-left" : ""}`}>{current?.label}</span>
         <ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
@@ -95,7 +98,7 @@ export function SelectMenu<T extends string>({
           id={listId}
           role="listbox"
           aria-label={label}
-          className="absolute right-0 z-30 mt-1.5 min-w-full list-none overflow-hidden rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-1 shadow-[0_18px_40px_rgba(0,0,0,.45)]"
+          className="absolute right-0 z-30 mt-1.5 max-h-72 min-w-full list-none overflow-y-auto rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-1 shadow-[0_18px_40px_rgba(0,0,0,.45)]"
         >
           {options.map((option, index) => {
             const selected = option.value === value;

@@ -47,7 +47,9 @@ function requireProvider(): AiProvider {
 async function withEscalation<T extends { confidence: number }>(
   provider: AiProvider,
   run: (model: string) => Promise<ExtractionResult<T>>,
+  accurateOnly = false,
 ): Promise<ExtractionResult<T>> {
+  if (accurateOnly) return { ...(await run(MODELS[provider].accurate)), escalated: true };
   const first = await run(MODELS[provider].fast);
   if (first.data.confidence >= ESCALATION_THRESHOLD) return first;
 
@@ -65,12 +67,16 @@ async function withEscalation<T extends { confidence: number }>(
 
 // ------------------------------------------------------------------ email
 
-export async function extractFromEmail(input: {
-  from: string;
-  subject: string;
-  date: string;
-  body: string;
-}): Promise<ExtractionResult<EmailExtraction>> {
+export async function extractFromEmail(
+  input: {
+    from: string;
+    subject: string;
+    date: string;
+    body: string;
+  },
+  /** Directement le modèle le plus capable (seconde lecture). */
+  options: { accurate?: boolean } = {},
+): Promise<ExtractionResult<EmailExtraction>> {
   // Mode simulation : explicite, jamais un repli automatique sur clé absente.
   // Une clé manquante en production doit échouer bruyamment plutôt que de
   // produire des données inventées que l'utilisateur prendrait pour des faits.
@@ -97,7 +103,7 @@ export async function extractFromEmail(input: {
         content: userMessage,
       });
       return { ...result, model, escalated: false };
-    });
+    }, options.accurate);
   }
 
   const client = getAnthropic();
@@ -128,7 +134,7 @@ export async function extractFromEmail(input: {
       tokensOut: response.usage.output_tokens,
       escalated: false,
     };
-  });
+  }, options.accurate);
 }
 
 // ------------------------------------------------------------------ document
