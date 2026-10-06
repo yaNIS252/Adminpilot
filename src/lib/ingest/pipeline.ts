@@ -191,7 +191,8 @@ export async function processEmailJob(job: {
     const target = needsReview
       ? null
       : ((await findExistingSubscription(db, job.user_id, data.provider)) ??
-        (await findSubscriptionByPrefix(db, job.user_id, data.provider)));
+        (await findSubscriptionByPrefix(db, job.user_id, data.provider)) ??
+        (await findSubscriptionBySharedWord(db, job.user_id, data.provider)));
     if (target) {
       await markCancelled(db, job.user_id, target.id, {
         effectiveDate: data.effective_date,
@@ -966,6 +967,31 @@ async function findSubscriptionByPrefix(db: Db, userId: string, provider: string
     return name.length >= 4 && (name.startsWith(target) || target.startsWith(name));
   });
   // Ambigu (deux abonnements possibles) : on ne devine pas.
+  return matches.length === 1 ? matches[0] : null;
+}
+
+/**
+ * Dernier recours pour une résiliation : un seul abonnement actif partage un
+ * mot d'au moins quatre lettres avec le nom lu (« Paris Saint-Germain » ↔
+ * « My Paris »). Deux candidats : on ne devine pas. Au pire, l'utilisateur
+ * clique « Reprendre le suivi ».
+ */
+async function findSubscriptionBySharedWord(db: Db, userId: string, provider: string) {
+  const words = (name: string) =>
+    name
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((word) => word.length >= 4);
+  const wanted = new Set(words(provider));
+  if (!wanted.size) return null;
+  const { data } = await db
+    .from("subscriptions")
+    .select("id, provider")
+    .eq("user_id", userId)
+    .eq("status", "active");
+  const matches = (data ?? []).filter((row) => words(row.provider).some((word) => wanted.has(word)));
   return matches.length === 1 ? matches[0] : null;
 }
 

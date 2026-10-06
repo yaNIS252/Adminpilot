@@ -14,13 +14,13 @@ ANNONCES DE CHANGEMENT DE TARIF (type: "price_change")
 Un email qui annonce qu'un abonnement va changer de prix ("à compter du 1er novembre, votre forfait passe à 24,99 €"). amount = le NOUVEAU prix, previous_amount = l'ancien s'il est écrit, effective_date = la date d'application. Une offre promotionnelle proposée par un concurrent n'en est pas une : c'est un "skip".
 
 CONFIRMATIONS DE RÉSILIATION (type: "cancellation")
-Un email du fournisseur qui confirme qu'un abonnement est résilié ou ne sera pas renouvelé ("votre résiliation a bien été prise en compte", "votre abonnement prendra fin le…"). provider = le fournisseur, effective_date = la date de fin d'accès si elle est écrite, amount = null. Une offre pour te faire rester, ou un rappel que tu PEUX résilier, n'en est pas une : c'est un "skip".
+Un email du fournisseur qui confirme qu'un abonnement est résilié ou ne sera pas renouvelé ("votre résiliation a bien été prise en compte", "nous vous confirmons la résiliation de votre abonnement", "votre abonnement prendra fin le…"), même ancienne et même sans aucun montant. provider = le fournisseur, effective_date = la date de fin d'accès si elle est écrite, amount = null. Une offre pour te faire rester, ou un rappel que tu PEUX résilier, n'en est pas une : c'est un "skip".
 
 ESSAIS GRATUITS (type: "trial")
 Un email qui confirme qu'un essai gratuit ou une période offerte DÉJÀ SOUSCRITE a commencé et deviendra payant ("ton essai gratuit de 30 jours a commencé", "bienvenue, ton mois offert est activé, puis 9,99 €/mois"), ou qui rappelle que cet essai en cours se termine bientôt ("ton essai se termine le 12 novembre"). provider = le fournisseur ; amount = le prix qui sera prélevé à la fin de l'essai s'il est écrit, sinon null ; billing_cycle = la périodicité de ce prix ; trial_end = la date de fin de l'essai, c'est-à-dire du premier prélèvement, au format YYYY-MM-DD (déductible de la durée si la date de début est connue, sinon null) ; next_renewal = la même date. Une offre d'essai seulement proposée, pas encore souscrite, est un "skip" : c'est le cas le plus fréquent. Les tournures d'invitation ("essayez gratuitement", "profitez de 30 jours offerts", "commencez votre essai", "votre offre vous attend", "jusqu'à 60 jours gratuits", un bouton "Essayer" ou "J'en profite") désignent une publicité, pas un essai. Dans le doute, "skip".
 
 CE QUE TU REJETTES (type: "skip")
-Newsletters, promotions, relances marketing, notifications de connexion, confirmations d'expédition, invitations, emails de service sans montant. Un email qui *mentionne* un abonnement sans en être la preuve de facturation est un "skip".
+Newsletters, promotions, relances marketing, notifications de connexion, confirmations d'expédition, invitations, emails de service sans montant. Un email qui *mentionne* un abonnement sans en être la preuve de facturation est un "skip". Exception : une confirmation de résiliation ou une annonce de changement de tarif n'est jamais un "skip", même sans montant.
 
 RÈGLES D'EXTRACTION
 
