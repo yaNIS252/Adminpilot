@@ -147,10 +147,25 @@ Cartes : `4242 4242 4242 4242` (OK) · `4000 0000 0000 0002` (refusée) ·
 | 10.1 | Exporter mes données | Fichier complet, liens de téléchargement valides 24 h | — |
 | 10.2 | Supprimer le compte B (en retapant l'adresse) | Déconnecté, compte effacé | Fichiers supprimés, abonnement Stripe annulé |
 
-## 11. Mobile
+## 11. Parcours téléphone
 
-Refaire 1.4, 3.6 (photo), 5.2 et 8.1 sur téléphone : barre du bas, lisibilité,
-boutons atteignables, aucune page qui déborde.
+Sur ton téléphone, dans Chrome ou Safari, avec un compte de test neuf (D) si
+possible. Partout : rien ne déborde sur le côté, tout se lit sans zoomer, les
+boutons s'atteignent au pouce.
+
+| # | Toi | ✅ Attendu |
+|---|---|---|
+| 11.1 | Inscription avec un lien magique, ouvert depuis l'app Gmail du téléphone | Connecté directement, la présentation de bienvenue s'affiche en entier |
+| 11.2 | Présentation : étape « boîte mail » | Explications « téléphone » : Gmail en version pour ordinateur, 3 champs à copier ; chaque « Copier » marche |
+| 11.3 | Créer le filtre dans Gmail (version ordinateur) en collant les champs | Filtre créé, transfert vers l'adresse AdminPilot confirmé |
+| 11.4 | Transférer une facture depuis l'app Gmail | Abonnement visible dans les minutes qui suivent |
+| 11.5 | Barre du bas : passer par chaque onglet | Toutes les pages s'ouvrent, l'onglet actif est visible |
+| 11.6 | Ajouter un abonnement à la main | Formulaire utilisable, clavier qui ne cache pas le bouton |
+| 11.7 | Documents → prendre une facture en photo | Photo envoyée, document rangé |
+| 11.8 | Abonnement → Résilier → Négocier → « Envoyer par e-mail » | L'app de messagerie s'ouvre avec le message rempli |
+| 11.9 | Réglages → parrainage → « Partager » / WhatsApp / SMS | Le menu de partage du téléphone, WhatsApp ou les SMS s'ouvrent avec le lien |
+| 11.10 | Ajouter à l'écran d'accueil | Icône AdminPilot, l'app s'ouvre sans barre d'adresse |
+| 11.11 | Thème clair / sombre du téléphone | Lisible dans les deux |
 
 ## 12. Contrôles techniques (moi)
 
