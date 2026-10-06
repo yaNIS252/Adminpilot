@@ -9,7 +9,26 @@
  *
  * Sans IA : des modèles par catégorie, assemblés avec les données connues.
  * Rien d'inventé — sans offre concurrente vérifiée, le message n'en cite pas.
+ *
+ * Réservé aux contrats où un service fidélisation existe vraiment. Personne
+ * n'obtient de geste commercial en écrivant à Spotify, Apple ou Netflix : là,
+ * on résilie, c'est tout.
  */
+
+type Family = "telecom" | "energie" | "assurance";
+
+const FAMILIES: Record<string, Family> = {
+  telecom: "telecom",
+  energie: "energie",
+  assurance: "assurance",
+  sante: "assurance",
+  banque: "assurance",
+};
+
+/** La carte « Négocier avant de partir » a-t-elle un sens pour cette catégorie ? */
+export function isNegotiable(category: string | null): boolean {
+  return Boolean(category && FAMILIES[category]);
+}
 
 export type NegotiationInput = {
   provider: string;
@@ -23,6 +42,8 @@ export type NegotiationInput = {
   /** Fin d'engagement à venir, si connue. */
   commitmentEnd: string | null;
   userName: string | null;
+  /** Numéro du service client, quand le catalogue le connaît. */
+  phone: string | null;
 };
 
 export type Negotiation = {
@@ -30,24 +51,17 @@ export type Negotiation = {
   body: string;
   /** Conseils pour l'échange (téléphone, chat), du plus utile au moins utile. */
   tips: string[];
+  /** Comment joindre le fournisseur. */
+  contact: string[];
 };
 
 function euros(value: number): string {
   return `${value.toFixed(2).replace(".", ",")} €`;
 }
 
-type Family = "telecom" | "energie" | "assurance" | "numerique" | "autre";
-
-function familyOf(category: string | null): Family {
-  if (category === "telecom") return "telecom";
-  if (category === "energie") return "energie";
-  if (category === "assurance" || category === "sante" || category === "banque") return "assurance";
-  if (["streaming", "logiciel", "presse", "sport"].includes(category ?? "")) return "numerique";
-  return "autre";
-}
-
-export function buildNegotiation(input: NegotiationInput): Negotiation {
-  const family = familyOf(input.category);
+export function buildNegotiation(input: NegotiationInput): Negotiation | null {
+  const family = input.category ? FAMILIES[input.category] : undefined;
+  if (!family) return null;
   const lines: string[] = ["Bonjour,", ""];
 
   // L'ancienneté n'est pas citée : AdminPilot ne connaît que la date où il a
@@ -74,10 +88,6 @@ export function buildNegotiation(input: NegotiationInput): Negotiation {
       "Je préférerais rester chez vous, mais sans proposition plus avantageuse sur mon tarif, je changerai de fournisseur : c'est gratuit et sans coupure.",
     assurance:
       "Je préférerais rester chez vous. Pouvez-vous revoir ma cotisation ? À défaut, je résilierai pour souscrire ailleurs.",
-    numerique:
-      "Je compte résilier à la fin de ma période en cours. Existe-t-il une offre pour rester (remise, formule moins chère, tarif annuel) ?",
-    autre:
-      "Je préférerais rester chez vous, mais sans geste commercial de votre part, je résilierai mon abonnement.",
   };
   lines.push("", ask[family], "", "Merci de me faire une proposition.", "", "Cordialement,");
   if (input.userName) lines.push(input.userName);
@@ -102,14 +112,22 @@ export function buildNegotiation(input: NegotiationInput): Negotiation {
       "Après un an de contrat, la loi Hamon te permet de résilier à tout moment : rappelle-le.",
       "Demande une révision de ta cotisation avec un devis concurrent en main.",
     ],
-    numerique: [
-      "Commence la résiliation en ligne : beaucoup de services affichent une offre pour te retenir juste avant la dernière étape.",
-      "Le tarif annuel revient souvent bien moins cher que le mensuel.",
-    ],
-    autre: ["Sois poli mais ferme : tu demandes un geste, sinon tu pars."],
   };
   tips.push(...byFamily[family]);
   tips.push("Note le nom de ton interlocuteur et garde une trace écrite de l'offre obtenue.");
 
-  return { subject: `Mon abonnement ${input.provider} : avant de résilier`, body: lines.join("\n"), tips };
+  const where: Record<Family, string> = {
+    telecom:
+      "Sinon : ton espace client, rubrique Assistance ou Contact (chat, messagerie ou rappel gratuit). Demande le service fidélisation.",
+    energie:
+      "Le numéro de ton fournisseur figure en haut de ta facture ; tu peux aussi écrire depuis ton espace client, rubrique Contact.",
+    assurance:
+      "Le plus efficace : la messagerie de ton espace client ou ton conseiller (ses coordonnées sont sur ton contrat ou ton avis d'échéance).",
+  };
+  const contact = [
+    ...(input.phone ? [`Par téléphone : ${input.phone} (gratuit depuis une ligne de l'opérateur).`] : []),
+    where[family],
+  ];
+
+  return { contact, subject: `Mon abonnement ${input.provider} : avant de résilier`, body: lines.join("\n"), tips };
 }

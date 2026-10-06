@@ -127,7 +127,7 @@ Cartes : `4242 4242 4242 4242` (OK) · `4000 0000 0000 0002` (refusée) ·
 | # | Toi | ✅ Attendu | Moi |
 |---|---|---|---|
 | 8.1 | Abonnement → « Résilier » | Lien officiel, guide pas à pas, astuce de la catégorie | — |
-| 8.2 | « Négocier avant de partir » (Pro) | Message prêt, prix réel, offre concurrente citée si le comparateur en a une, conseils selon la catégorie ; « Copier » et « Envoyer par e-mail » marchent | — |
+| 8.2 | « Négocier avant de partir » (Pro), sur une box, un mobile, une assurance, l'énergie ou la banque | Message prêt, prix réel, offre concurrente citée si le comparateur en a une, conseils, « Comment les joindre » (numéro pour Orange, SFR, Bouygues, Free) ; « Copier » et « Ouvrir mon espace client » marchent. Sur un streaming ou un logiciel : pas de carte « Négocier » | — |
 | 8.3 | « J'ai résilié » | Abonnement dans « Résiliés », hors total | Rappels supprimés |
 | 8.4 | Transférer un vrai e-mail de confirmation de résiliation | Passage automatique en « Résiliés » | `cancelled_via: email` |
 | 8.5 | « Reprendre le suivi » | Revient dans les actifs, rappels recréés | — |

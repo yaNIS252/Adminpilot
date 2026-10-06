@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Lightbulb, Mail } from "lucide-react";
+import { Check, Copy, ExternalLink, Lightbulb, Mail, Phone } from "lucide-react";
 import { useState } from "react";
 
 import { useIsPhone } from "@/components/shared/use-is-phone";
@@ -13,13 +13,19 @@ export function NegotiationHelper({
   subject,
   body,
   tips,
+  contact,
   email,
+  accountUrl,
 }: {
   subject: string;
   body: string;
   tips: string[];
   /** Adresse du service client, quand le catalogue la connaît. */
   email: string | null;
+  /** Comment joindre le fournisseur (téléphone, espace client). */
+  contact: string[];
+  /** Site du fournisseur, pour rejoindre l'espace client. */
+  accountUrl: string | null;
 }) {
   const [text, setText] = useState(body);
   const [copied, setCopied] = useState(false);
@@ -60,35 +66,61 @@ export function NegotiationHelper({
           {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
           {copied ? "Message copié" : "Copier le message"}
         </button>
-        {phone ? (
-          <a href={mailto} className="btn-secondary inline-flex h-10 items-center gap-1.5 px-4 text-[13px]">
-            <Mail className="size-4" />
-            {email ? "Envoyer par e-mail" : "Ouvrir dans ma messagerie"}
-          </a>
+        {email ? (
+          phone ? (
+            <a href={mailto} className="btn-secondary inline-flex h-10 items-center gap-1.5 px-4 text-[13px]">
+              <Mail className="size-4" />
+              Envoyer par e-mail
+            </a>
+          ) : (
+            <>
+              <a
+                href={gmail}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary inline-flex h-10 items-center gap-1.5 px-4 text-[13px]"
+              >
+                <Mail className="size-4" />
+                Écrire dans Gmail
+              </a>
+              <a
+                href={mailto}
+                className="inline-flex h-10 items-center px-2 text-[13px] text-[var(--text-dim)] underline-offset-2 hover:text-[var(--text)] hover:underline"
+              >
+                Autre messagerie
+              </a>
+            </>
+          )
         ) : (
-          <>
+          accountUrl && (
             <a
-              href={gmail}
+              href={accountUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary inline-flex h-10 items-center gap-1.5 px-4 text-[13px]"
             >
-              <Mail className="size-4" />
-              Écrire dans Gmail
+              <ExternalLink className="size-4" />
+              Ouvrir mon espace client
             </a>
-            <a
-              href={mailto}
-              className="inline-flex h-10 items-center px-2 text-[13px] text-[var(--text-dim)] underline-offset-2 hover:text-[var(--text)] hover:underline"
-            >
-              Autre messagerie
-            </a>
-          </>
+          )
         )}
       </div>
       <p className="m-0 text-xs text-[var(--text-faint)]">
-        Colle-le dans le chat de ton espace client, envoie-le par e-mail, ou
+        Colle-le dans le chat ou la messagerie de ton espace client, ou
         sers-t’en de fil conducteur au téléphone.
       </p>
+
+      <div className="rounded-[8px] border border-[var(--border-soft)] px-3.5 py-3">
+        <div className="mb-1.5 flex items-center gap-1.5 text-[13px] font-medium">
+          <Phone className="size-4 text-[var(--accent-light)]" />
+          Comment les joindre
+        </div>
+        <ul className="m-0 list-disc space-y-1 pl-5 text-[13px] leading-[1.55] text-[var(--text-dim)]">
+          {contact.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+      </div>
 
       <div className="border-t border-[var(--border-soft)] pt-3.5">
         <div className="mb-2 flex items-center gap-1.5 text-[13px] font-medium">

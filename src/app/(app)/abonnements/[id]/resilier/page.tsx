@@ -45,7 +45,7 @@ export default async function CancelPage({
   const { data: sub } = await supabase
     .from("subscriptions")
     .select(
-      "id, provider, amount, currency, cycle, category, next_renewal, status, metadata, known_providers(name, domain, category, seo_slug, cancel_method, cancel_url, cancel_email, cancel_guide, legal_basis)",
+      "id, provider, amount, currency, cycle, category, next_renewal, status, metadata, known_providers(name, domain, category, seo_slug, cancel_method, cancel_url, cancel_email, cancel_guide, legal_basis, contact_phone)",
     )
     .eq("id", id)
     .eq("over_quota", false)
@@ -66,6 +66,7 @@ export default async function CancelPage({
     category: string;
     cancel_guide: Json | null;
     legal_basis: keyof typeof LEGAL_TEMPLATES;
+    contact_phone: string | null;
   } | null;
 
   const basis = catalogue?.legal_basis ?? "libre";
@@ -138,6 +139,7 @@ export default async function CancelPage({
       : null,
     commitmentEnd,
     userName: auth.profile.name,
+    phone: catalogue?.contact_phone ?? null,
   });
 
   return (
@@ -264,7 +266,7 @@ export default async function CancelPage({
         )}
       </Card>
 
-      {!cancelled && (
+      {!cancelled && negotiation && (
         <Card icon={<Handshake className="size-4" />} title="Négocier avant de partir">
           {paid ? (
             <>
@@ -278,7 +280,13 @@ export default async function CancelPage({
                 subject={negotiation.subject}
                 body={negotiation.body}
                 tips={negotiation.tips}
+                contact={negotiation.contact}
                 email={catalogue?.cancel_email ?? null}
+                accountUrl={
+                  catalogue?.domain
+                    ? `https://www.${catalogue.domain.replace(/^www\./, "")}`
+                    : siteUrl
+                }
               />
             </>
           ) : (

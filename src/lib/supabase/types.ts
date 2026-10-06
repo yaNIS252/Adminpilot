@@ -313,6 +313,7 @@ export type Database = {
           cancel_guide: Json | null;
           cancel_method: Database["public"]["Enums"]["cancel_method"] | null;
           cancel_url: string | null;
+          contact_phone: string | null;
           category: string;
           created_at: string;
           domain: string;
@@ -328,6 +329,7 @@ export type Database = {
           cancel_guide?: Json | null;
           cancel_method?: Database["public"]["Enums"]["cancel_method"] | null;
           cancel_url?: string | null;
+          contact_phone?: string | null;
           category: string;
           created_at?: string;
           domain: string;
@@ -343,6 +345,7 @@ export type Database = {
           cancel_guide?: Json | null;
           cancel_method?: Database["public"]["Enums"]["cancel_method"] | null;
           cancel_url?: string | null;
+          contact_phone?: string | null;
           category?: string;
           created_at?: string;
           domain?: string;
