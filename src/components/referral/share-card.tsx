@@ -30,7 +30,7 @@ export function ShareCard({ link, monthly }: { link: string; monthly: string }) 
         </span>
         <div>
           <div className="text-[15px] font-semibold">
-            Tu paies {monthly} par mois en abonnements. Et tes proches ?
+            Tu paies {monthly} par mois en abonnements (hors AdminPilot). Et tes proches ?
           </div>
           <p className="m-0 mt-0.5 text-[13px] leading-[1.5] text-[var(--text-dim)]">
             Offre-leur 1 mois de Pro avec ton lien. Quand ils s’en servent, tu

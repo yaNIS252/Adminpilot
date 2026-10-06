@@ -22,6 +22,7 @@ import { OpenTourButton } from "@/components/onboarding/open-tour-button";
 import { ShareCard } from "@/components/referral/share-card";
 
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
+import { OWN_SUBSCRIPTION_SOURCE } from "@/lib/billing/sync";
 import { requireUser } from "@/lib/auth/require-user";
 import { PLAN_LABELS, SHARE_COOKIE, TOUR_MAILBOX_STEP, UPSELL_COOKIE } from "@/lib/constants";
 import { periodsPerYear } from "@/lib/ingest/price-tracker";
@@ -139,12 +140,21 @@ export default async function DashboardPage({
 
   // Ce qui est réellement payé aujourd'hui : sans les essais gratuits en
   // cours. Le total complet (ce que coûteront ces abonnements une fois les
-  // essais finis) s'affiche en petit dessous. Même chiffre sur la carte de
-  // parrainage, pour ne pas montrer deux montants différents à l'écran.
+  // essais finis) s'affiche en petit dessous.
   const trialMonthly = subs
     .filter((sub) => activeTrialUntil(sub.metadata))
     .reduce((sum, sub) => sum + monthlyEquivalent(sub.amount, sub.cycle), 0);
   const paidMonthly = monthlyTotal - trialMonthly;
+
+  // Carte de parrainage : le même montant sans la ligne AdminPilot, qui n'a
+  // rien à faire dans « et tes proches ? » — la carte le précise.
+  const shareMonthly = subs
+    .filter(
+      (sub) =>
+        !activeTrialUntil(sub.metadata) &&
+        (sub.metadata as { source?: string } | null)?.source !== OWN_SUBSCRIPTION_SOURCE,
+    )
+    .reduce((sum, sub) => sum + monthlyEquivalent(sub.amount, sub.cycle), 0);
 
   // Répartition par catégorie — calculée sur les données du moment, donc juste.
   // La maquette montrait une courbe d'évolution : elle demanderait un
@@ -327,10 +337,10 @@ export default async function DashboardPage({
 
       {/* Partage après la première détection : c'est le chiffre qui donne
           envie d'en parler, pas une publicité. */}
-      {auth && paidMonthly > 0 && !shareHidden && (
+      {auth && shareMonthly > 0 && !shareHidden && (
         <ShareCard
           link={`${siteUrl()}/p/${auth.profile.referral_code}`}
-          monthly={formatAmount(paidMonthly) ?? ""}
+          monthly={formatAmount(shareMonthly) ?? ""}
         />
       )}
 
