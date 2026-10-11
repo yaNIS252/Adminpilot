@@ -26,6 +26,9 @@ const PUBLIC_PREFIXES = [
   "/api/inbound",
   "/api/cron",
   "/api/webhooks",
+  // Lien d'agenda : lu par Google Agenda ou Apple, sans session ; protégé
+  // par son jeton secret.
+  "/api/calendar",
   // Protégée par CRON_SECRET dans la route elle-même.
   "/api/health",
   "/resilier",

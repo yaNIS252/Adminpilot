@@ -502,6 +502,7 @@ export type Database = {
           avatar_path: string | null;
           background: string;
           bonus_pro_until: string | null;
+          calendar_token: string;
           created_at: string;
           deleted_at: string | null;
           email: string;
@@ -532,6 +533,7 @@ export type Database = {
           avatar_path?: string | null;
           background?: string;
           bonus_pro_until?: string | null;
+          calendar_token?: string;
           created_at?: string;
           deleted_at?: string | null;
           email: string;
@@ -562,6 +564,7 @@ export type Database = {
           avatar_path?: string | null;
           background?: string;
           bonus_pro_until?: string | null;
+          calendar_token?: string;
           created_at?: string;
           deleted_at?: string | null;
           email?: string;

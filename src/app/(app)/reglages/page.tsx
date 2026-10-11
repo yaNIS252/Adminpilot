@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Forward, Gift, History, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
+import { CalendarDays, Forward, Gift, History, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 
 import { ManageSubscription, PlanPicker } from "@/components/billing/plan-picker";
 import {
   HouseholdManager,
   HouseholdMembership,
 } from "@/components/household/household-manager";
+import { CalendarLink } from "@/components/profile/calendar-link";
 import { ProfileEditor } from "@/components/profile/profile-editor";
 import { RecapToggle } from "@/components/profile/recap-toggle";
 import { ReferralPanel } from "@/components/referral/referral-panel";
@@ -330,6 +331,20 @@ export default async function SettingsPage({
             </p>
           ) : (
             <RecapToggle initial={profile.monthly_recap} />
+          )}
+        </Card>
+      </section>
+
+      <section id="agenda" className="scroll-mt-6">
+        <Card icon={<CalendarDays className="size-4" />} title="Mon agenda">
+          {profile.plan === "free" ? (
+            <p className="m-0 flex items-center gap-2 text-sm text-[var(--text-dim)]">
+              <Lock className="size-4 shrink-0 text-[var(--accent-lighter)]" />
+              Tes échéances directement dans Google Agenda, Apple ou Outlook :
+              inclus avec Pro et Premium.
+            </p>
+          ) : (
+            <CalendarLink url={`${siteUrl()}/api/calendar/${profile.calendar_token}.ics`} />
           )}
         </Card>
       </section>
