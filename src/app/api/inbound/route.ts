@@ -176,7 +176,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: "ignored_security" }, { status: 202 });
   }
 
-  if (!(await consume("inbound", token))) {
+  if (!(await consume("inbound", token)) || !(await consume("inboundDaily", token))) {
     return tooManyRequests("inbound");
   }
 

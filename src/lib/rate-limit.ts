@@ -25,6 +25,14 @@ export const LIMITS = {
   avatar: { limit: 10, windowSecs: 3600 },
   /** Invitations au foyer : chacune peut partir par e-mail. */
   invite: { limit: 20, windowSecs: 3600 },
+  /** Plafond journalier par adresse d'ingestion : borne la facture d'IA. */
+  inboundDaily: { limit: 600, windowSecs: 86_400 },
+  /** Avis : chacun est relayé par e-mail au support. */
+  feedback: { limit: 5, windowSecs: 3600 },
+  /** Créations (abonnements, rappels) et autres écritures de l'utilisateur. */
+  write: { limit: 120, windowSecs: 3600 },
+  /** Sessions de paiement Stripe et exports complets du compte. */
+  heavy: { limit: 20, windowSecs: 3600 },
 } as const;
 
 export type LimitKind = keyof typeof LIMITS;

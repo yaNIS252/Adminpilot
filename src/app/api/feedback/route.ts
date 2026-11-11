@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth/require-user";
 import { relayFeedback } from "@/lib/feedback";
 import { readJson } from "@/lib/http/request";
+import { consume, tooManyRequests } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -31,6 +32,8 @@ export async function POST(request: Request) {
 
   const body = await readJson(request, BodySchema);
   if (!body.ok) return body.response;
+
+  if (!(await consume("feedback", auth.userId))) return tooManyRequests("feedback");
 
   const db = createAdminClient();
   const now = new Date().toISOString();

@@ -20,7 +20,17 @@ export const runtime = "nodejs";
 const BodySchema = z
   .object({
     // Espaces aux bords retirés ; une chaîne vide efface le prénom.
-    name: z.string().trim().max(60).optional(),
+    // Le prénom apparaît dans l'objet des invitations au foyer, envoyées
+    // à des tiers : ni adresse web ni e-mail, qui en feraient un vecteur
+    // d'hameçonnage expédié depuis notre domaine.
+    name: z
+      .string()
+      .trim()
+      .max(60)
+      .refine((value) => !/(https?:|www\.|[/@<>]|\.[a-z]{2,}\b)/i.test(value), {
+        message: "prénom invalide",
+      })
+      .optional(),
     accent: z.enum(ACCENTS.map((accent) => accent.id) as [string, ...string[]]).optional(),
     background: z
       .enum(BACKGROUNDS.map((background) => background.id) as [string, ...string[]])

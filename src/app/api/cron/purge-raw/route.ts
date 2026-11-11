@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { isCronAuthorized } from "@/lib/auth/cron";
+
 import { RAW_RETENTION_DAYS, REFERRAL } from "@/lib/constants";
 import { deleteRaw } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -24,8 +26,7 @@ export const maxDuration = 60;
 const BATCH_SIZE = 200;
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "non autorisé" }, { status: 401 });
   }
 
@@ -41,7 +42,10 @@ export async function GET(request: Request) {
     .not("raw_url", "is", null)
     // Un job encore en attente ou en échec n'a pas livré sa donnée : le purger
     // reviendrait à perdre définitivement l'email sans rien en avoir extrait.
-    .in("status", ["done", "needs_review"])
+    // Les e-mails en échec définitif aussi : ils ne seront jamais relus, et
+    // les garder au-delà du délai annoncé contredirait la politique de
+    // confidentialité.
+    .in("status", ["done", "needs_review", "failed"])
     .lt("created_at", cutoff)
     .limit(BATCH_SIZE);
 

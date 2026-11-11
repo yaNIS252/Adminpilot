@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isCronAuthorized } from "@/lib/auth/cron";
 import { isAiConfigured } from "@/lib/ai/client";
 import { isMockMode } from "@/lib/ai/mock";
 import {
@@ -29,9 +30,7 @@ export const maxDuration = 60;
 const BATCH_SIZE = 10;
 
 function authorize(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  return isCronAuthorized(request);
 }
 
 async function drain() {

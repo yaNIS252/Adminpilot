@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
 import { getSignedUrl } from "@/lib/storage";
 import { referralOverview } from "@/lib/referral/engine";
+import { consume, tooManyRequests } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,15 +25,30 @@ export async function GET() {
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
   }
 
+  if (!(await consume("heavy", auth.userId))) return tooManyRequests("heavy");
+
   const supabase = await createClient();
 
-  const [subscriptions, documents, alerts, cancellations, usage, referrals] =
+  const [
+    subscriptions,
+    documents,
+    alerts,
+    cancellations,
+    usage,
+    priceChanges,
+    linkSuggestions,
+    household,
+    referrals,
+  ] =
     await Promise.all([
       supabase.from("subscriptions").select("*"),
       supabase.from("documents").select("*"),
       supabase.from("alerts").select("*"),
       supabase.from("cancellations").select("*"),
       supabase.from("usage_counters").select("*"),
+      supabase.from("price_changes").select("*"),
+      supabase.from("cancel_link_suggestions").select("url, status, created_at"),
+      supabase.from("family_members").select("email, name, invited_at, joined_at"),
       // Table lue par le serveur seul : on n'en exporte que ce qui concerne
       // l'utilisateur, tel qu'il le voit dans ses réglages.
       referralOverview(createAdminClient(), auth.userId),
@@ -74,6 +90,9 @@ export async function GET() {
     alerts: alerts.data ?? [],
     cancellations: cancellations.data ?? [],
     usage_counters: usage.data ?? [],
+    price_changes: priceChanges.data ?? [],
+    cancel_link_suggestions: linkSuggestions.data ?? [],
+    household: household.data ?? [],
     referrals: referrals.rows,
   };
 

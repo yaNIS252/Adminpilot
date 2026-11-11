@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { isCronAuthorized } from "@/lib/auth/cron";
+
 import { aiProvider, isAiConfigured } from "@/lib/ai/client";
 import { missingLegalFields } from "@/lib/legal";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -16,8 +18,7 @@ export const dynamic = "force-dynamic";
  * sa présence.
  */
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "non autorisé" }, { status: 401 });
   }
 

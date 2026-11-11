@@ -9,6 +9,7 @@ import {
   ensureCustomer,
 } from "@/lib/billing/stripe";
 import { readJson } from "@/lib/http/request";
+import { consume, tooManyRequests } from "@/lib/rate-limit";
 import { bonusActive } from "@/lib/referral/bonus";
 import { safeReturnPath } from "@/lib/http/safe-path";
 import { siteUrl } from "@/lib/site-url";
@@ -87,6 +88,8 @@ async function handle(request: Request) {
   // ni portail. Lui ouvrir un paiement le ferait payer une seconde fois.
   // Un mois offert par parrainage n'est pas un abonnement : il peut, lui,
   // être prolongé par un paiement.
+  if (!(await consume("heavy", auth.userId))) return tooManyRequests("heavy");
+
   const onBonus = bonusActive(auth.profile);
 
   if (auth.profile.plan !== "free" && !auth.profile.stripe_sub_id && !onBonus) {

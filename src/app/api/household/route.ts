@@ -99,7 +99,11 @@ export async function POST(request: Request) {
   const link = `${siteUrl()}/rejoindre/${token}`;
   const emailed = await sendInviteEmail({
     to: email,
-    ownerName: auth.profile.name ?? auth.profile.email,
+    // Le prénom est modifiable librement par son titulaire : nettoyé ici,
+    // pour qu'une invitation ne puisse pas porter un lien d'hameçonnage.
+    ownerName:
+      (auth.profile.name ?? "").replace(/https?:\S*|www\.\S*|\S+\.[a-z]{2,}\S*|[<>]/gi, "").trim().slice(0, 40) ||
+      auth.profile.email,
     link,
   });
 

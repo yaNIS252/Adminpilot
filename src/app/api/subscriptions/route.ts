@@ -12,6 +12,7 @@ import {
   markCancelled,
 } from "@/lib/ingest/pipeline";
 import { isAdminPilotProvider } from "@/lib/ingest/sender-learning";
+import { consume, tooManyRequests } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -74,6 +75,7 @@ export async function POST(request: Request) {
 
   const body = await readJson(request, CreateSchema);
   if (!body.ok) return body.response;
+  if (!(await consume("write", auth.userId))) return tooManyRequests("write");
   const input = body.data;
   const db = createAdminClient();
 

@@ -47,8 +47,15 @@ export async function applySubscription(
   // Un abonnement actif ou en période d'essai ouvre les droits. Tout autre
   // état (impayé, annulé, incomplet) ramène au plan gratuit : on ne laisse
   // pas un accès payant ouvert sur un paiement qui n'a pas abouti.
+  // `past_due` : un prélèvement a échoué (carte expirée…) et Stripe va le
+  // retenter pendant quelques jours. L'accès est gardé pendant ces relances :
+  // couper la formule au premier échec punirait un simple oubli de carte.
+  // Si les relances échouent, Stripe passe l'abonnement en `canceled` ou
+  // `unpaid`, et la formule est alors retirée.
   const entitled =
-    subscription.status === "active" || subscription.status === "trialing";
+    subscription.status === "active" ||
+    subscription.status === "trialing" ||
+    subscription.status === "past_due";
 
   const paidPlan: Enums<"plan"> = entitled && plan ? plan : "free";
 

@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/require-user";
 import { invalidId, readJson, readUuid } from "@/lib/http/request";
+import { consume, tooManyRequests } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,6 +16,8 @@ export const runtime = "nodejs";
  * sont les alertes manuelles, et la possibilité pour l'utilisateur de désactiver
  * ce qui le dérange — un produit qui notifie trop est désinstallé.
  */
+
+const MAX_PENDING_MANUAL = 100;
 
 const PostSchema = z.object({
   ref_type: z.enum(["subscription", "document"]),
@@ -67,6 +70,8 @@ export async function POST(request: Request) {
   if (!body.ok) return body.response;
   const input = body.data;
 
+  if (!(await consume("write", auth.userId))) return tooManyRequests("write");
+
   const supabase = await createClient();
 
   // Vérification de propriété de l'objet référencé.
@@ -95,6 +100,22 @@ export async function POST(request: Request) {
   // Écriture avec la clé de service, et seulement ici : l'insertion directe
   // depuis le navigateur est fermée en base (migration 0010), sans quoi un
   // appel à Supabase en direct contournait la vérification ci-dessus.
+  // Plafond de rappels en attente : au-delà, c'est un abus ou une erreur.
+  const { count: pending } = await supabase
+    .from("alerts")
+    .select("id", { count: "exact", head: true })
+    .eq("kind", "manual")
+    .is("sent_at", null);
+  if ((pending ?? 0) >= MAX_PENDING_MANUAL) {
+    return NextResponse.json(
+      {
+        error: `Tu as déjà ${MAX_PENDING_MANUAL} rappels en attente. Supprimes-en avant d’en créer d’autres.`,
+        code: "limit",
+      },
+      { status: 409 },
+    );
+  }
+
   const { data, error } = await createAdminClient()
     .from("alerts")
     .insert({

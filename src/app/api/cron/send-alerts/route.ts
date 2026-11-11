@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+import { isCronAuthorized } from "@/lib/auth/cron";
 import { Resend } from "resend";
 
 import {
@@ -33,6 +35,9 @@ export const maxDuration = 60;
  */
 
 const BATCH_SIZE = 100;
+const MAX_ROUNDS = 20;
+/** La fonction dure 60 s au plus : on s'arrête avant, le reste part demain. */
+const TIME_BUDGET_MS = 40_000;
 
 function daysUntil(date: string): number {
   const target = new Date(`${date}T00:00:00Z`).getTime();
@@ -46,8 +51,7 @@ function sender(): string {
 }
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "non autorisé" }, { status: 401 });
   }
 
@@ -55,6 +59,13 @@ export async function GET(request: Request) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   const base = siteUrl();
   const today = new Date().toISOString().slice(0, 10);
+
+  // Échéances dépassées : avancées à la suivante, rappels recréés. En
+  // premier : le récapitulatif et les rappels du jour lisent des dates à jour.
+  const renewals = await rollRenewals(db).catch((error) => {
+    console.error("[cron] échéances:", error);
+    return null;
+  });
 
   // Récapitulatif mensuel des abonnés, du 1er au 3 du mois. Porté par cette
   // tâche quotidienne plutôt que par une tâche à part : le plan Vercel limite
@@ -65,13 +76,6 @@ export async function GET(request: Request) {
   // que le récap pour être hébergé ici. Un échec n'empêche pas les alertes.
   const referrals = await runReferralTasks(db).catch((error) => {
     console.error("[cron] parrainage:", error);
-    return null;
-  });
-
-  // Échéances dépassées : avancées à la suivante, rappels recréés. Avant
-  // l'envoi, pour que les rappels du jour en fassent partie.
-  const renewals = await rollRenewals(db).catch((error) => {
-    console.error("[cron] échéances:", error);
     return null;
   });
 
@@ -101,6 +105,31 @@ export async function GET(request: Request) {
     return null;
   });
 
+  // Par lots de cent, tant qu'il en reste et que le temps le permet : avec
+  // un seul lot, la cent-unième alerte du jour partait le lendemain, donc
+  // après son échéance.
+  const totals = { candidates: 0, sent: 0, failed: 0, refused: 0, capped: 0 };
+  const started = Date.now();
+  for (let round = 0; round < MAX_ROUNDS && Date.now() - started < TIME_BUDGET_MS; round += 1) {
+    const batch = await dispatchBatch(db, resend, base, today);
+    if (!batch) break;
+    for (const key of Object.keys(totals) as (keyof typeof totals)[]) totals[key] += batch[key];
+  }
+
+  return NextResponse.json({ ...totals, recap, referrals, feedback, renewals, newSubscriptions });
+}
+
+/**
+ * Envoie un lot d'alertes arrivées à échéance. `null` quand il n'en reste
+ * plus. Chaque alerte est close avant l'envoi : le lot suivant ne la revoit
+ * pas.
+ */
+async function dispatchBatch(
+  db: ReturnType<typeof createAdminClient>,
+  resend: Resend,
+  base: string,
+  today: string,
+) {
   const { data: alerts, error } = await db
     .from("alerts")
     .select("*, profiles!inner(email, deleted_at, plan)")
@@ -110,9 +139,7 @@ export async function GET(request: Request) {
     .limit(BATCH_SIZE);
 
   if (error) throw error;
-  if (!alerts?.length) {
-    return NextResponse.json({ candidates: 0, sent: 0, failed: 0, refused: 0, recap, referrals, feedback, renewals, newSubscriptions });
-  }
+  if (!alerts?.length) return null;
 
   // Les objets référencés sont chargés en deux requêtes, pas en deux par
   // alerte : sur un lot de cent, l'ancienne version en faisait cent et un.
@@ -267,7 +294,17 @@ export async function GET(request: Request) {
         } else {
           if (!doc?.deadline) continue;
 
-          email = buildDeadlineEmail({
+          // Titre propre (« Fin d'engagement Fitness Park ») : son texte à
+          // lui, pas le nom du fichier.
+          if (alert.title !== (doc.filename_ai ?? doc.filename_original) && alert.message) {
+            email = buildNoticeEmail({
+              title: alert.title,
+              message: alert.message,
+              label: "Échéance à venir",
+              actionLabel: "Voir le document",
+              actionUrl: `${base}/documents`,
+            });
+          } else email = buildDeadlineEmail({
             title: doc.filename_ai ?? doc.filename_original,
             deadline: doc.deadline,
             daysLeft: Math.max(0, daysUntil(doc.deadline)),
@@ -276,13 +313,20 @@ export async function GET(request: Request) {
         }
       }
 
-      await resend.emails.send({
+      // Le SDK Resend ne lève pas sur un refus de l'API : il renvoie
+      // `error`. Sans ce contrôle, un envoi refusé comptait comme envoyé
+      // (et entamait le quota de la formule gratuite).
+      const { error: sendError } = await resend.emails.send({
         from: sender(),
         to: profile.email,
         subject: email.subject,
         html: email.html,
         text: email.text,
       });
+      if (sendError) {
+        failed += 1;
+        continue;
+      }
 
       sent += 1;
       sentThisMonth.set(alert.user_id, already + 1);
@@ -295,16 +339,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({
-    candidates: alerts.length,
-    sent,
-    failed,
-    refused,
-    capped,
-    recap,
-    referrals,
-    feedback,
-    renewals,
-    newSubscriptions,
-  });
+  return { candidates: alerts.length, sent, failed, refused, capped };
 }

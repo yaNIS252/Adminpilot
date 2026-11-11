@@ -46,6 +46,22 @@ export async function scheduleDeadlineAlerts(input: {
     if (sub?.reminders_muted) return 0;
   }
 
+  // L'échéance d'un abonnement a changé (nouvelle facture, date avancée) :
+  // les rappels encore en attente de l'ancienne date sont retirés. Sans cela
+  // ils partaient à contretemps, en plus des nouveaux (« se renouvelle dans
+  // 16 jours » envoyé la veille de l'ancienne date).
+  if (input.refType === "subscription") {
+    const prefix = `subscription:${input.refId}:`;
+    await db
+      .from("alerts")
+      .delete()
+      .eq("ref_id", input.refId)
+      .eq("kind", "deadline")
+      .is("sent_at", null)
+      .like("dedup_key", `${prefix}%`)
+      .not("dedup_key", "like", `${prefix}${input.deadline}:%`);
+  }
+
   const rows = (input.offsets ?? ALERT_OFFSETS_DAYS).map((offset) => ({
     user_id: input.userId,
     ref_type: input.refType,

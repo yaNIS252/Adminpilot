@@ -47,8 +47,29 @@ export default async function AnalysePage() {
 
   const rows = subs ?? [];
   const locked = !auth || auth.profile.plan === "free";
-  const recos = recommend(rows, (offerRows ?? []) as ReferenceOffer[]);
-  const totalSaving = recos.reduce((sum, reco) => sum + reco.yearlySaving, 0);
+  const realRecos = recommend(rows, (offerRows ?? []) as ReferenceOffer[]);
+  const totalSaving = realRecos.reduce((sum, reco) => sum + reco.yearlySaving, 0);
+  // En gratuit, le détail n'est pas seulement flouté : il n'est pas envoyé au
+  // navigateur du tout (un flou CSS se retire en deux clics). Des cartes
+  // factices donnent la forme, sans aucune donnée réelle.
+  const recos = locked
+    ? realRecos.map((reco, index) => ({
+        ...reco,
+        subscription: { ...reco.subscription, id: `masque-${index}`, provider: "ton fournisseur" },
+        currentMonthly: 0,
+        yearlySaving: 0,
+        monthlySaving: 0,
+        offer: {
+          ...reco.offer,
+          id: "masque",
+          name: "Offre réservée",
+          provider_name: "un autre fournisseur",
+          monthly_price: 0,
+          conditions: null,
+          affiliate_url: null,
+        },
+      }))
+    : realRecos;
 
   const byCategory = [
     ...rows
