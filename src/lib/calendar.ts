@@ -59,7 +59,7 @@ type CalendarEvent = {
   rrule?: string;
 };
 
-function render(events: CalendarEvent[], stamp: string): string {
+function render(events: CalendarEvent[], stamp: string, refresh: string): string {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -68,8 +68,10 @@ function render(events: CalendarEvent[], stamp: string): string {
     "METHOD:PUBLISH",
     "X-WR-CALNAME:AdminPilot",
     "X-WR-TIMEZONE:Europe/Paris",
-    "X-PUBLISHED-TTL:PT12H",
-    "REFRESH-INTERVAL;VALUE=DURATION:PT12H",
+    // Fréquence de relecture demandée à l'agenda (Apple et Outlook la
+    // suivent ; Google garde son propre rythme).
+    `X-PUBLISHED-TTL:${refresh}`,
+    `REFRESH-INTERVAL;VALUE=DURATION:${refresh}`,
   ];
   for (const event of events) {
     lines.push(
@@ -95,7 +97,12 @@ function render(events: CalendarEvent[], stamp: string): string {
   return `${lines.map(fold).join("\r\n")}\r\n`;
 }
 
-export async function buildCalendar(db: Db, userId: string, siteUrl: string): Promise<string> {
+export async function buildCalendar(
+  db: Db,
+  userId: string,
+  siteUrl: string,
+  refresh: "PT1H" | "PT12H" = "PT12H",
+): Promise<string> {
   const today = new Date().toISOString().slice(0, 10);
   const [{ data: subs }, { data: docs }] = await Promise.all([
     db
@@ -157,5 +164,5 @@ export async function buildCalendar(db: Db, userId: string, siteUrl: string): Pr
   }
 
   const stamp = `${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`;
-  return render(events, stamp);
+  return render(events, stamp, refresh);
 }

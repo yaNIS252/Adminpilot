@@ -25,6 +25,7 @@ import { ShareCard } from "@/components/referral/share-card";
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { OWN_SUBSCRIPTION_SOURCE } from "@/lib/billing/sync";
 import { requireUser } from "@/lib/auth/require-user";
+import { householdDuplicates } from "@/lib/household-duplicates";
 import { SHARE_COOKIE, TOUR_MAILBOX_STEP, UPSELL_COOKIE } from "@/lib/constants";
 import { periodsPerYear } from "@/lib/ingest/price-tracker";
 import {
@@ -39,6 +40,7 @@ import {
   withCurrentRenewal,
 } from "@/lib/format";
 import { siteUrl } from "@/lib/site-url";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Vue d'ensemble — AdminPilot" };
@@ -105,9 +107,13 @@ export default async function DashboardPage({
         .eq("over_quota", false)
         .eq("confirmed_by_user", false)
         .lt("confidence", 0.7),
-      supabase
+      // Abonnements en réserve : invisibles pour l'API de l'utilisateur (RLS),
+      // comptés ici par le serveur.
+      createAdminClient()
         .from("subscriptions")
         .select("id", { count: "exact", head: true })
+        .eq("user_id", auth?.userId ?? "")
+        .eq("status", "active")
         .eq("over_quota", true),
       // Douze derniers mois : c'est l'horizon du « combien de plus cette année ».
       supabase
@@ -132,6 +138,12 @@ export default async function DashboardPage({
     .reduce((sum, change) => sum + change.yearly, 0);
 
   const subs = withCurrentRenewal(subscriptions ?? []);
+
+  // Doublons du foyer (Premium, membres volontaires uniquement).
+  const duplicates =
+    auth?.profile.plan === "family" && auth.profile.household_share
+      ? (await householdDuplicates(createAdminClient(), auth.userId)).duplicates
+      : [];
 
   // Les cycles sont ramenés au mois : additionner 384 €/an et 13,49 €/mois tels
   // quels donnerait un total qui ne veut rien dire.
@@ -226,6 +238,29 @@ export default async function DashboardPage({
           général avant l'utilisateur — mais pas toujours : si le profil est
           encore en gratuit, on le dit plutôt que de laisser croire à un échec. */}
       {justPaid && <PaymentConfirmation plan={auth?.profile.plan ?? "free"} />}
+
+      {duplicates.length > 0 && (
+        <section
+          role="status"
+          className="anim-up rounded-[var(--radius-xl)] border border-[rgb(var(--accent-rgb)/.35)] bg-[var(--accent-soft)] px-5 py-4"
+        >
+          <div className="text-[15px] font-semibold">
+            {duplicates.length === 1 ? "Un service payé en double dans ton foyer" : `${duplicates.length} services payés en double dans ton foyer`}
+          </div>
+          <ul className="m-0 mt-2 list-none space-y-1 p-0 text-sm text-[var(--text-dim)]">
+            {duplicates.map((item) => (
+              <li key={item.provider}>
+                <strong className="font-medium text-[var(--text)]">{item.provider}</strong> ·{" "}
+                {item.payers} membres le paient, {formatAmount(item.totalMonthly)} par mois au total
+              </li>
+            ))}
+          </ul>
+          <p className="m-0 mt-2 text-xs text-[var(--text-faint)]">
+            Une offre Duo ou Famille coûte souvent moins cher que plusieurs abonnements
+            séparés : compare sur le site du fournisseur.
+          </p>
+        </section>
+      )}
 
       {justJoined && (
         <section

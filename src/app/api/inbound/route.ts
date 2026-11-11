@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { isSenderAddress, senderAddress } from "@/lib/email/sender";
 import { hashEmail } from "@/lib/ingest/dedupe";
+import { registerMailbox } from "@/lib/mailboxes";
 import {
   detectGmailConfirmation,
   forwardingSourceAddress,
@@ -140,6 +141,18 @@ export async function POST(request: Request) {
   });
 
   if (confirmation) {
+    // Quelle boîte demande à transférer ? Au-delà du nombre prévu par la
+    // formule, le code n'est pas affiché : le transfert ne peut pas être
+    // validé, et l'application propose de passer à la formule au-dessus.
+    const mailbox = forwardingSourceAddress(body, process.env.INBOUND_DOMAIN ?? "in.zylax.fr");
+    if (mailbox && !(await registerMailbox(db, profile, mailbox))) {
+      await db
+        .from("profiles")
+        .update({ mailbox_limit_at: new Date().toISOString() })
+        .eq("id", profile.id);
+      return NextResponse.json({ status: "mailbox_limit" }, { status: 202 });
+    }
+
     await db
       .from("profiles")
       .update({

@@ -5,6 +5,7 @@ import type { Resend } from "resend";
 import { escapeHtml } from "@/lib/alerts/email";
 import { incrementUsage } from "@/lib/billing/quotas";
 import { PLAN_LIMITS } from "@/lib/constants";
+import { sendPush } from "@/lib/push";
 import { formatAmount, formatCycle } from "@/lib/format";
 import type { createAdminClient } from "@/lib/supabase/admin";
 
@@ -135,6 +136,9 @@ export async function sendNewSubscriptionDigests(input: {
   </div>
 </body></html>`,
       });
+      if (profile.plan === "family") {
+        await sendPush(db, userId, { title: subject, body: lines.join(" · "), url: "/abonnements" });
+      }
       if (!sendError) {
         sent += 1;
         await incrementUsage(userId, "alerts").catch(() => {});

@@ -18,6 +18,7 @@ import { sendFeedbackRequests } from "@/lib/feedback";
 import { PLAN_LIMITS } from "@/lib/constants";
 import { alertsAddress } from "@/lib/email/sender";
 import { runReferralTasks } from "@/lib/referral/engine";
+import { sendPush } from "@/lib/push";
 import { siteUrl } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -326,6 +327,15 @@ async function dispatchBatch(
       if (sendError) {
         failed += 1;
         continue;
+      }
+
+      // Premium : la même alerte en notification sur ses appareils.
+      if (profile.plan === "family") {
+        await sendPush(db, alert.user_id, {
+          title: email.subject,
+          body: alert.message ?? "",
+          url: alert.ref_type === "document" ? "/documents" : "/alertes",
+        });
       }
 
       sent += 1;

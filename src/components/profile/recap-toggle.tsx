@@ -10,7 +10,7 @@ export function RecapToggle({
   description = "Le 1er de chaque mois : ton total, les hausses et baisses de prix, les nouveaux abonnements, les résiliations et les échéances à venir.",
 }: {
   initial: boolean;
-  field?: "monthly_recap" | "notify_new_subscription";
+  field?: "monthly_recap" | "notify_new_subscription" | "household_share";
   label?: string;
   description?: string;
 }) {

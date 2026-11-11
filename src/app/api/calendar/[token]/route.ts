@@ -28,16 +28,18 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     .maybeSingle();
   if (!profile) return NextResponse.json({ error: "introuvable" }, { status: 404 });
 
+  // Premium : relecture demandée toutes les heures au lieu de deux fois par jour.
+  const premium = profile.plan === "family";
   const body =
     profile.plan === "free"
       ? "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//AdminPilot//Echeances//FR\r\nX-WR-CALNAME:AdminPilot\r\nEND:VCALENDAR\r\n"
-      : await buildCalendar(db, profile.id, siteUrl());
+      : await buildCalendar(db, profile.id, siteUrl(), premium ? "PT1H" : "PT12H");
 
   return new NextResponse(body, {
     headers: {
       "content-type": "text/calendar; charset=utf-8",
       "content-disposition": 'inline; filename="adminpilot.ics"',
-      "cache-control": "private, max-age=900",
+      "cache-control": `private, max-age=${premium ? 300 : 900}`,
     },
   });
 }

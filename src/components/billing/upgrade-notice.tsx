@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { ArrowRight, Lock } from "lucide-react";
 
+import { PLAN_PRICES } from "@/lib/constants";
+
+const euros = (value: number) => value.toFixed(2).replace(".", ",");
+const MONTHLY = euros(PLAN_PRICES.pro.monthly);
+const YEARLY_PER_MONTH = euros(PLAN_PRICES.pro.yearly / 12);
+const YEARLY_SAVING = Math.round((1 - PLAN_PRICES.pro.yearly / (PLAN_PRICES.pro.monthly * 12)) * 100);
+
 /**
  * Encart affiché quand une limite de la formule gratuite retient quelque
  * chose : abonnements détectés mais masqués, document refusé, recherche ou
@@ -28,13 +35,23 @@ export function UpgradeNotice({
           {body}
         </p>
       </div>
-      <Link
-        href="/reglages?formule=pro#formules"
-        className="btn-primary h-10 px-4 text-[13px]"
-      >
-        {cta}
-        <ArrowRight className="size-4" />
-      </Link>
+      <div className="flex flex-col items-stretch gap-1.5 sm:items-end">
+        {/* L'annuel d'abord : c'est au moment où la limite gêne que
+            l'économie parle le plus. */}
+        <Link
+          href="/reglages?formule=pro&cycle=yearly#formules"
+          className="btn-primary h-10 px-4 text-[13px]"
+        >
+          {cta} à {YEARLY_PER_MONTH} €/mois
+          <ArrowRight className="size-4" />
+        </Link>
+        <span className="text-center text-[11px] text-[var(--text-faint)] sm:text-right">
+          {PLAN_PRICES.pro.yearly} € par an, soit {YEARLY_SAVING} % de moins ·{" "}
+          <Link href="/reglages?formule=pro&cycle=monthly#formules">
+            ou {MONTHLY} € au mois
+          </Link>
+        </span>
+      </div>
     </section>
   );
 }

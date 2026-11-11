@@ -11,6 +11,7 @@ import {
   Plus,
   Repeat,
   Settings,
+  FileSpreadsheet,
   PiggyBank,
 } from "lucide-react";
 
@@ -38,6 +39,7 @@ const LINKS = [
   // Pas dans la barre du bas : cinq entrées au pouce, c'est le maximum.
   // Sur mobile, l'analyse s'ouvre depuis le tableau de bord.
   { href: "/analyse", label: "Analyse", short: "Analyse", Icon: PiggyBank, desktopOnly: true },
+  { href: "/bilan", label: "Bilan annuel", short: "Bilan", Icon: FileSpreadsheet, desktopOnly: true },
   { href: "/reglages", label: "Réglages", short: "Réglages", Icon: Settings },
 ] as const satisfies readonly {
   href: string;
@@ -79,7 +81,7 @@ export function Sidebar({
   return (
     <nav
       className="
-        fixed bottom-0 left-0 z-20 flex w-full justify-around border-t
+        fixed bottom-0 left-0 z-20 flex w-full justify-around border-t print:hidden
         border-[var(--border)] bg-[var(--nav-bg)] backdrop-blur-xl
         pb-[env(safe-area-inset-bottom,0px)]
         md:sticky md:top-0 md:h-dvh md:w-[252px] md:shrink-0 md:flex-col

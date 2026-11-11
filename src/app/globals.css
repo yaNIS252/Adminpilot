@@ -482,3 +482,35 @@ select option {
   background-color: var(--bg-elevated);
   color: var(--text);
 }
+
+/* Impression (bilan annuel enregistré en PDF) : fond blanc, texte noir, sans
+   navigation ni effets, pour une page lisible et économe en encre. */
+@media print {
+  :root {
+    color-scheme: light;
+    --bg: #fff;
+    --bg-elevated: #fff;
+    --text: #111;
+    --text-bright: #000;
+    --text-dim: #333;
+    --text-muted: #333;
+    --text-faint: #555;
+    --border: #ccc;
+    --border-soft: #ddd;
+    --accent-soft: #fff;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .card-sheen {
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+  .anim-up {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

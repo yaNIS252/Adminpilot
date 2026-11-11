@@ -38,6 +38,9 @@ const PUBLIC_PREFIXES = [
   "/p",
   // Icône de l'écran d'accueil iOS, générée sans extension de fichier.
   "/apple-icon",
+  // Application installée : manifeste et service worker des notifications.
+  "/manifest.webmanifest",
+  "/sw.js",
 ];
 
 function isPublic(pathname: string): boolean {
@@ -47,7 +50,7 @@ function isPublic(pathname: string): boolean {
   );
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // La réponse doit être construite AVANT le client : c'est sur elle que
   // Supabase pose les cookies rafraîchis.
   let response = NextResponse.next({ request });

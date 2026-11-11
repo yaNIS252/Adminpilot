@@ -8,6 +8,8 @@ import {
   HouseholdMembership,
 } from "@/components/household/household-manager";
 import { CalendarLink } from "@/components/profile/calendar-link";
+import { MailboxManager } from "@/components/profile/mailbox-manager";
+import { PushToggle } from "@/components/profile/push-toggle";
 import { PasswordSetter } from "@/components/profile/password-setter";
 import { ProfileEditor } from "@/components/profile/profile-editor";
 import { RecapToggle } from "@/components/profile/recap-toggle";
@@ -21,6 +23,7 @@ import { inboxAddress, requireUser } from "@/lib/auth/require-user";
 import { getStripe, planFromPriceId } from "@/lib/billing/stripe";
 import {
   FAMILY_SEATS,
+  MAILBOX_LIMITS,
   PLAN_LABELS,
   PLAN_LIMITS,
   RAW_RETENTION_DAYS,
@@ -82,7 +85,7 @@ export default async function SettingsPage({
   const pausedMember = Boolean(membership) && !isMember && membership?.owner?.plan !== "family";
   const householdOwner = subscriber && profile.plan === "family";
 
-  const [billing, ownAvatar, household, domains, referrals, pausedHousehold] = await Promise.all([
+  const [billing, ownAvatar, household, domains, referrals, pausedHousehold, mailboxRows] = await Promise.all([
     subscriber && profile.stripe_sub_id ? currentBilling(profile.stripe_sub_id) : null,
     avatarUrl(profile.avatar_path),
     householdOwner ? householdOf(db, auth.userId) : Promise.resolve([]),
@@ -97,7 +100,17 @@ export default async function SettingsPage({
           .not("member_id", "is", null)
           .then(({ count }) => count ?? 0)
       : Promise.resolve(0),
+    db
+      .from("mailboxes")
+      .select("id, address, created_at")
+      .eq("user_id", auth.userId)
+      .order("created_at", { ascending: true })
+      .then(({ data }) => data ?? []),
   ]);
+  const freshConfirmation = isRecent(profile.gmail_confirmation_at, 3_600_000)
+    ? (profile.gmail_confirmation as { code: string; url: string | null } | null)
+    : null;
+  const mailboxLimitHit = isRecent(profile.mailbox_limit_at, 86_400_000);
   const memberAvatars = await avatarUrls(household.map((row) => row.member?.avatar_path ?? null));
 
   // Valeurs venues de l'URL, donc de n'importe qui : réduites à ce qui existe.
@@ -188,6 +201,27 @@ export default async function SettingsPage({
         </Card>
       </section>
 
+      <section id="boites" className="scroll-mt-6">
+        <Card
+          icon={<Mail className="size-4" />}
+          title="Mes boîtes mail"
+          subtitle="Les boîtes Gmail qui transfèrent leurs factures vers ton compte"
+        >
+          <MailboxManager
+            userId={auth.userId}
+            inboxAddress={inboxAddress(profile)}
+            mailboxes={mailboxRows.map((row) => ({
+              id: row.id,
+              address: row.address,
+              createdAt: formatDate(row.created_at.slice(0, 10)) ?? "",
+            }))}
+            limit={MAILBOX_LIMITS[profile.plan]}
+            limitHit={mailboxLimitHit}
+            initialConfirmation={freshConfirmation}
+          />
+        </Card>
+      </section>
+
       {/* Cible du bouton « Géré dans Réglages » de la ligne AdminPilot :
           la formule en cours et « Gérer mon abonnement ». */}
       <section id="abonnement" className="scroll-mt-6">
@@ -198,7 +232,7 @@ export default async function SettingsPage({
           isMember
             ? "Incluse dans un foyer Premium"
             : onBonus
-              ? `Offerte par parrainage jusqu’au ${bonusEnd}`
+              ? `Offerte jusqu’au ${bonusEnd} (essai ou parrainage)`
               : undefined
         }
       >
@@ -231,7 +265,7 @@ export default async function SettingsPage({
           >
             {onBonus && (
               <p className="m-0 mb-4 text-[13px] leading-[1.55] text-[var(--text-dim)]">
-                Ton mois offert continue : si tu t’abonnes maintenant, rien
+                Ta période offerte continue : si tu t’abonnes maintenant, rien
                 n’est prélevé avant le {bonusEnd}.
               </p>
             )}
@@ -306,6 +340,16 @@ export default async function SettingsPage({
             </Link>
           </div>
         )}
+        {(householdOwner || isMember) && (
+          <div className="mt-4 border-t border-[var(--border-soft)] pt-4">
+            <RecapToggle
+              initial={profile.household_share}
+              field="household_share"
+              label="Participer à la détection des doublons du foyer"
+              description="Repérer les services payés en double dans le foyer (deux Spotify, deux Netflix…) pour passer à une offre Duo ou Famille. Seuls les membres qui activent cette option sont comparés, et personne ne voit qui paie quoi : seulement « 2 membres paient Spotify »."
+            />
+          </div>
+        )}
       </Card>
 
       <section id="parrainage" className="scroll-mt-6">
@@ -333,6 +377,17 @@ export default async function SettingsPage({
             label="Être prévenu des nouveaux abonnements"
             description="Quand un nouvel abonnement est détecté : une pastille dans l’appli et un e-mail récapitulatif (un seul par jour). En gratuit, l’e-mail compte dans tes 3 alertes du mois."
           />
+          <div className="mt-4 border-t border-[var(--border-soft)] pt-4">
+            {profile.plan === "family" ? (
+              <PushToggle />
+            ) : (
+              <p className="m-0 flex items-center gap-2 text-sm text-[var(--text-dim)]">
+                <Lock className="size-4 shrink-0 text-[var(--accent-lighter)]" />
+                Notifications sur ton téléphone ou ton ordinateur, en plus des e-mails : inclus
+                avec Premium.
+              </p>
+            )}
+          </div>
         </Card>
       </section>
 
@@ -386,6 +441,11 @@ export default async function SettingsPage({
       <AccountActions email={profile.email} />
     </div>
   );
+}
+
+/** Date survenue depuis moins de `windowMs` (code Gmail encore utile, etc.). */
+function isRecent(date: string | null, windowMs: number): boolean {
+  return Boolean(date && Date.now() - new Date(date).getTime() < windowMs);
 }
 
 function Card({

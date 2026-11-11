@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { SESSION_COOKIE, SESSION_COOKIE_OPTIONS, sessionCookieValue } from "@/lib/auth/session";
+import { startTrialIfNew } from "@/lib/billing/trial";
 import { REFERRAL_COOKIE } from "@/lib/constants";
 import { attachReferral } from "@/lib/referral/engine";
 import { clientIp } from "@/lib/referral/normalize";
@@ -36,6 +37,8 @@ export async function POST(request: Request) {
       console.error("[auth/session] parrainage:", error);
     }
   }
+
+  await startTrialIfNew(createAdminClient(), user.id);
 
   const response = NextResponse.json({ ok: true });
   if (referralCode) response.cookies.delete(REFERRAL_COOKIE);

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { startTrialIfNew } from "@/lib/billing/trial";
 import { REFERRAL_COOKIE } from "@/lib/constants";
 import { attachReferral } from "@/lib/referral/engine";
 import { clientIp } from "@/lib/referral/normalize";
@@ -96,6 +97,14 @@ export async function GET(request: Request) {
     } catch (error) {
       console.error("[auth/callback] parrainage:", error);
     }
+  }
+
+  // Première connexion d'un nouveau compte : l'essai Pro démarre.
+  {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) await startTrialIfNew(createAdminClient(), user.id);
   }
 
   // Nouvelle connexion : le compteur de durée de session repart de zéro.

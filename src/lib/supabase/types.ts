@@ -402,6 +402,12 @@ export type Database = {
         };
         Relationships: [];
       };
+      mailboxes: {
+        Row: { address: string; created_at: string; id: string; user_id: string };
+        Insert: { address: string; created_at?: string; id?: string; user_id: string };
+        Update: { address?: string; created_at?: string; id?: string; user_id?: string };
+        Relationships: [];
+      };
       offer_clicks: {
         Row: {
           created_at: string;
@@ -567,9 +573,11 @@ export type Database = {
           gmail_confirmation_at: string | null;
           gmail_filter_hash: string | null;
           gmail_forward_verified: boolean;
+          household_share: boolean;
           id: string;
           inbox_token: string;
           last_recap_period: string | null;
+          mailbox_limit_at: string | null;
           monthly_recap: boolean;
           name: string | null;
           notify_new_subscription: boolean;
@@ -578,6 +586,7 @@ export type Database = {
           stripe_customer_id: string | null;
           stripe_sub_id: string | null;
           tour_completed_at: string | null;
+          trial_started_at: string | null;
           updated_at: string;
         };
         Insert: {
@@ -602,6 +611,7 @@ export type Database = {
           id: string;
           inbox_token?: string;
           last_recap_period?: string | null;
+          mailbox_limit_at?: string | null;
           monthly_recap?: boolean;
           name?: string | null;
           notify_new_subscription?: boolean;
@@ -610,6 +620,7 @@ export type Database = {
           stripe_customer_id?: string | null;
           stripe_sub_id?: string | null;
           tour_completed_at?: string | null;
+          trial_started_at?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -631,9 +642,11 @@ export type Database = {
           gmail_confirmation_at?: string | null;
           gmail_filter_hash?: string | null;
           gmail_forward_verified?: boolean;
+          household_share?: boolean;
           id?: string;
           inbox_token?: string;
           last_recap_period?: string | null;
+          mailbox_limit_at?: string | null;
           monthly_recap?: boolean;
           name?: string | null;
           notify_new_subscription?: boolean;
@@ -642,8 +655,15 @@ export type Database = {
           stripe_customer_id?: string | null;
           stripe_sub_id?: string | null;
           tour_completed_at?: string | null;
+          trial_started_at?: string | null;
           updated_at?: string;
         };
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: { auth: string; created_at: string; endpoint: string; id: string; p256dh: string; user_id: string };
+        Insert: { auth: string; created_at?: string; endpoint: string; id?: string; p256dh: string; user_id: string };
+        Update: { auth?: string; created_at?: string; endpoint?: string; id?: string; p256dh?: string; user_id?: string };
         Relationships: [];
       };
       referrals: {

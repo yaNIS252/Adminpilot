@@ -4,6 +4,7 @@ import type Stripe from "stripe";
 
 import { getStripe } from "@/lib/billing/stripe";
 import { coveredByHousehold, unlockHiddenSubscriptions } from "@/lib/billing/sync";
+import { enforceFreeLimits } from "@/lib/billing/limits";
 import { PLAN_PRICES, REFERRAL } from "@/lib/constants";
 import { bonusActive } from "@/lib/referral/bonus";
 import { removeBonusLine, syncBonusLine } from "@/lib/referral/bonus-line";
@@ -166,6 +167,7 @@ export async function runReferralTasks(db: Db) {
     }
     await db.from("profiles").update(update).eq("id", profile.id);
     await removeBonusLine(db, profile.id);
+    await enforceFreeLimits(db, profile.id);
   }
 
   // 2. Parrains à valider : filleul actif depuis au moins une semaine.

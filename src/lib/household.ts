@@ -4,6 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 
 import { Resend } from "resend";
 
+import { enforceFreeLimits } from "@/lib/billing/limits";
 import { FAMILY_SEATS } from "@/lib/constants";
 import { senderAddress } from "@/lib/email/sender";
 import { restoreBonus } from "@/lib/referral/bonus";
@@ -116,6 +117,7 @@ export async function revokeMemberPlan(db: Db, memberId: string) {
     .eq("plan", "family");
   // Un mois offert par parrainage encore en cours reprend le relais.
   await restoreBonus(db, [memberId]);
+  await enforceFreeLimits(db, memberId);
 }
 
 function escapeHtml(value: string): string {

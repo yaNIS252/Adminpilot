@@ -156,6 +156,19 @@ export default async function AnalysePage() {
         </section>
       )}
 
+      <Link
+        href="/bilan"
+        className="anim-up flex items-center justify-between gap-3 rounded-[var(--radius-xl)] border border-[var(--border)] px-5 py-4 text-sm no-underline hover:border-[var(--border-strong)]"
+      >
+        <span>
+          <strong className="font-semibold text-[var(--text)]">Bilan annuel</strong>
+          <span className="block text-xs text-[var(--text-faint)]">
+            Ton année en PDF ou pour Excel (Premium)
+          </span>
+        </span>
+        <ArrowRight className="size-4 text-[var(--text-dim)]" />
+      </Link>
+
       <section className="card-sheen anim-up rounded-[var(--radius-xl)] border border-[var(--border)] p-5">
         <h2 className="mt-0 mb-3 text-[15px] font-semibold">Dépenses par catégorie</h2>
         {byCategory.length ? (

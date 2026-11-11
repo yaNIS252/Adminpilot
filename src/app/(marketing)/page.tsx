@@ -47,9 +47,11 @@ export default function LandingPage() {
         </div>
 
         <p className="mt-9 mb-0 font-mono text-xs text-[var(--text-faint)]">
-          Gratuit jusqu&apos;à 5 abonnements
+          14 jours de Pro offerts
           <Sep />
           Sans carte bancaire
+          <Sep />
+          Puis gratuit jusqu&apos;à 5 abonnements
           <Sep />
           Emails bruts supprimés sous 30 jours
         </p>

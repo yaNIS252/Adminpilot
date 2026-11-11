@@ -4,6 +4,7 @@ import type Stripe from "stripe";
 
 import { REVIEW_THRESHOLD } from "@/lib/ai/schemas";
 import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
+import { enforceFreeLimits } from "@/lib/billing/limits";
 import { getStripe, planFromPriceId } from "@/lib/billing/stripe";
 import { restoreBonus } from "@/lib/referral/bonus";
 import { onRefereePaid } from "@/lib/referral/engine";
@@ -92,6 +93,8 @@ export async function applySubscription(
     }
     // Ni foyer ni abonnement, mais un mois offert en cours : il continue.
     await restoreBonus(db, (profiles ?? []).map((profile) => profile.id));
+    // Toujours en gratuit après ces deux rattrapages : la limite s'applique.
+    for (const profile of profiles ?? []) await enforceFreeLimits(db, profile.id);
   }
 
   // Filleul devenu client payant : son parrain est validé sans attendre.
@@ -268,7 +271,10 @@ export async function syncHousehold(
     .eq("plan", covered ? "free" : "family");
   if (updateError) throw updateError;
 
-  if (!covered) await restoreBonus(db, memberIds);
+  if (!covered) {
+    await restoreBonus(db, memberIds);
+    for (const memberId of memberIds) await enforceFreeLimits(db, memberId);
+  }
 
   if (covered) {
     for (const memberId of memberIds) {

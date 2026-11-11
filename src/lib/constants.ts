@@ -139,6 +139,12 @@ export const TOUR_MAILBOX_STEP = 2;
 export const FEEDBACK_PROMPT_DAYS = 14;
 export const FEEDBACK_EMAIL_DAYS = 30;
 
+/** Essai Pro offert à l'inscription, sans carte bancaire. */
+export const TRIAL_DAYS = 14;
+
+/** Boîtes mail pouvant transférer vers un même compte. */
+export const MAILBOX_LIMITS = { free: 1, pro: 1, family: 3 } as const;
+
 export const REFERRAL_BANNER_COOKIE = "ap_referral_banner_hidden";
 
 /**

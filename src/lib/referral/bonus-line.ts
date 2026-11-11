@@ -79,8 +79,8 @@ export async function syncBonusLine(db: Db, userId: string, until: Date) {
     refType: "subscription",
     refId: id,
     deadline: end,
-    title: "Ton mois de Pro offert se termine",
-    message: `Le ${frenchDate(end)}, ton compte repassera en formule gratuite : ${free.subscriptions} abonnements suivis, ${free.documents} documents, ${free.alerts} alertes par mois. Pour tout garder, passe à Pro (${price} € par mois) : rien ne sera prélevé avant la fin de ton mois offert.`,
+    title: "Ta période Pro offerte se termine",
+    message: `Le ${frenchDate(end)}, ton compte repassera en formule gratuite : ${free.subscriptions} abonnements suivis, ${free.documents} documents, ${free.alerts} alertes par mois. Pour tout garder, passe à Pro (${price} € par mois) : rien ne sera prélevé avant la fin de ta période offerte.`,
     offsets: BONUS_REMINDER_DAYS,
   });
 }

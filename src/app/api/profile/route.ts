@@ -37,6 +37,7 @@ const BodySchema = z
       .optional(),
     monthly_recap: z.boolean().optional(),
     notify_new_subscription: z.boolean().optional(),
+    household_share: z.boolean().optional(),
   })
   .refine((body) => Object.values(body).some((value) => value !== undefined), {
     message: "rien à modifier",
@@ -57,6 +58,7 @@ export async function PATCH(request: Request) {
     background?: string;
     monthly_recap?: boolean;
     notify_new_subscription?: boolean;
+    household_share?: boolean;
     updated_at: string;
   } = {
     updated_at: new Date().toISOString(),
@@ -83,6 +85,8 @@ export async function PATCH(request: Request) {
   if (body.data.notify_new_subscription !== undefined) {
     update.notify_new_subscription = body.data.notify_new_subscription;
   }
+
+  if (body.data.household_share !== undefined) update.household_share = body.data.household_share;
 
   const { error } = await createAdminClient()
     .from("profiles")

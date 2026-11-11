@@ -14,6 +14,7 @@ import {
 import { NewSubscriptions } from "@/components/dashboard/new-subscriptions";
 import { AddSubscription } from "@/components/dashboard/add-subscription";
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   UpgradeNotice,
@@ -58,9 +59,13 @@ export default async function SubscriptionsPage({
     { data: unreadNew },
   ] = await Promise.all([
     query,
-    supabase
+    // Abonnements en réserve : invisibles pour l'API de l'utilisateur (RLS),
+    // comptés ici par le serveur.
+    createAdminClient()
       .from("subscriptions")
       .select("id", { count: "exact", head: true })
+      .eq("user_id", auth?.userId ?? "")
+      .eq("status", "active")
       .eq("over_quota", true),
     // Changements des 90 derniers jours, du plus récent au plus ancien.
     supabase

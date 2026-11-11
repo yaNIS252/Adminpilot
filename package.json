@@ -15,6 +15,7 @@
     "login:link": "tsx --conditions=react-server --env-file=.env.local scripts/login-link.ts",
     "preview:recap": "tsx --conditions=react-server --env-file=.env.local scripts/preview-recap.ts",
     "check:ai-schemas": "tsx --conditions=react-server scripts/check-ai-schemas.ts",
+    "test:plans": "tsx --conditions=react-server --env-file=.env.local scripts/test-plans.ts",
     "test:referrals": "tsx --conditions=react-server --env-file=.env.local scripts/test-referrals.ts",
     "test:analysis": "tsx scripts/test-analysis.ts",
     "test:renewal": "tsx scripts/test-renewal.ts",
@@ -36,6 +37,7 @@
     "server-only": "^0.0.1",
     "stripe": "^22.6.2",
     "svix": "^2.5.0",
+    "web-push": "^3.6.7",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -43,6 +45,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",

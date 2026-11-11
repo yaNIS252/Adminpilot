@@ -438,7 +438,7 @@ export function AuthPanel({
         <p className="m-0 text-[15px] leading-[1.5] text-[var(--text-dim)]">
           {mode === "signin"
             ? "Connecte-toi pour retrouver tes abonnements et tes factures."
-            : "Crée ton compte en une minute. Gratuit jusqu’à 5 abonnements, sans carte bancaire."}
+            : "Crée ton compte en une minute : 14 jours de Pro offerts, sans carte bancaire. Ensuite, gratuit jusqu’à 5 abonnements."}
         </p>
       </div>
 

@@ -30,7 +30,10 @@ export async function GET(
   if (!offer?.active) return NextResponse.redirect(fallback);
 
   const auth = await requireUser();
-  await db.from("offer_clicks").insert({ offer_id: offer.id, user_id: auth?.userId ?? null });
+  // Seuls les clics d'un utilisateur connecté sont comptés : sans cela,
+  // n'importe quel robot pouvait gonfler le compteur qui sert à vérifier
+  // les commissions.
+  if (auth) await db.from("offer_clicks").insert({ offer_id: offer.id, user_id: auth.userId });
 
   const target =
     offer.affiliate_url && !NO_AFFILIATION_CATEGORIES.has(offer.category)
