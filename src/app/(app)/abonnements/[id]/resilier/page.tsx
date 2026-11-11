@@ -4,6 +4,7 @@ import { ArrowLeft, CircleCheck, ExternalLink, Globe, Handshake, Lock, Scale } f
 
 import { CancelStatus } from "@/components/cancel/cancel-status";
 import { CategoryTip, GuideSteps } from "@/components/cancel/cancel-guide";
+import { SuggestLink } from "@/components/cancel/suggest-link";
 import { NegotiationHelper } from "@/components/cancel/negotiation-helper";
 import { OfferList } from "@/components/cancel/offer-list";
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
@@ -266,6 +267,8 @@ export default async function CancelPage({
             Guide complet pour résilier {name}
           </Link>
         )}
+        {/* Pas de lien vérifié au catalogue : l'utilisateur peut en proposer un. */}
+        {!catalogue?.cancel_url && <SuggestLink subscriptionId={sub.id} provider={name} />}
       </Card>
 
       {!cancelled && negotiation && (

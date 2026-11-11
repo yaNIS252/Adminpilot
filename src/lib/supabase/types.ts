@@ -76,6 +76,39 @@ export type Database = {
           },
         ];
       };
+      cancel_link_suggestions: {
+        Row: {
+          ai_verdict: Json | null;
+          created_at: string;
+          id: string;
+          provider_id: string | null;
+          status: string;
+          subscription_id: string | null;
+          url: string;
+          user_id: string;
+        };
+        Insert: {
+          ai_verdict?: Json | null;
+          created_at?: string;
+          id?: string;
+          provider_id?: string | null;
+          status?: string;
+          subscription_id?: string | null;
+          url: string;
+          user_id: string;
+        };
+        Update: {
+          ai_verdict?: Json | null;
+          created_at?: string;
+          id?: string;
+          provider_id?: string | null;
+          status?: string;
+          subscription_id?: string | null;
+          url?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       cancellations: {
         Row: {
           created_at: string;
@@ -331,6 +364,7 @@ export type Database = {
           name: string;
           sender_emails: string[];
           seo_slug: string;
+          verified_at: string | null;
         };
         Insert: {
           cancel_address?: string | null;
@@ -347,6 +381,7 @@ export type Database = {
           name: string;
           sender_emails?: string[];
           seo_slug: string;
+          verified_at: string | null;
         };
         Update: {
           cancel_address?: string | null;
@@ -363,6 +398,7 @@ export type Database = {
           name?: string;
           sender_emails?: string[];
           seo_slug?: string;
+          verified_at?: string | null;
         };
         Relationships: [];
       };
