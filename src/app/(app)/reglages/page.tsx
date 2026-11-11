@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, Forward, Gift, History, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
+import { CalendarDays, Forward, KeyRound, Gift, History, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 
 import { ManageSubscription, PlanPicker } from "@/components/billing/plan-picker";
 import {
@@ -7,6 +7,7 @@ import {
   HouseholdMembership,
 } from "@/components/household/household-manager";
 import { CalendarLink } from "@/components/profile/calendar-link";
+import { PasswordSetter } from "@/components/profile/password-setter";
 import { ProfileEditor } from "@/components/profile/profile-editor";
 import { RecapToggle } from "@/components/profile/recap-toggle";
 import { ReferralPanel } from "@/components/referral/referral-panel";
@@ -332,6 +333,12 @@ export default async function SettingsPage({
           ) : (
             <RecapToggle initial={profile.monthly_recap} />
           )}
+        </Card>
+      </section>
+
+      <section id="mot-de-passe" className="scroll-mt-6">
+        <Card icon={<KeyRound className="size-4" />} title="Mot de passe">
+          <PasswordSetter />
         </Card>
       </section>
 

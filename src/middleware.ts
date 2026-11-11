@@ -83,8 +83,12 @@ export async function middleware(request: NextRequest) {
   if (user) {
     const now = Date.now();
     const session = readSession(request.cookies.get(SESSION_COOKIE)?.value);
+    // `/api/auth/session` ouvre une session neuve (mot de passe ou code) : il
+    // remet ce compteur à zéro, il ne doit donc pas être bloqué par l'ancien.
     const expired =
-      session && (now - session.issued > SESSION_MAX_MS || now - session.seen > SESSION_IDLE_MS);
+      pathname !== "/api/auth/session" &&
+      session &&
+      (now - session.issued > SESSION_MAX_MS || now - session.seen > SESSION_IDLE_MS);
 
     if (expired) {
       // Révoque la session côté Supabase et efface ses cookies sur `response`.
