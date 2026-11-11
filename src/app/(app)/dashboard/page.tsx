@@ -399,6 +399,8 @@ export default async function DashboardPage({
           className="min-w-0 flex-[1.6_1_420px]"
           title="Répartition des dépenses"
           subtitle="par catégorie, ramenée au mois"
+          href="/analyse"
+          hrefLabel="Analyse et économies"
           icon={<ChartPie className="size-4" />}
         >
           {byCategory.length === 0 ? (
@@ -562,6 +564,7 @@ function Card({
   title,
   subtitle,
   href,
+  hrefLabel = "Tout voir",
   icon,
   className = "",
   children,
@@ -569,6 +572,7 @@ function Card({
   title: string;
   subtitle?: string;
   href?: string;
+  hrefLabel?: string;
   icon?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
@@ -592,7 +596,7 @@ function Card({
             href={href}
             className="shrink-0 text-xs text-[var(--text-dim)] hover:text-[var(--accent-light)]"
           >
-            Tout voir
+            {hrefLabel}
           </Link>
         )}
       </div>

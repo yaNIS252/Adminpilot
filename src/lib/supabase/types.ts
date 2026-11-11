@@ -439,8 +439,11 @@ export type Database = {
           checked_at: string;
           conditions: string | null;
           created_at: string;
+          details: Json;
           id: string;
+          is_reference: boolean;
           monthly_price: number;
+          kind: string | null;
           name: string;
           provider_name: string;
           url: string;
@@ -453,8 +456,11 @@ export type Database = {
           checked_at?: string;
           conditions?: string | null;
           created_at?: string;
+          details?: Json;
           id?: string;
+          is_reference?: boolean;
           monthly_price: number;
+          kind?: string | null;
           name: string;
           provider_name: string;
           url: string;
@@ -467,8 +473,11 @@ export type Database = {
           checked_at?: string;
           conditions?: string | null;
           created_at?: string;
+          details?: Json;
           id?: string;
+          is_reference?: boolean;
           monthly_price?: number;
+          kind?: string | null;
           name?: string;
           provider_name?: string;
           url?: string;

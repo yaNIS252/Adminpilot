@@ -11,6 +11,7 @@ import {
   Plus,
   Repeat,
   Settings,
+  PiggyBank,
 } from "lucide-react";
 
 import { LogoMark } from "@/components/marketing/logo-mark";
@@ -34,8 +35,17 @@ const LINKS = [
   { href: "/abonnements", label: "Abonnements", short: "Abos", Icon: Repeat },
   { href: "/documents", label: "Documents", short: "Docs", Icon: FolderClosed },
   { href: "/alertes", label: "Alertes", short: "Alertes", Icon: Bell },
+  // Pas dans la barre du bas : cinq entrées au pouce, c'est le maximum.
+  // Sur mobile, l'analyse s'ouvre depuis le tableau de bord.
+  { href: "/analyse", label: "Analyse", short: "Analyse", Icon: PiggyBank, desktopOnly: true },
   { href: "/reglages", label: "Réglages", short: "Réglages", Icon: Settings },
-] as const;
+] as const satisfies readonly {
+  href: string;
+  label: string;
+  short: string;
+  Icon: typeof Bell;
+  desktopOnly?: boolean;
+}[];
 
 export function Sidebar({
   plan,
@@ -194,7 +204,7 @@ export function Sidebar({
           Libellés raccourcis : à cinq entrées sur 375 px, « Vue d'ensemble »
           passe à la ligne et déborde de la barre. Le libellé complet reste
           porté par `aria-label` pour les lecteurs d'écran. */}
-      {LINKS.map(({ href, label, short, Icon }) => {
+      {LINKS.filter((link) => !("desktopOnly" in link)).map(({ href, label, short, Icon }) => {
         const active = pathname.startsWith(href);
         const badge = href === "/abonnements" ? reviewCount : 0;
 
