@@ -10,6 +10,7 @@ import {
 } from "@/lib/alerts/email";
 import { sendMonthlyRecaps } from "@/lib/alerts/recap";
 import { currentPeriod, incrementUsage } from "@/lib/billing/quotas";
+import { rollRenewals } from "@/lib/alerts/rollover";
 import { sendFeedbackRequests } from "@/lib/feedback";
 import { PLAN_LIMITS } from "@/lib/constants";
 import { alertsAddress } from "@/lib/email/sender";
@@ -66,6 +67,13 @@ export async function GET(request: Request) {
     return null;
   });
 
+  // Échéances dépassées : avancées à la suivante, rappels recréés. Avant
+  // l'envoi, pour que les rappels du jour en fassent partie.
+  const renewals = await rollRenewals(db).catch((error) => {
+    console.error("[cron] échéances:", error);
+    return null;
+  });
+
   // Demande d'avis un mois après l'inscription. Même hébergement que le récap.
   const feedback = await sendFeedbackRequests({ db, resend, siteUrl: base }).catch((error) => {
     console.error("[cron] demande d'avis:", error);
@@ -81,7 +89,7 @@ export async function GET(request: Request) {
 
   if (error) throw error;
   if (!alerts?.length) {
-    return NextResponse.json({ candidates: 0, sent: 0, failed: 0, refused: 0, recap, referrals, feedback });
+    return NextResponse.json({ candidates: 0, sent: 0, failed: 0, refused: 0, recap, referrals, feedback, renewals });
   }
 
   // Les objets référencés sont chargés en deux requêtes, pas en deux par
@@ -274,5 +282,6 @@ export async function GET(request: Request) {
     recap,
     referrals,
     feedback,
+    renewals,
   });
 }

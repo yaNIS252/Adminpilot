@@ -5,7 +5,7 @@ import {
   CancelledList,
   type CancelledSubscription,
 } from "@/components/dashboard/cancelled-list";
-import { formatAmount, isoDaysAgo, monthlyEquivalent } from "@/lib/format";
+import { formatAmount, isoDaysAgo, monthlyEquivalent, withCurrentRenewal } from "@/lib/format";
 
 import {
   SubscriptionList,
@@ -50,7 +50,7 @@ export default async function SubscriptionsPage({
     : query.eq("status", "active");
 
   const [
-    { data },
+    { data: rows },
     { count: hiddenCount },
     { data: changes },
     { data: cancelledRows },
@@ -73,6 +73,8 @@ export default async function SubscriptionsPage({
       .order("cancelled_at", { ascending: false, nullsFirst: false })
       .limit(50),
   ]);
+
+  const data = rows ? withCurrentRenewal(rows) : rows;
 
   const cancelled: CancelledSubscription[] = (cancelledRows ?? []).map((row) => {
     const meta =

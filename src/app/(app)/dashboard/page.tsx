@@ -36,6 +36,7 @@ import {
   isoDaysAgo,
   formatRelativeDeadline,
   monthlyEquivalent,
+  withCurrentRenewal,
 } from "@/lib/format";
 import { siteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
@@ -130,7 +131,7 @@ export default async function DashboardPage({
     .filter((change) => change.kind === "decrease")
     .reduce((sum, change) => sum + change.yearly, 0);
 
-  const subs = subscriptions ?? [];
+  const subs = withCurrentRenewal(subscriptions ?? []);
 
   // Les cycles sont ramenés au mois : additionner 384 €/an et 13,49 €/mois tels
   // quels donnerait un total qui ne veut rien dire.

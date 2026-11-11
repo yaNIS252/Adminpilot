@@ -3,6 +3,8 @@
  * s'écrivent partout de la même façon.
  */
 
+import { getNextRenewal } from "@/lib/ingest/schedule";
+
 export function formatAmount(
   amount: number | null,
   currency = "EUR",
@@ -98,4 +100,13 @@ export function activeTrialUntil(metadata: unknown): string | null {
   const until = (metadata as Record<string, unknown>).trial_until;
   if (typeof until !== "string") return null;
   return until >= new Date().toISOString().slice(0, 10) ? until : null;
+}
+
+/**
+ * Abonnements avec leur échéance à jour : une date déjà passée avance à la
+ * suivante (voir `getNextRenewal`). Même calcul que la tâche quotidienne, si
+ * bien qu'un compte à rebours n'est jamais négatif, même avant son passage.
+ */
+export function withCurrentRenewal<T extends { next_renewal: string | null; cycle: string }>(rows: T[]): T[] {
+  return rows.map((row) => ({ ...row, next_renewal: getNextRenewal(row.next_renewal, row.cycle) }));
 }

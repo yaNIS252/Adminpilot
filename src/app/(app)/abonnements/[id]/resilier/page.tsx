@@ -10,6 +10,7 @@ import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { requireUser } from "@/lib/auth/require-user";
 import { parseGuide } from "@/lib/cancel/guides";
 import { trustedLink } from "@/lib/cancel/links";
+import { getNextRenewal } from "@/lib/ingest/schedule";
 import { buildNegotiation } from "@/lib/cancel/negotiation";
 import { LEGAL_TEMPLATES } from "@/lib/cancel/templates";
 import { readUuid } from "@/lib/http/request";
@@ -56,6 +57,7 @@ export default async function CancelPage({
   const meta = sub.metadata && typeof sub.metadata === "object" && !Array.isArray(sub.metadata) ? sub.metadata : {};
   if ((meta as Record<string, unknown>).source === "adminpilot_billing") redirect("/reglages#abonnement");
 
+  const renewal = getNextRenewal(sub.next_renewal, sub.cycle);
   const catalogue = sub.known_providers as unknown as {
     name: string;
     domain: string;
@@ -162,7 +164,7 @@ export default async function CancelPage({
             {[
               formatAmount(sub.amount, sub.currency),
               formatCycle(sub.cycle),
-              sub.next_renewal ? `prochaine échéance le ${formatDate(sub.next_renewal)}` : null,
+              renewal ? `prochaine échéance le ${formatDate(renewal)}` : null,
               typeof metadata.commitment_end === "string"
                 ? `engagement jusqu’au ${formatDate(metadata.commitment_end)}`
                 : null,

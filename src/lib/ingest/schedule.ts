@@ -86,3 +86,40 @@ export function resolveRenewal(input: {
   }
   return date;
 }
+
+/**
+ * Échéance à afficher et à suivre : la date connue si elle est à venir,
+ * sinon avancée de période en période jusqu'à aujourd'hui ou après. Sans
+ * périodicité (paiement unique, inconnue), une date passée ne mène nulle
+ * part : `null`, et l'interface n'affiche pas de compte à rebours.
+ *
+ * Fonction pure, partagée par la tâche quotidienne et l'interface : le
+ * compteur ne devient jamais négatif.
+ */
+export function getNextRenewal(date: string | null, cycle: string, now: Date = new Date()): string | null {
+  const anchor = date ? parse(date) : null;
+  if (!date || !anchor) return null;
+  const today = format(now);
+  if (date >= today) return date;
+  if (!isPeriodic(cycle)) return null;
+
+  // Chaque échéance est calculée depuis la date d'origine, pas depuis la
+  // précédente : sinon le 31 janvier passerait au 28 février, puis resterait
+  // au 28 tous les mois suivants.
+  for (let step = 1; step < 2000; step += 1) {
+    const next = shift(anchor, cycle, step);
+    if (next >= today) return next;
+  }
+  return null;
+}
+
+function shift(anchor: Date, cycle: "monthly" | "yearly" | "quarterly" | "weekly", steps: number): string {
+  if (cycle === "weekly") {
+    return format(new Date(anchor.getTime() + steps * 7 * 86_400_000));
+  }
+  const months = (cycle === "monthly" ? 1 : cycle === "quarterly" ? 3 : 12) * steps;
+  const year = anchor.getUTCFullYear();
+  const month = anchor.getUTCMonth() + months;
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return format(new Date(Date.UTC(year, month, Math.min(anchor.getUTCDate(), lastDay))));
+}
