@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowUpDown, Check, LogOut, Pencil, Trash2, X } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 
+import { TrialBadge, TrialNote } from "@/components/shared/trial-note";
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { SelectMenu } from "@/components/shared/select-menu";
 import { BILLING_CYCLES } from "@/lib/ai/schemas";
@@ -210,22 +211,15 @@ export function SubscriptionList({
                   <ProviderAvatar name={sub.provider} size={40} />
 
                   <div className="min-w-[8rem] flex-1">
-                    <div className="flex items-center gap-1.5 font-medium">
-                      {sub.provider}
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 font-medium">
+                      <span className="min-w-0 truncate">{sub.provider}</span>
                       {priceChanges[sub.id] && (
                         <PriceBadge
                           change={priceChanges[sub.id]}
                           currency={sub.currency}
                         />
                       )}
-                      {trialUntil && (
-                        <span
-                          title="Le premier prélèvement aura lieu à la fin de l'essai"
-                          className="rounded-full bg-[rgba(63,207,149,.15)] px-1.5 text-[10px] font-semibold text-[var(--positive-light)]"
-                        >
-                          Essai gratuit
-                        </span>
-                      )}
+                      {trialUntil && <TrialBadge />}
                       {uncertain && (
                         <span
                           title="Détecté automatiquement, non vérifié"
@@ -236,21 +230,34 @@ export function SubscriptionList({
                       )}
                     </div>
                     <div className="text-xs text-[var(--text-faint)]">
-                      {trialUntil
-                        ? `essai gratuit jusqu’au ${formatDate(trialUntil)}, puis ${
-                            formatAmount(sub.amount, sub.currency) ?? "montant inconnu"
-                          } ${formatCycle(sub.cycle)}`.trim()
-                        : [
+                      {trialUntil ? (
+                        <TrialNote
+                          until={trialUntil}
+                          amount={sub.amount}
+                          currency={sub.currency}
+                          cycle={sub.cycle}
+                        />
+                      ) : (
+                        [
                             formatCycle(sub.cycle) || "périodicité inconnue",
                             sub.next_renewal
                               ? `prochaine échéance le ${formatDate(sub.next_renewal)}`
                               : "échéance inconnue",
-                          ].join(" · ")}
+                          ].join(" · ")
+                      )}
                     </div>
                   </div>
 
                   <div className="mono text-right text-lg font-semibold">
-                    {formatAmount(sub.amount, sub.currency) ?? "—"}
+                    {trialUntil ? (
+                      // Rien n'est prélevé pendant l'essai : le prix vient ensuite.
+                      <>
+                        0 €
+                        <div className="font-sans text-[11px] font-normal text-[var(--text-faint)]">pendant l’essai</div>
+                      </>
+                    ) : (
+                      (formatAmount(sub.amount, sub.currency) ?? "—")
+                    )}
                   </div>
 
                   {isOwnSubscription(sub) ? (
