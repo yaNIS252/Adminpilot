@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, Forward, KeyRound, Gift, History, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
+import { Bell, CalendarDays, Forward, KeyRound, Gift, History, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 
 import { PaymentConfirmation } from "@/components/billing/payment-confirmation";
 import { ManageSubscription, PlanPicker } from "@/components/billing/plan-picker";
@@ -321,6 +321,17 @@ export default async function SettingsPage({
             maxMonths={REFERRAL.maxMonths}
             minSubscriptions={REFERRAL.minSubscriptions}
             minAgeDays={REFERRAL.minAgeDays}
+          />
+        </Card>
+      </section>
+
+      <section id="notifications" className="scroll-mt-6">
+        <Card icon={<Bell className="size-4" />} title="Notifications">
+          <RecapToggle
+            initial={profile.notify_new_subscription}
+            field="notify_new_subscription"
+            label="Être prévenu des nouveaux abonnements"
+            description="Quand un nouvel abonnement est détecté : une pastille dans l’appli et un e-mail récapitulatif (un seul par jour). En gratuit, l’e-mail compte dans tes 3 alertes du mois."
           />
         </Card>
       </section>

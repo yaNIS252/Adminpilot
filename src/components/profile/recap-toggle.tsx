@@ -2,8 +2,18 @@
 
 import { useState } from "react";
 
-/** Interrupteur du récapitulatif mensuel par e-mail. */
-export function RecapToggle({ initial }: { initial: boolean }) {
+/** Interrupteur d'une préférence d'e-mail (récapitulatif mensuel par défaut). */
+export function RecapToggle({
+  initial,
+  field = "monthly_recap",
+  label = "Recevoir le récap mensuel",
+  description = "Le 1er de chaque mois : ton total, les hausses et baisses de prix, les nouveaux abonnements, les résiliations et les échéances à venir.",
+}: {
+  initial: boolean;
+  field?: "monthly_recap" | "notify_new_subscription";
+  label?: string;
+  description?: string;
+}) {
   const [enabled, setEnabled] = useState(initial);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,7 +24,7 @@ export function RecapToggle({ initial }: { initial: boolean }) {
     const response = await fetch("/api/profile", {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ monthly_recap: next }),
+      body: JSON.stringify({ [field]: next }),
     }).catch(() => null);
     if (!response?.ok) {
       setEnabled(!next);
@@ -25,15 +35,12 @@ export function RecapToggle({ initial }: { initial: boolean }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-4">
-        <p className="m-0 flex-1 text-sm text-[var(--text-dim)]">
-          Le 1er de chaque mois : ton total, les hausses et baisses de prix, les
-          nouveaux abonnements, les résiliations et les échéances à venir.
-        </p>
+        <p className="m-0 flex-1 text-sm text-[var(--text-dim)]">{description}</p>
         <button
           type="button"
           role="switch"
           aria-checked={enabled}
-          aria-label="Recevoir le récap mensuel"
+          aria-label={label}
           onClick={toggle}
           className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
             enabled ? "bg-[var(--accent)]" : "bg-[rgba(255,255,255,.12)]"

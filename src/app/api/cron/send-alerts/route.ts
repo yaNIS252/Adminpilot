@@ -10,6 +10,7 @@ import {
 } from "@/lib/alerts/email";
 import { sendMonthlyRecaps } from "@/lib/alerts/recap";
 import { currentPeriod, incrementUsage } from "@/lib/billing/quotas";
+import { sendNewSubscriptionDigests } from "@/lib/alerts/new-subscription";
 import { rollRenewals } from "@/lib/alerts/rollover";
 import { sendFeedbackRequests } from "@/lib/feedback";
 import { PLAN_LIMITS } from "@/lib/constants";
@@ -80,16 +81,37 @@ export async function GET(request: Request) {
     return null;
   });
 
+  // Nouveaux abonnements : un seul e-mail récapitulatif par utilisateur.
+  const newSubscriptions = await sendNewSubscriptionDigests({
+    db,
+    resend,
+    from: sender(),
+    siteUrl: base,
+    sentThisMonth: async (userId) => {
+      const { data } = await db
+        .from("usage_counters")
+        .select("alerts_count")
+        .eq("user_id", userId)
+        .eq("period", currentPeriod())
+        .maybeSingle();
+      return data?.alerts_count ?? 0;
+    },
+  }).catch((error) => {
+    console.error("[cron] nouveaux abonnements:", error);
+    return null;
+  });
+
   const { data: alerts, error } = await db
     .from("alerts")
     .select("*, profiles!inner(email, deleted_at, plan)")
+    .neq("kind", "new_subscription")
     .is("sent_at", null)
     .lte("alert_date", today)
     .limit(BATCH_SIZE);
 
   if (error) throw error;
   if (!alerts?.length) {
-    return NextResponse.json({ candidates: 0, sent: 0, failed: 0, refused: 0, recap, referrals, feedback, renewals });
+    return NextResponse.json({ candidates: 0, sent: 0, failed: 0, refused: 0, recap, referrals, feedback, renewals, newSubscriptions });
   }
 
   // Les objets référencés sont chargés en deux requêtes, pas en deux par
@@ -283,5 +305,6 @@ export async function GET(request: Request) {
     referrals,
     feedback,
     renewals,
+    newSubscriptions,
   });
 }

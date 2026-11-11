@@ -60,6 +60,7 @@ async function drain() {
           id: job.id,
           user_id: job.user_id,
           attempts: job.attempts,
+          bulk: job.bulk,
           payload,
         });
         // E-mail sans rapport avec un abonnement (newsletter, message

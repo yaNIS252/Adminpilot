@@ -93,6 +93,7 @@ export async function ingestForwardedMessages(input: {
         contentHash,
         rawUrl: key,
         mimeType: "message/rfc822",
+        bulk: true,
       });
       if (result.status === "duplicate") continue;
       messages += 1;

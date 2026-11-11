@@ -43,7 +43,7 @@ export default async function AppLayout({
   const feedbackDue = !tourPending && isFeedbackDue(auth.profile);
 
   const supabase = await createClient();
-  const [{ count: reviewCount }, { count: documentsUsed }, photo, domains] = await Promise.all([
+  const [{ count: reviewCount }, { count: documentsUsed }, photo, domains, { count: newCount }] = await Promise.all([
     supabase
       .from("subscriptions")
       .select("id", { count: "exact", head: true })
@@ -57,6 +57,12 @@ export default async function AppLayout({
     tourPending || !auth.profile.gmail_forward_verified
       ? forwardingDomains()
       : Promise.resolve([] as string[]),
+    // Nouveaux abonnements pas encore vus : pastille sur « Abonnements ».
+    supabase
+      .from("alerts")
+      .select("id", { count: "exact", head: true })
+      .eq("kind", "new_subscription")
+      .is("read_at", null),
   ]);
 
   const { accent, background } = effectiveTheme(auth.profile);
@@ -72,7 +78,7 @@ export default async function AppLayout({
         email={auth.profile.email}
         name={auth.profile.name}
         avatarUrl={photo}
-        reviewCount={reviewCount ?? 0}
+        reviewCount={(reviewCount ?? 0) + (newCount ?? 0)}
         documentsUsed={documentsUsed ?? 0}
         documentsLimit={PLAN_LIMITS[auth.profile.plan].documents}
       />

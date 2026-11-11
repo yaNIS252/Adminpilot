@@ -47,6 +47,7 @@ const KIND_LABELS: Record<string, string> = {
   deadline: "Échéance",
   price_change: "Hausse de prix",
   manual: "Mon rappel",
+  new_subscription: "Nouvel abonnement",
 };
 
 export function UpcomingAlerts({ alerts }: { alerts: UpcomingAlert[] }) {

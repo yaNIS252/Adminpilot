@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { TablesUpdate } from "@/lib/supabase/types";
 import { REVIEW_THRESHOLD } from "@/lib/ai/schemas";
 import { extractFromDocument, extractFromEmail } from "@/lib/ai/extract";
+import { recordNewSubscription } from "@/lib/alerts/new-subscription";
 import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
 import { matchCatalogue, senderDomain, trustedLink } from "@/lib/cancel/links";
 import { cycleFromGap, isPeriodic, resolveRenewal } from "@/lib/ingest/schedule";
@@ -35,6 +36,8 @@ export type EnqueueInput = {
    * sans ça le nom que l'utilisateur reconnaît serait définitivement perdu.
    */
   originalFilename?: string;
+  /** Import groupé de l'historique : pas de notification « nouvel abonnement ». */
+  bulk?: boolean;
 };
 
 export type EnqueueResult =
@@ -59,6 +62,7 @@ export async function enqueue(input: EnqueueInput): Promise<EnqueueResult> {
       raw_url: input.rawUrl,
       mime_type: input.mimeType,
       original_filename: input.originalFilename ?? null,
+      bulk: input.bulk ?? false,
     })
     .select("id")
     .single();
@@ -146,6 +150,7 @@ export async function processEmailJob(job: {
   id: string;
   user_id: string;
   attempts: number;
+  bulk?: boolean;
   payload: { from: string; subject: string; date: string; body: string };
 }) {
   const db = createAdminClient();
@@ -359,6 +364,18 @@ ${job.payload.body.slice(0, 6000)}`)
           ...(activeTrial ? { trial_until: trialEnd } : {}),
         },
       });
+
+  // Abonnement apparu hors de la mise en place : l'utilisateur est prévenu.
+  if (!existing && !job.bulk && !needsReview && !overQuota) {
+    await recordNewSubscription(db, {
+      userId: job.user_id,
+      subscriptionId: inserted.id,
+      provider: data.provider,
+      amount: data.amount,
+      currency: data.currency,
+      cycle,
+    });
+  }
 
   if (existing) {
     await attachLinks(db, existing.id, {

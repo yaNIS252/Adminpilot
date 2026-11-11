@@ -11,6 +11,7 @@ import {
   SubscriptionList,
   type RecentPriceChange,
 } from "@/components/dashboard/subscription-list";
+import { NewSubscriptions } from "@/components/dashboard/new-subscriptions";
 import { AddSubscription } from "@/components/dashboard/add-subscription";
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
 import { createClient } from "@/lib/supabase/server";
@@ -54,6 +55,7 @@ export default async function SubscriptionsPage({
     { count: hiddenCount },
     { data: changes },
     { data: cancelledRows },
+    { data: unreadNew },
   ] = await Promise.all([
     query,
     supabase
@@ -72,6 +74,13 @@ export default async function SubscriptionsPage({
       .eq("status", "cancelled")
       .order("cancelled_at", { ascending: false, nullsFirst: false })
       .limit(50),
+    supabase
+      .from("alerts")
+      .select("id, title, message")
+      .eq("kind", "new_subscription")
+      .is("read_at", null)
+      .order("created_at", { ascending: false })
+      .limit(20),
   ]);
 
   const data = rows ? withCurrentRenewal(rows) : rows;
@@ -131,6 +140,8 @@ export default async function SubscriptionsPage({
           {reviewMode ? "Voir tous les abonnements" : "Voir ceux à vérifier"}
         </Link>
       </header>
+
+      {!reviewMode && unreadNew?.length ? <NewSubscriptions items={unreadNew} /> : null}
 
       {!reviewMode && auth && <AddSubscription inboxAddress={inboxAddress(auth.profile)} />}
 

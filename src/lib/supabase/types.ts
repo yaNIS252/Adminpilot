@@ -27,6 +27,7 @@ export type Database = {
           kind: string;
           price_change_id: string | null;
           message: string;
+          read_at: string | null;
           ref_id: string;
           ref_type: string;
           sent_at: string | null;
@@ -42,6 +43,7 @@ export type Database = {
           kind?: string;
           price_change_id?: string | null;
           message: string;
+          read_at?: string | null;
           ref_id: string;
           ref_type: string;
           sent_at?: string | null;
@@ -57,6 +59,7 @@ export type Database = {
           kind?: string;
           price_change_id?: string | null;
           message?: string;
+          read_at?: string | null;
           ref_id?: string;
           ref_type?: string;
           sent_at?: string | null;
@@ -245,6 +248,7 @@ export type Database = {
         Row: {
           attempts: number;
           claimed_at: string | null;
+          bulk: boolean;
           content_hash: string;
           created_at: string;
           error: string | null;
@@ -264,6 +268,7 @@ export type Database = {
         Insert: {
           attempts?: number;
           claimed_at?: string | null;
+          bulk?: boolean;
           content_hash: string;
           created_at?: string;
           error?: string | null;
@@ -283,6 +288,7 @@ export type Database = {
         Update: {
           attempts?: number;
           claimed_at?: string | null;
+          bulk?: boolean;
           content_hash?: string;
           created_at?: string;
           error?: string | null;
@@ -521,6 +527,7 @@ export type Database = {
           last_recap_period: string | null;
           monthly_recap: boolean;
           name: string | null;
+          notify_new_subscription: boolean;
           plan: Database["public"]["Enums"]["plan"];
           referral_code: string;
           stripe_customer_id: string | null;
@@ -552,6 +559,7 @@ export type Database = {
           last_recap_period?: string | null;
           monthly_recap?: boolean;
           name?: string | null;
+          notify_new_subscription?: boolean;
           plan?: Database["public"]["Enums"]["plan"];
           referral_code?: string;
           stripe_customer_id?: string | null;
@@ -583,6 +591,7 @@ export type Database = {
           last_recap_period?: string | null;
           monthly_recap?: boolean;
           name?: string | null;
+          notify_new_subscription?: boolean;
           plan?: Database["public"]["Enums"]["plan"];
           referral_code?: string;
           stripe_customer_id?: string | null;
