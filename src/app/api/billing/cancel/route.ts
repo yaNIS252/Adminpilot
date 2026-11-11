@@ -3,6 +3,7 @@ import Stripe from "stripe";
 
 import { requireUser } from "@/lib/auth/require-user";
 import { createPortalSession } from "@/lib/billing/stripe";
+import { safeReturnPath } from "@/lib/http/safe-path";
 import { siteUrl } from "@/lib/site-url";
 
 export const runtime = "nodejs";
@@ -16,7 +17,7 @@ export const runtime = "nodejs";
  * sans détour (art. L215-1-1 du Code de la consommation). La confirmation
  * écrite part à la réception du webhook Stripe.
  */
-export async function POST() {
+export async function POST(request: Request) {
   const auth = await requireUser();
   if (!auth) {
     return NextResponse.json({ error: "non authentifié" }, { status: 401 });
@@ -32,6 +33,8 @@ export async function POST() {
       stripeCustomerId: customerId,
       siteUrl: siteUrl(),
       cancelSubscriptionId: subscriptionId,
+      // Page d'où vient le clic, transmise en `?retour=` : on y revient.
+      returnPath: safeReturnPath(new URL(request.url).searchParams.get("retour"), "/reglages"),
     });
     return NextResponse.json({ url });
   } catch (error) {

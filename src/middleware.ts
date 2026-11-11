@@ -10,6 +10,7 @@ import {
   readSession,
   sessionCookieValue,
 } from "@/lib/auth/session";
+import { safeReturnPath } from "@/lib/http/safe-path";
 import type { Database } from "@/lib/supabase/types";
 
 /**
@@ -149,11 +150,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(login);
   }
 
+  // Déjà connecté : direction la page demandée (`?next=`), sinon le tableau de bord.
   if (user && pathname === "/login") {
-    const dashboard = request.nextUrl.clone();
-    dashboard.pathname = "/dashboard";
-    dashboard.search = "";
-    return NextResponse.redirect(dashboard);
+    const target = safeReturnPath(request.nextUrl.searchParams.get("next"));
+    return NextResponse.redirect(new URL(target, request.url));
   }
 
   return response;

@@ -2,6 +2,7 @@ import "server-only";
 
 import Stripe from "stripe";
 
+import { withParams } from "@/lib/http/safe-path";
 import type { Enums } from "@/lib/supabase/types";
 
 let cached: Stripe | null = null;
@@ -92,6 +93,8 @@ export async function createCheckoutSession(input: {
    * déjà offerts.
    */
   trialEnd?: Date | null;
+  /** Page où revenir après le paiement (chemin interne déjà vérifié). */
+  returnPath: string;
 }): Promise<string> {
   const stripe = getStripe();
   // Stripe exige au moins 48 h d'essai ; en deçà, on facture tout de suite.
@@ -116,10 +119,14 @@ export async function createCheckoutSession(input: {
       },
       ...(trialEnd ? { trial_end: trialEnd } : {}),
     },
-    success_url: `${input.siteUrl}/dashboard?abonnement=actif`,
-    // Retour là où le bouton a été cliqué, avec le choix intact : une
-    // hésitation au moment de payer ne doit pas obliger à tout recommencer.
-    cancel_url: `${input.siteUrl}/reglages?formule=${input.plan}&cycle=${input.cycle}&paiement=annule#formules`,
+    // Retour sur la page où le bouton a été cliqué, payé ou non. En cas
+    // d'annulation, le choix reste intact : une hésitation au moment de payer
+    // ne doit pas obliger à tout recommencer.
+    success_url: `${input.siteUrl}${withParams(input.returnPath, "abonnement=actif")}`,
+    cancel_url: `${input.siteUrl}${withParams(
+      input.returnPath === "/reglages" ? "/reglages#formules" : input.returnPath,
+      `formule=${input.plan}&cycle=${input.cycle}&paiement=annule`,
+    )}`,
     allow_promotion_codes: true,
     // Un code promo à 100 % (Premium offert à un proche) ramène le total à
     // 0 € : Stripe ne demande alors aucune carte. Sans ce réglage, il en
@@ -147,8 +154,10 @@ export async function createPortalSession(input: {
   siteUrl: string;
   /** Ouvre directement l'écran de résiliation de cet abonnement. */
   cancelSubscriptionId?: string;
+  /** Page où revenir en quittant le portail (chemin interne déjà vérifié). */
+  returnPath: string;
 }): Promise<string> {
-  const returnUrl = `${input.siteUrl}/reglages`;
+  const returnUrl = `${input.siteUrl}${input.returnPath}`;
   const session = await getStripe().billingPortal.sessions.create({
     customer: input.stripeCustomerId,
     return_url: returnUrl,
@@ -159,7 +168,9 @@ export async function createPortalSession(input: {
             subscription_cancel: { subscription: input.cancelSubscriptionId },
             after_completion: {
               type: "redirect" as const,
-              redirect: { return_url: `${returnUrl}?resiliation=enregistree` },
+              redirect: {
+                return_url: `${input.siteUrl}${withParams(input.returnPath, "resiliation=enregistree")}`,
+              },
             },
           },
         }

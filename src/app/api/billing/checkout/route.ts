@@ -10,6 +10,7 @@ import {
 } from "@/lib/billing/stripe";
 import { readJson } from "@/lib/http/request";
 import { bonusActive } from "@/lib/referral/bonus";
+import { safeReturnPath } from "@/lib/http/safe-path";
 import { siteUrl } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -23,6 +24,8 @@ export const runtime = "nodejs";
 const BodySchema = z.object({
   plan: z.enum(["pro", "family"]),
   cycle: z.enum(["monthly", "yearly"]).default("monthly"),
+  // Page d'où vient le clic : on y revient après Stripe.
+  returnPath: z.string().max(300).optional(),
   /**
    * Demande expresse de commencer avant la fin du délai de rétractation
    * (art. L221-25 du Code de la consommation). Sans elle, le service ne
@@ -107,16 +110,18 @@ async function handle(request: Request) {
 
   // Déjà client et déjà sur un plan payant : le portail Stripe est le bon
   // endroit, une seconde session de paiement créerait un doublon d'abonnement.
+  const body = await readJson(request, BodySchema);
+  if (!body.ok) return body.response;
+  const returnPath = safeReturnPath(body.data.returnPath, "/reglages");
+
   if (auth.profile.stripe_customer_id && auth.profile.plan !== "free" && !onBonus) {
     const url = await createPortalSession({
       stripeCustomerId: auth.profile.stripe_customer_id,
       siteUrl: base,
+      returnPath,
     });
     return NextResponse.json({ url, kind: "portal" });
   }
-
-  const body = await readJson(request, BodySchema);
-  if (!body.ok) return body.response;
 
   const customerId = await ensureCustomer({
     userId: auth.userId,
@@ -141,6 +146,7 @@ async function handle(request: Request) {
     cycle: body.data.cycle,
     siteUrl: base,
     trialEnd: onBonus && auth.profile.bonus_pro_until ? new Date(auth.profile.bonus_pro_until) : null,
+    returnPath,
   });
 
   return NextResponse.json({ url, kind: "checkout" });

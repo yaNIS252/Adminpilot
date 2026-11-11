@@ -67,7 +67,7 @@ export function PlanPicker({
       const response = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan, cycle, immediateStart }),
+        body: JSON.stringify({ plan, cycle, immediateStart, returnPath: window.location.pathname }),
       });
       const body = await response.json().catch(() => ({}));
 
@@ -299,7 +299,10 @@ export function ManageSubscription() {
     setCancelling(true);
     setError(null);
     try {
-      const response = await fetch("/api/billing/cancel", { method: "POST" });
+      const response = await fetch(
+        `/api/billing/cancel?retour=${encodeURIComponent(window.location.pathname)}`,
+        { method: "POST" },
+      );
       const body = await response.json().catch(() => ({}));
       if (response.ok && body.url) {
         window.location.assign(body.url);
@@ -320,7 +323,7 @@ export function ManageSubscription() {
       const response = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan: "pro" }),
+        body: JSON.stringify({ plan: "pro", returnPath: window.location.pathname }),
       });
       const body = await response.json().catch(() => ({}));
       if (response.ok && body.url) {

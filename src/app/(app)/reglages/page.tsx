@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CalendarDays, Forward, KeyRound, Gift, History, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 
+import { PaymentConfirmation } from "@/components/billing/payment-confirmation";
 import { ManageSubscription, PlanPicker } from "@/components/billing/plan-picker";
 import {
   HouseholdManager,
@@ -58,7 +59,7 @@ async function currentBilling(
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ formule?: string; cycle?: string; paiement?: string; resiliation?: string }>;
+  searchParams: Promise<{ formule?: string; cycle?: string; paiement?: string; resiliation?: string; abonnement?: string }>;
 }) {
   const auth = await requireUser();
   if (!auth) return null;
@@ -111,6 +112,8 @@ export default async function SettingsPage({
       <header className="anim-up mb-1">
         <h1 className="serif m-0 text-[36px] leading-[1.05]">Réglages</h1>
       </header>
+
+      {params.abonnement === "actif" && <PaymentConfirmation plan={profile.plan} />}
 
       {params.resiliation === "enregistree" && (
         <p

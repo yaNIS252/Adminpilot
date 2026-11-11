@@ -19,12 +19,13 @@ import {
 } from "@/components/billing/upgrade-notice";
 import { UpsellBanner } from "@/components/billing/upsell-banner";
 import { OpenTourButton } from "@/components/onboarding/open-tour-button";
+import { PaymentConfirmation } from "@/components/billing/payment-confirmation";
 import { ShareCard } from "@/components/referral/share-card";
 
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { OWN_SUBSCRIPTION_SOURCE } from "@/lib/billing/sync";
 import { requireUser } from "@/lib/auth/require-user";
-import { PLAN_LABELS, SHARE_COOKIE, TOUR_MAILBOX_STEP, UPSELL_COOKIE } from "@/lib/constants";
+import { SHARE_COOKIE, TOUR_MAILBOX_STEP, UPSELL_COOKIE } from "@/lib/constants";
 import { periodsPerYear } from "@/lib/ingest/price-tracker";
 import {
   activeTrialUntil,
@@ -223,23 +224,7 @@ export default async function DashboardPage({
       {/* Retour de paiement. Le webhook Stripe, seul juge du plan, arrive en
           général avant l'utilisateur — mais pas toujours : si le profil est
           encore en gratuit, on le dit plutôt que de laisser croire à un échec. */}
-      {justPaid && (
-        <section
-          role="status"
-          className="rounded-[10px] border border-[rgba(63,207,149,.35)] bg-[rgba(63,207,149,.06)] px-5 py-4"
-        >
-          <div className="text-[15px] font-semibold">
-            {auth?.profile.plan && auth.profile.plan !== "free"
-              ? `Bienvenue en ${PLAN_LABELS[auth.profile.plan]}.`
-              : "Paiement reçu, activation en cours."}
-          </div>
-          <p className="m-0 mt-0.5 text-[13px] text-[var(--text-dim)]">
-            {auth?.profile.plan && auth.profile.plan !== "free"
-              ? "Tout est débloqué, y compris les abonnements déjà détectés au-delà de la limite gratuite. Ta facture est disponible dans les réglages."
-              : "Ta formule sera active d’ici quelques secondes. Recharge la page si rien ne change."}
-          </p>
-        </section>
-      )}
+      {justPaid && <PaymentConfirmation plan={auth?.profile.plan ?? "free"} />}
 
       {justJoined && (
         <section
