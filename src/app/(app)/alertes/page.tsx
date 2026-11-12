@@ -119,7 +119,11 @@ export default async function AlertsPage() {
             // « subscription:<id>:2026-10-17:j-7 ».
             const due = /:(\d{4}-\d{2}-\d{2}):/.exec(alert.dedup_key ?? "")?.[1] ?? null;
             const cycle =
-              alert.ref_type === "subscription" && alert.kind === "deadline"
+              // Seulement pour un renouvellement : une fin d'essai ou de
+              // période offerte n'a rien de récurrent.
+              alert.ref_type === "subscription" &&
+              alert.kind === "deadline" &&
+              alert.title.endsWith("se renouvelle")
                 ? (cycles.get(alert.ref_id) ?? null)
                 : null;
             return {
