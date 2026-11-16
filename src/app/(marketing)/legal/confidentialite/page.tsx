@@ -28,7 +28,7 @@ export default function PrivacyPage() {
     <LegalLayout
       title="Confidentialité"
       intro="Ce que le service fait de tes données, décrit tel que le code le fait."
-      updated="2 octobre 2026"
+      updated="16 novembre 2026"
       current="/legal/confidentialite"
     >
       <Block title="1. Ce que nous recevons">
@@ -108,6 +108,15 @@ export default function PrivacyPage() {
           parrainage.
         </p>
         <p>
+          Nous conservons l’adresse des boîtes mail qui transfèrent leurs
+          messages vers ton adresse d’ingestion, pour appliquer le nombre de
+          boîtes prévu par ta formule ; tu peux en retirer une depuis tes
+          réglages. Si tu actives les notifications, nous conservons
+          l’adresse technique fournie par ton navigateur pour les recevoir,
+          jusqu’à ce que tu les désactives ; elle ne contient ni ton nom ni
+          ton adresse e-mail.
+        </p>
+        <p>
           Les clics vers une offre du comparateur sont enregistrés pour
           rapprocher les éventuelles commissions de nos partenaires ; ils ne
           sont plus rattachés à toi dès la suppression de ton compte. Les
@@ -121,6 +130,12 @@ export default function PrivacyPage() {
           Chaque donnée est rattachée à ton compte et isolée au niveau de la
           base de données elle-même : une requête portant sur le compte d’un
           autre utilisateur ne renvoie rien, même en cas d’erreur applicative.
+        </p>
+        <p>
+          Dans un foyer Premium, si tu l’acceptes dans tes réglages, les
+          autres membres volontaires voient les services que vous payez en
+          double, avec le nombre de payeurs, sans savoir qui paie. Tu peux
+          retirer cet accord à tout moment.
         </p>
         <p>
           Les fichiers ne sont jamais accessibles publiquement. Leur
@@ -163,6 +178,14 @@ export default function PrivacyPage() {
             <strong className="text-[var(--text)]">Sentry</strong> — détection
             des erreurs techniques, lorsqu’elle est activée. Les rapports ne
             contiennent ni cookies, ni contenu de formulaire, ni adresse e-mail.
+          </li>
+          <li>
+            <strong className="text-[var(--text)]">
+              Service de notifications de ton navigateur
+            </strong>{" "}
+            (Google, Apple ou Mozilla selon l’appareil) — acheminement des
+            notifications, si tu les actives. Le contenu est chiffré de bout en
+            bout : ce service ne peut pas le lire.
           </li>
         </ul>
         <p>

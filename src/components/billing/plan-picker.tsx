@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, CircleAlert, Users } from "lucide-react";
 import { useState } from "react";
 
-import { FAMILY_SEATS, PLAN_LABELS, PLAN_PRICES } from "@/lib/constants";
+import { FAMILY_SEATS, MAILBOX_LIMITS, PLAN_LABELS, PLAN_PRICES } from "@/lib/constants";
 
 /**
  * Choix d'une formule payante.
@@ -20,8 +20,8 @@ type Plan = "pro" | "family";
 type Cycle = "monthly" | "yearly";
 
 const PITCH: Record<Plan, string> = {
-  pro: "Tout illimité, recherche et messages de négociation.",
-  family: `Tout le Pro, et jusqu’à ${FAMILY_SEATS - 1} proches invités avec chacun son compte. Idéal en couple ou en famille.`,
+  pro: "Tout illimité, analyse des dépenses, échéances dans ton agenda, recherche et messages de négociation.",
+  family: `Tout le Pro, jusqu’à ${FAMILY_SEATS - 1} proches invités avec chacun son compte, doublons du foyer, ${MAILBOX_LIMITS.family} boîtes mail, notifications et bilan annuel.`,
 };
 
 export function formatPrice(plan: Plan, cycle: Cycle): string {

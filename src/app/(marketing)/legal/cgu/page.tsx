@@ -7,7 +7,7 @@ import {
   ToComplete,
 } from "@/components/marketing/legal-page";
 import { LEGAL } from "@/lib/legal";
-import { FAMILY_SEATS, PLAN_PRICES, REFERRAL } from "@/lib/constants";
+import { FAMILY_SEATS, PLAN_PRICES, REFERRAL, TRIAL_DAYS } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Conditions d’utilisation — AdminPilot",
@@ -30,7 +30,7 @@ export default function TermsPage() {
     <LegalLayout
       title="Conditions d’utilisation"
       intro="Ce que le service s’engage à faire, ce qu’il ne garantit pas, et comment y mettre fin."
-      updated="5 octobre 2026"
+      updated="16 novembre 2026"
       current="/legal/cgu"
     >
       <Block title="1. Objet">
@@ -72,7 +72,20 @@ export default function TermsPage() {
           La formule Premium permet à son titulaire d’inviter jusqu’à{" "}
           {FAMILY_SEATS - 1} personnes, qui bénéficient des mêmes droits tant
           que l’abonnement est actif. Chaque compte reste distinct : aucun
-          membre n’a accès aux documents ni aux abonnements d’un autre.
+          membre n’a accès aux documents ni aux abonnements d’un autre. Seule
+          exception, sur accord exprès de chacun dans ses réglages : les
+          membres volontaires voient les services payés en double dans le
+          foyer, avec le nombre de payeurs, sans que soit indiqué qui paie.
+        </p>
+        <p>
+          À la première connexion, un compte qui n’a jamais souscrit
+          d’abonnement payant reçoit {TRIAL_DAYS} jours de formule Pro
+          offerts, une seule fois, sans carte bancaire ni engagement. À la fin
+          de l’essai, le compte repasse automatiquement en formule Gratuite,
+          sans aucun prélèvement. Au-delà des limites de la formule Gratuite,
+          les abonnements les plus récents sont mis en réserve : ils ne sont
+          pas supprimés et réapparaissent si l’utilisateur souscrit une
+          formule payante.
         </p>
         <p>
           Les paiements sont traités par Stripe. Aucune coordonnée bancaire ne

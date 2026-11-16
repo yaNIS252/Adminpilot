@@ -81,7 +81,7 @@ export default function LandingPage() {
           <Feature
             index="02"
             title="Alertes avant reconduction"
-            body="Une alerte sept jours avant, une autre la veille. Le temps de décider si tu gardes — pas de constater le prélèvement."
+            body="Une alerte sept jours avant, une autre la veille, par e-mail et dans ton agenda. Le temps de décider si tu gardes — pas de constater le prélèvement."
           >
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>

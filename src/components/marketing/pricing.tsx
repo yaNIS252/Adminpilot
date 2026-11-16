@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { useState } from "react";
 
-import { FAMILY_SEATS, PLAN_LIMITS, PLAN_PRICES } from "@/lib/constants";
+import { FAMILY_SEATS, MAILBOX_LIMITS, PLAN_LIMITS, PLAN_PRICES, TRIAL_DAYS } from "@/lib/constants";
 
 /**
  * Tarifs, avec bascule mensuel / annuel.
@@ -64,6 +64,7 @@ export function Pricing() {
             `${PLAN_LIMITS.free.subscriptions} abonnements suivis`,
             `${PLAN_LIMITS.free.documents} documents`,
             `${PLAN_LIMITS.free.alerts} alertes par mois`,
+            `${TRIAL_DAYS} jours de Pro offerts à l’inscription`,
           ]}
           cta="Commencer"
           href="/login"
@@ -84,6 +85,8 @@ export function Pricing() {
           }
           features={[
             "Abonnements, documents et alertes illimités",
+            "Analyse des dépenses et offres moins chères",
+            "Échéances dans ton agenda (Google, Apple, Outlook)",
             "Recherche en langage courant",
             "Messages de négociation avant résiliation",
             "Récap mensuel par e-mail",
@@ -109,7 +112,10 @@ export function Pricing() {
           features={[
             "Tout le plan Pro",
             `Jusqu’à ${FAMILY_SEATS - 1} proches invités, chacun son compte`,
-            "Idéal en couple ou en famille",
+            "Abonnements payés en double dans le foyer",
+            `${MAILBOX_LIMITS.family} boîtes mail reliées`,
+            "Notifications sur téléphone et ordinateur",
+            "Bilan annuel en PDF et pour Excel",
           ]}
           cta="Choisir Premium"
           href={checkoutHref("family", yearly)}
