@@ -3,7 +3,8 @@ import { ArrowRight, Lock, PiggyBank } from "lucide-react";
 
 import { requireUser } from "@/lib/auth/require-user";
 import { formatAmount, formatDate, monthlyEquivalent } from "@/lib/format";
-import { ANALYSED_CATEGORIES, recommend, type ReferenceOffer } from "@/lib/offers/analysis";
+import { ANALYSED_CATEGORIES, recommend, telecomKind, type ReferenceOffer } from "@/lib/offers/analysis";
+import { SpendSimulator } from "@/components/analyse/spend-simulator";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Analyse — AdminPilot" };
@@ -84,6 +85,17 @@ export default async function AnalysePage() {
     .filter(([, amount]) => amount > 0)
     .sort((a, b) => b[1] - a[1]);
   const monthlyTotal = byCategory.reduce((sum, [, amount]) => sum + amount, 0);
+  const simulated = rows
+    .map((sub) => {
+      const monthly = monthlyEquivalent(sub.amount, sub.cycle);
+      return {
+        id: sub.id,
+        provider: sub.provider,
+        monthly,
+        isBox: sub.category === "telecom" && telecomKind(sub, monthly) === "box",
+      };
+    })
+    .sort((a, b) => b.monthly - a.monthly);
 
   return (
     <div className="flex flex-col gap-5">
@@ -180,6 +192,8 @@ export default async function AnalysePage() {
           )}
         </section>
       )}
+
+      <SpendSimulator subscriptions={simulated} bundlesUnlocked={!locked} />
 
       <Link
         href="/bilan"
