@@ -36,8 +36,14 @@ export function SiteHeader() {
     if (!open) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // Échap referme le menu, comme toute fenêtre ouverte par-dessus la page.
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
     };
   }, [open]);
 

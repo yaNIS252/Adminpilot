@@ -1,4 +1,5 @@
 import { monthlyEquivalent } from "@/lib/format";
+import { KWH_SHARE, kwhDiscount } from "@/lib/offers";
 
 /**
  * Analyse : dépenses par catégorie et changements de fournisseur rentables.
@@ -17,8 +18,6 @@ import { monthlyEquivalent } from "@/lib/format";
 export const ANALYSED_CATEGORIES = ["energie", "telecom", "assurance"] as const;
 
 const MIN_MONTHLY_SAVING = 5;
-/** Part de la facture d'électricité qui dépend du prix du kWh. */
-const KWH_SHARE = 0.8;
 /** Offres moins chères montrées en plus de la meilleure. */
 const MAX_ALTERNATIVES = 2;
 const MIN_SAVING_RATIO = 0.1;
@@ -69,15 +68,8 @@ export type Recommendation = {
   alternatives: PricedOffer[];
 };
 
-function kwhDiscount(offer: ReferenceOffer): number | null {
-  const details = offer.details;
-  if (!details || typeof details !== "object" || Array.isArray(details)) return null;
-  const pct = (details as Record<string, unknown>).remise_kwh_pct;
-  return typeof pct === "number" && pct > 0 && pct < 50 ? pct : null;
-}
-
 function priceFor(offer: ReferenceOffer, currentMonthly: number): PricedOffer | null {
-  const discount = offer.category === "energie" ? kwhDiscount(offer) : null;
+  const discount = offer.category === "energie" ? kwhDiscount(offer.details) : null;
   if (offer.category === "energie" && discount === null) return null;
   const monthly =
     discount !== null ? currentMonthly * (1 - (discount / 100) * KWH_SHARE) : offer.monthly_price;

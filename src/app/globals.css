@@ -43,7 +43,8 @@
   --text-muted: #c4c4d2;
   --text-dim: #a0a0b2;
   --text-faint: #8c8c9e;
-  --text-ghost: #6b6b7b;
+  /* Le plus pâle des textes lisibles : 4,5:1 minimum sur le fond. */
+  --text-ghost: #7d7d8e;
 
   /* Composantes RVB de l'accent, pour les transparences :
      `rgb(var(--accent-rgb) / .14)`. Redéfinies par thème, plus bas. */
@@ -66,6 +67,8 @@
 
   --danger: #f07168;
   --danger-light: #f5a09a;
+  /* Texte posé sur un aplat rouge (bouton de suppression). */
+  --on-danger: #2a0805;
 
   /* Papier et encre : le bouton principal est clair sur fond sombre. C'est à
      la fois le contraste le plus fort possible et le contre-pied exact du
@@ -181,8 +184,8 @@
   --text-soft: #2a2834;
   --text-muted: #3b3946;
   --text-dim: #55535f;
-  --text-faint: #6c6a76;
-  --text-ghost: #8a8894;
+  --text-faint: #5f5d69;
+  --text-ghost: #696773;
 
   --accent-blue-light: #4351c9;
 
@@ -194,6 +197,7 @@
   --warning-bright: #a86a00;
   --danger: #c93b31;
   --danger-light: #b3322a;
+  --on-danger: #ffffff;
 
   /* Bouton principal : encre sur fond clair. */
   --paper: #1d1b26;

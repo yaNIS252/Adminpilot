@@ -17,6 +17,7 @@ import { LEGAL_TEMPLATES } from "@/lib/cancel/templates";
 import { readUuid } from "@/lib/http/request";
 import { formatAmount, formatCycle, formatDate, monthlyEquivalent } from "@/lib/format";
 import { compareOffers } from "@/lib/offers";
+import { telecomKind } from "@/lib/offers/analysis";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
 
@@ -108,8 +109,9 @@ export default async function CancelPage({
     category && currentMonthly > 0
       ? await supabase
           .from("offers")
-          .select("id, provider_name, name, monthly_price, conditions, url, affiliate_url, checked_at, category, valid_until")
+          .select("id, provider_name, name, monthly_price, conditions, url, affiliate_url, checked_at, category, valid_until, kind, details")
           .eq("category", category)
+          .eq("active", true)
           .or(`valid_until.is.null,valid_until.gte.${new Date().toISOString().slice(0, 10)}`)
           .order("monthly_price")
           .limit(20)
@@ -117,6 +119,10 @@ export default async function CancelPage({
   const offers = compareOffers(catalogueOffers ?? [], {
     currentMonthly,
     currentProvider: name,
+    kind:
+      category === "telecom"
+        ? telecomKind({ id: sub.id, provider: name, amount: sub.amount, cycle: sub.cycle, category }, currentMonthly)
+        : null,
   });
   const paid = auth.profile.plan !== "free";
   const cancelled = sub.status === "cancelled";

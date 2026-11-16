@@ -131,7 +131,7 @@ export function Sidebar({
               {badge > 0 && (
                 <span
                   title={`${badge} à vérifier`}
-                  className="min-w-5 rounded-full bg-[rgba(224,161,56,.16)] px-1.5 py-px text-center text-[11px] font-semibold text-[var(--warning-light)]"
+                  className="min-w-5 rounded-full bg-[var(--warning)] px-1.5 py-px text-center text-[11px] font-bold text-black"
                 >
                   {badge}
                 </span>
@@ -187,6 +187,7 @@ export function Sidebar({
           <Link
             href="/reglages"
             title="Réglages"
+            aria-label="Réglages"
             className="grid size-[30px] shrink-0 place-items-center rounded-lg text-[var(--text-faint)] transition-colors hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text-bright)]"
           >
             <Settings className="size-4" />
@@ -195,6 +196,7 @@ export function Sidebar({
             type="button"
             onClick={signOut}
             title="Déconnexion"
+            aria-label="Se déconnecter"
             className="grid size-[30px] shrink-0 place-items-center rounded-lg text-[var(--text-faint)] transition-colors hover:bg-[rgba(240,113,104,.12)] hover:text-[var(--danger)]"
           >
             <LogOut className="size-4" />

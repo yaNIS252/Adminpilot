@@ -110,7 +110,7 @@ export function AccountActions({ email }: { email: string }) {
             type="button"
             disabled={busy || confirmEmail.trim() !== email}
             onClick={deleteAccount}
-            className="rounded-[var(--radius-sm)] bg-[var(--danger)] px-4 py-2.5 text-sm font-semibold text-[#2a0805] transition-opacity disabled:opacity-40"
+            className="rounded-[var(--radius-sm)] bg-[var(--danger)] px-4 py-2.5 text-sm font-semibold text-[var(--on-danger)] transition-opacity disabled:opacity-40"
           >
             {busy ? "Suppression…" : "Supprimer définitivement"}
           </button>

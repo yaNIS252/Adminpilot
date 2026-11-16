@@ -46,7 +46,10 @@ export function OfferList({
                     .join(" · ")}
                 </div>
               </div>
-              <span className="mono text-sm">{formatAmount(offer.monthly_price)}/mois</span>
+              <span className="mono text-sm" title={offer.estimated ? "Estimation pour ta consommation actuelle" : undefined}>
+                {offer.estimated ? "≈ " : ""}
+                {formatAmount(offer.monthly_price)}/mois
+              </span>
               <span className="mono min-w-[7rem] text-right text-[13px] text-[var(--positive-light)]">
                 −{formatAmount(offer.yearlySaving)}/an
               </span>

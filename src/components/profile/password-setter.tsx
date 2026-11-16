@@ -47,8 +47,8 @@ export function PasswordSetter() {
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
       <p className="m-0 text-sm text-[var(--text-dim)]">
-        Pour te connecter aussi avec ton adresse et un mot de passe, en plus de
-        Google ou du code par e-mail.
+        Pour te connecter avec ton adresse et un mot de passe, sans attendre de
+        code par e-mail. Tu peux aussi le changer ici.
       </p>
       <div className="flex flex-wrap gap-2">
         <div className="flex h-10 min-w-[220px] flex-1 items-center rounded-[8px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] pr-1 pl-3 focus-within:border-[var(--accent)]">

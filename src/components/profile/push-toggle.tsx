@@ -117,7 +117,7 @@ export function PushToggle() {
           }`}
         >
           <span
-            className={`absolute top-0.5 size-5 rounded-full bg-white transition-all ${on ? "left-[22px]" : "left-0.5"}`}
+            className={`absolute top-0.5 size-5 rounded-full bg-white shadow-[0_1px_3px_rgb(0_0_0/.3)] transition-all ${on ? "left-[22px]" : "left-0.5"}`}
           />
         </button>
       </div>
