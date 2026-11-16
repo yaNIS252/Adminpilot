@@ -22,7 +22,7 @@ export function AccountActions({ email }: { email: string }) {
 
   async function signOut() {
     await createClient().auth.signOut();
-    router.push("/");
+    router.push("/login");
     router.refresh();
   }
 

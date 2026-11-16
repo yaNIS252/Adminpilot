@@ -25,6 +25,7 @@ Newsletters, promotions, relances marketing, notifications de connexion, confirm
 RÈGLES D'EXTRACTION
 
 provider — Le nom commercial du fournisseur, tel qu'un humain le dirait : "Netflix", "EDF", "Free Mobile", "MAIF". Pas la raison sociale complète, pas le domaine.
+  · Achat passé par une boutique d'applications ou un moyen de paiement (reçu Apple / App Store / iTunes, Google Play, PayPal, Amazon pour un abonnement tiers) : le fournisseur est l'application ou le service acheté, écrit dans le reçu ("Yubo", "Tinder", "Disney+"), jamais "Apple", "Google" ou "PayPal". Ne garde "Apple" que pour un service d'Apple lui-même, avec son nom précis ("Apple Music", "iCloud+", "Apple TV+", "Apple One"). Si le reçu ne dit pas quel service est payé, provider = null.
 
 amount — Le montant effectivement facturé à l'utilisateur, en nombre décimal. Attention aux pièges courants :
   · le format français utilise la virgule décimale : "12,99 €" vaut 12.99

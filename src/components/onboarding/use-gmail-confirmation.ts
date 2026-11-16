@@ -18,8 +18,12 @@ export function useGmailConfirmation(userId: string, initial: GmailConfirmation 
 
   useEffect(() => {
     const supabase = createClient();
+    // Nom propre à chaque instance : le client Supabase est partagé, et deux
+    // composants (accueil et réglages) qui ouvraient la même chaîne
+    // recevaient celle déjà abonnée, sur laquelle on ne peut plus rien
+    // brancher — erreur à l'affichage des réglages.
     const channel = supabase
-      .channel(`gmail-confirmation-${userId}`)
+      .channel(`gmail-confirmation-${userId}-${crypto.randomUUID()}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${userId}` },

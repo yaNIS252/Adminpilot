@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, CalendarDays, Forward, KeyRound, Gift, History, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
+import { Bell, CalendarDays, ChevronDown, Forward, KeyRound, Gift, History, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 
 import { PaymentConfirmation } from "@/components/billing/payment-confirmation";
 import { ManageSubscription, PlanPicker } from "@/components/billing/plan-picker";
@@ -18,6 +18,7 @@ import { ThemePicker } from "@/components/profile/theme-picker";
 import { AccountActions } from "@/components/shared/account-actions";
 import { ForwardingSetup } from "@/components/shared/forwarding-setup";
 import { HistoryImport } from "@/components/shared/history-import";
+import { HashOpener } from "@/components/shared/hash-opener";
 import { InboxAddress } from "@/components/shared/inbox-address";
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
 import { getStripe, planFromPriceId } from "@/lib/billing/stripe";
@@ -147,7 +148,7 @@ export default async function SettingsPage({
         />
       </Card>
 
-      <Card
+      <Card collapsible
         icon={<Palette className="size-4" />}
         title="Apparence"
         subtitle="Fond et couleur secondaire de l’application"
@@ -176,7 +177,7 @@ export default async function SettingsPage({
         </p>
       </Card>
 
-      <Card
+      <Card collapsible
         icon={<Forward className="size-4" />}
         title="Transfert automatique"
         subtitle="Pour que chaque nouvelle facture arrive sans y penser"
@@ -192,7 +193,7 @@ export default async function SettingsPage({
       </Card>
 
       <section id="historique" className="scroll-mt-6">
-        <Card
+        <Card collapsible
           icon={<History className="size-4" />}
           title="Récupérer mes anciennes factures"
           subtitle="Un an d’historique en une seule manipulation"
@@ -202,7 +203,7 @@ export default async function SettingsPage({
       </section>
 
       <section id="boites" className="scroll-mt-6">
-        <Card
+        <Card collapsible defaultOpen={mailboxLimitHit || Boolean(freshConfirmation)}
           icon={<Mail className="size-4" />}
           title="Mes boîtes mail"
           subtitle="Les boîtes Gmail qui transfèrent leurs factures vers ton compte"
@@ -254,7 +255,7 @@ export default async function SettingsPage({
 
       {!isMember && (
         <section id="formules" className="scroll-mt-6">
-          <Card
+          <Card collapsible defaultOpen={Boolean(params.formule) || params.paiement === "annule"}
             icon={<Sparkles className="size-4" />}
             title={subscriber ? "Changer de formule" : "Passer à une formule payante"}
             subtitle={
@@ -281,7 +282,7 @@ export default async function SettingsPage({
         </section>
       )}
 
-      <Card
+      <Card collapsible
         icon={<Users className="size-4" />}
         title="Foyer"
         subtitle={
@@ -353,7 +354,7 @@ export default async function SettingsPage({
       </Card>
 
       <section id="parrainage" className="scroll-mt-6">
-        <Card
+        <Card collapsible
           icon={<Gift className="size-4" />}
           title="Parrainage"
           subtitle="1 mois de Pro offert à tes proches, et à toi"
@@ -370,7 +371,7 @@ export default async function SettingsPage({
       </section>
 
       <section id="notifications" className="scroll-mt-6">
-        <Card icon={<Bell className="size-4" />} title="Notifications">
+        <Card collapsible icon={<Bell className="size-4" />} title="Notifications">
           <RecapToggle
             initial={profile.notify_new_subscription}
             field="notify_new_subscription"
@@ -392,7 +393,7 @@ export default async function SettingsPage({
       </section>
 
       <section id="recap" className="scroll-mt-6">
-        <Card icon={<Mail className="size-4" />} title="Récap mensuel par e-mail">
+        <Card collapsible icon={<Mail className="size-4" />} title="Récap mensuel par e-mail">
           {profile.plan === "free" ? (
             <p className="m-0 flex items-center gap-2 text-sm text-[var(--text-dim)]">
               <Lock className="size-4 shrink-0 text-[var(--accent-lighter)]" />
@@ -406,13 +407,13 @@ export default async function SettingsPage({
       </section>
 
       <section id="mot-de-passe" className="scroll-mt-6">
-        <Card icon={<KeyRound className="size-4" />} title="Mot de passe">
+        <Card collapsible icon={<KeyRound className="size-4" />} title="Mot de passe">
           <PasswordSetter />
         </Card>
       </section>
 
       <section id="agenda" className="scroll-mt-6">
-        <Card icon={<CalendarDays className="size-4" />} title="Mon agenda">
+        <Card collapsible icon={<CalendarDays className="size-4" />} title="Mon agenda">
           {profile.plan === "free" ? (
             <p className="m-0 flex items-center gap-2 text-sm text-[var(--text-dim)]">
               <Lock className="size-4 shrink-0 text-[var(--accent-lighter)]" />
@@ -425,7 +426,7 @@ export default async function SettingsPage({
         </Card>
       </section>
 
-      <Card
+      <Card collapsible
         icon={<ShieldCheck className="size-4 text-[var(--positive)]" />}
         title="Confidentialité"
       >
@@ -439,6 +440,7 @@ export default async function SettingsPage({
       </Card>
 
       <AccountActions email={profile.email} />
+      <HashOpener />
     </div>
   );
 }
@@ -453,25 +455,49 @@ function Card({
   title,
   subtitle,
   children,
+  collapsible = false,
+  defaultOpen = false,
 }: {
   icon?: React.ReactNode;
   title: string;
   subtitle?: string;
   children: React.ReactNode;
+  /** Repliée par défaut : on n'en voit que le titre, un clic l'ouvre. */
+  collapsible?: boolean;
+  defaultOpen?: boolean;
 }) {
+  const heading = (
+    <div>
+      <h2 className="m-0 flex items-center gap-2 text-[15px] font-semibold">
+        {icon && <span className="text-[var(--accent-light)]">{icon}</span>}
+        {title}
+      </h2>
+      {subtitle && (
+        <p className="m-0 mt-0.5 text-xs text-[var(--text-faint)]">
+          {subtitle}
+        </p>
+      )}
+    </div>
+  );
+
+  if (collapsible) {
+    return (
+      <details
+        open={defaultOpen}
+        className="group card-sheen anim-up rounded-[var(--radius-xl)] border border-[var(--border)]"
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 [&::-webkit-details-marker]:hidden">
+          {heading}
+          <ChevronDown className="size-4 shrink-0 text-[var(--text-faint)] transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="px-5 pb-5">{children}</div>
+      </details>
+    );
+  }
+
   return (
     <section className="card-sheen anim-up rounded-[var(--radius-xl)] border border-[var(--border)] p-5">
-      <div className="mb-3.5">
-        <h2 className="m-0 flex items-center gap-2 text-[15px] font-semibold">
-          {icon && <span className="text-[var(--accent-light)]">{icon}</span>}
-          {title}
-        </h2>
-        {subtitle && (
-          <p className="m-0 mt-0.5 text-xs text-[var(--text-faint)]">
-            {subtitle}
-          </p>
-        )}
-      </div>
+      <div className="mb-3.5">{heading}</div>
       {children}
     </section>
   );

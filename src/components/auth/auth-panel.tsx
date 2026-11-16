@@ -703,6 +703,7 @@ function PasswordField({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           autoComplete={autoComplete}
+          placeholder={strength ? `${MIN_PASSWORD} caractères minimum` : "Ton mot de passe"}
           className="h-full min-w-0 flex-1 border-0 bg-transparent text-[16px] text-[var(--text)] outline-none"
         />
         <button

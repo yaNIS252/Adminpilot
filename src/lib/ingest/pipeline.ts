@@ -204,6 +204,16 @@ ${job.payload.body.slice(0, 6000)}`)
 
   const needsReview = data.confidence < REVIEW_THRESHOLD;
 
+  // Reçu d'une boutique d'applications où l'appli payée n'a pas été lue :
+  // gardé pour une vérification, sans rien créer ni modifier.
+  if (isStoreOnlyProvider(data.provider) && data.type !== "cancellation") {
+    await db
+      .from("ingestion_jobs")
+      .update({ status: "needs_review", ...common })
+      .eq("id", job.id);
+    return { created: false as const, skipped: true as const };
+  }
+
   // Confirmation de résiliation envoyée par le fournisseur : l'abonnement
   // passe en « résilié » sans que l'utilisateur ait rien à faire. Seulement
   // sur une lecture assez sûre — retirer à tort un abonnement du suivi
@@ -585,6 +595,25 @@ function normalizeProvider(name: string): string {
     .trim();
 }
 
+/**
+ * Boutique d'applications ou moyen de paiement seul (« Apple », « App Store »,
+ * « Google Play », « PayPal ») : ce n'est pas un abonnement mais
+ * l'intermédiaire qui encaisse pour une appli (un reçu Apple pour Yubo). Un
+ * tel nom ne doit ni créer d'abonnement ni se rattacher à un abonnement
+ * existant : il mélangerait des applis différentes et inventerait des
+ * hausses de prix. Les services d'Apple eux-mêmes ont un nom précis
+ * (« Apple Music », « iCloud+ ») et ne sont pas concernés.
+ */
+const STORE_ONLY = new Set([
+  "apple", "appleinc", "appstore", "appleappstore", "itunes", "itunesstore",
+  "applestore", "google", "googleplay", "googleplaystore", "googlepayments",
+  "paypal", "amazon", "amazonpayments",
+]);
+
+export function isStoreOnlyProvider(name: string | null | undefined): boolean {
+  return Boolean(name) && STORE_ONLY.has(normalizeProvider(name!));
+}
+
 /** Tournures d'une confirmation de résiliation (voir la seconde lecture). */
 const CANCELLATION_HINT =
   /confirm\w*\s+(?:de\s+)?(?:la\s+|votre\s+)?r[ée]siliation|r[ée]siliation\s+(?:a\s+bien\s+été\s+)?(?:prise\s+en\s+compte|confirm[ée]e|enregistr[ée]e)|confirmation of cancellation|has been cancel+ed/i;
@@ -929,6 +958,7 @@ async function completeSubscriptionFromDocument(
     confidence: number;
   },
 ): Promise<boolean> {
+  if (isStoreOnlyProvider(doc.provider)) return false;
   // Le nom lu sur un PDF est souvent la raison sociale (« Fitness Park
   // Lyon », « IONOS SE ») : correspondance exacte, puis par préfixe.
   const existing =
