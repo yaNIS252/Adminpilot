@@ -156,7 +156,7 @@ async function dispatchBatch(
       ? db
           .from("subscriptions")
           .select(
-            "id, user_id, provider, amount, currency, next_renewal, confirmed_by_user, metadata",
+            "id, user_id, provider, amount, currency, next_renewal, confirmed_by_user, confidence, metadata",
           )
           .in("id", subIds)
       : Promise.resolve({ data: [] as never[] }),
@@ -274,7 +274,9 @@ async function dispatchBatch(
             renewalDate: sub.next_renewal,
             daysLeft: Math.max(0, daysUntil(sub.next_renewal)),
             dashboardUrl,
-            confirmed: sub.confirmed_by_user,
+            // Même règle que l'appli : « à vérifier » seulement si l'utilisateur
+            // n'a pas confirmé ET que la détection est peu sûre (< 0,7).
+            confirmed: sub.confirmed_by_user || sub.confidence >= 0.7,
           });
         }
       } else {
