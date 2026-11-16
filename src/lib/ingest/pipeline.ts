@@ -581,7 +581,7 @@ type Db = ReturnType<typeof createAdminClient>;
  * les traiterait comme trois fournisseurs distincts et le rapprochement ne
  * servirait à rien.
  */
-function normalizeProvider(name: string): string {
+export function normalizeProvider(name: string): string {
   return name
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
@@ -838,31 +838,56 @@ async function chargeAfterCancellation(
       ? new Date(`${metadata.cancel_effective_date}T23:59:59Z`)
       : new Date(new Date(sub.cancelled_at).getTime() + FINAL_INVOICE_DAYS * 86_400_000);
 
-  if (received <= effective) return "final_invoice";
+  // Réabonnement annoncé dans l'appli (bouton « Se réabonner ») : l'e-mail
+  // qui suit, même proche de la résiliation, est celui du nouvel abonnement.
+  // Une marge de dix minutes couvre l'horloge de l'expéditeur.
+  const started =
+    typeof metadata.resubscribe_started_at === "string"
+      ? new Date(metadata.resubscribe_started_at).getTime() - 10 * 60_000
+      : null;
+  const resubscribed = started !== null && received.getTime() >= started;
+
+  if (!resubscribed && received <= effective) return "final_invoice";
 
   const today = new Date().toISOString().slice(0, 10);
+  const rest = { ...metadata };
+  delete rest.cancel_effective_date;
+  delete rest.cancelled_via;
+  delete rest.resubscribe_started_at;
   await db
     .from("subscriptions")
     .update({
       status: "active",
       cancelled_at: null,
-      metadata: { ...metadata, reactivated_at: new Date().toISOString() },
+      metadata: { ...rest, reactivated_at: new Date().toISOString() },
     })
     .eq("id", sub.id)
     .eq("user_id", userId);
 
   await db.from("alerts").upsert(
-    {
-      user_id: userId,
-      ref_type: "subscription",
-      ref_id: sub.id,
-      kind: "manual",
-      title: `${sub.provider} t’a facturé après la résiliation`,
-      message:
-        "Une nouvelle facture est arrivée alors que cet abonnement était résilié. Si tu ne t’es pas réabonné, la résiliation n’a pas été prise en compte : contacte le fournisseur avec ta confirmation de résiliation.",
-      alert_date: today,
-      dedup_key: `reprise:${sub.id}:${today}`,
-    },
+    resubscribed
+      ? {
+          user_id: userId,
+          ref_type: "subscription",
+          ref_id: sub.id,
+          kind: "manual",
+          title: `Réabonnement à ${sub.provider} confirmé`,
+          message:
+            "Un e-mail du fournisseur confirme ton réabonnement : le suivi a repris sur l’abonnement existant, sans doublon.",
+          alert_date: today,
+          dedup_key: `reprise:${sub.id}:${today}`,
+        }
+      : {
+          user_id: userId,
+          ref_type: "subscription",
+          ref_id: sub.id,
+          kind: "manual",
+          title: `${sub.provider} t’a facturé après la résiliation`,
+          message:
+            "Une nouvelle facture est arrivée alors que cet abonnement était résilié. Si tu ne t’es pas réabonné, la résiliation n’a pas été prise en compte : contacte le fournisseur avec ta confirmation de résiliation.",
+          alert_date: today,
+          dedup_key: `reprise:${sub.id}:${today}`,
+        },
     { onConflict: "dedup_key", ignoreDuplicates: true },
   );
 

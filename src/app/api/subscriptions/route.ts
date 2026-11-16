@@ -10,11 +10,13 @@ import {
   exceedsSubscriptionQuota,
   findExistingSubscription,
   markCancelled,
+  normalizeProvider,
 } from "@/lib/ingest/pipeline";
 import { isAdminPilotProvider } from "@/lib/ingest/sender-learning";
 import { consume, tooManyRequests } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import type { Json } from "@/lib/supabase/types";
 
 export const runtime = "nodejs";
 
@@ -28,6 +30,24 @@ export const runtime = "nodejs";
  * Toutes les requêtes passent par le client de session, donc sous RLS : un
  * identifiant d'abonnement appartenant à quelqu'un d'autre ne renvoie rien.
  */
+
+/**
+ * Métadonnées d'un abonnement repris : les traces de la résiliation partent
+ * avec elle. Une date de fin d'accès restée en place ferait prendre la
+ * prochaine facture pour la dernière de l'ancien abonnement.
+ */
+function withoutCancellation(metadata: Json | null): Json {
+  const rest = {
+    ...((metadata && typeof metadata === "object" && !Array.isArray(metadata) ? metadata : {}) as Record<
+      string,
+      Json | undefined
+    >),
+  };
+  delete rest.cancel_effective_date;
+  delete rest.cancelled_via;
+  delete rest.resubscribe_started_at;
+  return { ...rest, resumed_at: new Date().toISOString() } as Json;
+}
 
 const PatchSchema = z.object({
   id: z.string().uuid(),
@@ -45,6 +65,12 @@ const PatchSchema = z.object({
   confirmed_by_user: z.boolean().optional(),
   /** Coupe ou rallume les rappels d'échéance de cet abonnement. */
   reminders_muted: z.boolean().optional(),
+  /**
+   * Abonnement résilié : l'utilisateur part se réabonner sur le site du
+   * fournisseur. Retenu pour que l'e-mail de réabonnement qui suit soit
+   * rattaché à cette ligne, sans alerte « facturé après la résiliation ».
+   */
+  resubscribing: z.literal(true).optional(),
 });
 
 const CreateSchema = z.object({
@@ -103,7 +129,39 @@ export async function POST(request: Request) {
 
   const catalogue = await matchCatalogue(db, { provider: input.provider });
 
-  const { data, error } = await db
+  // Même fournisseur déjà résilié : c'est un réabonnement. On reprend la
+  // ligne existante plutôt que d'en créer une seconde, qui resterait en
+  // double dans les résiliés.
+  const target = normalizeProvider(input.provider);
+  const { data: cancelledRows } = await db
+    .from("subscriptions")
+    .select("id, provider, metadata")
+    .eq("user_id", auth.userId)
+    .eq("status", "cancelled")
+    .order("cancelled_at", { ascending: false, nullsFirst: false });
+  const previous = (cancelledRows ?? []).find((row) => normalizeProvider(row.provider) === target);
+
+  const { data, error } = previous
+    ? await db
+        .from("subscriptions")
+        .update({
+          provider: input.provider,
+          amount: input.amount,
+          cycle: input.cycle,
+          category: input.category,
+          next_renewal: input.next_renewal,
+          status: "active",
+          cancelled_at: null,
+          confidence: 1,
+          confirmed_by_user: true,
+          provider_id: catalogue?.id ?? null,
+          metadata: withoutCancellation(previous.metadata),
+        })
+        .eq("id", previous.id)
+        .eq("user_id", auth.userId)
+        .select("*")
+        .single()
+    : await db
     .from("subscriptions")
     .insert({
       user_id: auth.userId,
@@ -173,8 +231,27 @@ export async function PATCH(request: Request) {
   const body = await readJson(request, PatchSchema);
   if (!body.ok) return body.response;
 
-  const { id, ...changes } = body.data;
+  const { id, resubscribing, ...changes } = body.data;
   const supabase = await createClient();
+
+  if (resubscribing) {
+    const db = createAdminClient();
+    const { data: row } = await db
+      .from("subscriptions")
+      .select("metadata")
+      .eq("id", id)
+      .eq("user_id", auth.userId)
+      .eq("status", "cancelled")
+      .maybeSingle();
+    if (!row) return NextResponse.json({ error: "introuvable" }, { status: 404 });
+    const meta = row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata) ? row.metadata : {};
+    await db
+      .from("subscriptions")
+      .update({ metadata: { ...meta, resubscribe_started_at: new Date().toISOString() } })
+      .eq("id", id)
+      .eq("user_id", auth.userId);
+    if (Object.keys(changes).length === 0) return NextResponse.json({ ok: true });
+  }
 
   // Montant corrigé à la main : la hausse ou la baisse « constatée » qui
   // avait produit l'ancien montant était une erreur de lecture. On la
@@ -235,9 +312,15 @@ export async function PATCH(request: Request) {
       via: "user",
     });
   } else if (changes.status === "active") {
+    // Les traces de la résiliation partent avec elle : une date de fin
+    // d'accès restée en place ferait prendre la prochaine facture pour la
+    // dernière de l'ancien abonnement.
     await createAdminClient()
       .from("subscriptions")
-      .update({ cancelled_at: null })
+      .update({
+        cancelled_at: null,
+        metadata: withoutCancellation(data.metadata),
+      })
       .eq("id", id)
       .eq("user_id", auth.userId);
     if (data.next_renewal && !data.reminders_muted) {

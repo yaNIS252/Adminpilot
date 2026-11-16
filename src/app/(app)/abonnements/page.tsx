@@ -14,6 +14,7 @@ import {
 import { NewSubscriptions } from "@/components/dashboard/new-subscriptions";
 import { AddSubscription } from "@/components/dashboard/add-subscription";
 import { inboxAddress, requireUser } from "@/lib/auth/require-user";
+import { resubscribeUrl } from "@/lib/cancel/links";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -75,7 +76,7 @@ export default async function SubscriptionsPage({
       .order("created_at", { ascending: false }),
     supabase
       .from("subscriptions")
-      .select("id, provider, amount, cycle, cancelled_at, metadata")
+      .select("id, provider, amount, cycle, cancelled_at, metadata, known_providers(domain)")
       .eq("status", "cancelled")
       .order("cancelled_at", { ascending: false, nullsFirst: false })
       .limit(50),
@@ -102,6 +103,8 @@ export default async function SubscriptionsPage({
       cancelledAt: row.cancelled_at,
       effectiveDate: typeof meta.cancel_effective_date === "string" ? meta.cancel_effective_date : null,
       viaEmail: meta.cancelled_via === "email",
+      siteUrl: resubscribeUrl(meta, row.known_providers?.domain ?? null),
+      resubscribing: typeof meta.resubscribe_started_at === "string",
     };
   });
   const monthlySaved = cancelled.reduce((sum, item) => sum + item.monthly, 0);

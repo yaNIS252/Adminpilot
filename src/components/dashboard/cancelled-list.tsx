@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronDown, RotateCcw, Search } from "lucide-react";
+import { Check, ChevronDown, ExternalLink, RotateCcw, Search } from "lucide-react";
 import { useState } from "react";
 
 import { formatAmount, formatDate } from "@/lib/format";
@@ -10,6 +10,11 @@ import { formatAmount, formatDate } from "@/lib/format";
  * Abonnements résiliés : gardés à part plutôt que supprimés, pour voir ce
  * que les résiliations rapportent et reprendre le suivi d'un abonnement
  * auquel on se réabonne.
+ *
+ * Se réabonner se fait en deux temps : le site du fournisseur s'ouvre, puis
+ * l'utilisateur confirme ici. Entre les deux, l'e-mail de réabonnement qui
+ * arriverait est rattaché à la même ligne (voir l'ingestion) : jamais de
+ * doublon.
  */
 
 export type CancelledSubscription = {
@@ -19,7 +24,19 @@ export type CancelledSubscription = {
   cancelledAt: string | null;
   effectiveDate: string | null;
   viaEmail: boolean;
+  /** Espace client ou site du fournisseur, s'il est connu. */
+  siteUrl: string | null;
+  /** Parti se réabonner, pas encore confirmé. */
+  resubscribing: boolean;
 };
+
+function hostLabel(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
 
 /** Au-delà, la liste se replie et se filtre par nom. */
 const COLLAPSE_AFTER = 5;
@@ -37,6 +54,22 @@ export function CancelledList({ items }: { items: CancelledSubscription[] }) {
     : items;
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [started, setStarted] = useState<Set<string>>(
+    () => new Set(items.filter((item) => item.resubscribing).map((item) => item.id)),
+  );
+
+  function goResubscribe(item: CancelledSubscription) {
+    if (!item.siteUrl) return;
+    // Ouvert pendant le clic : un onglet ouvert après un `await` serait
+    // bloqué par le navigateur.
+    window.open(item.siteUrl, "_blank", "noopener,noreferrer");
+    setStarted((current) => new Set(current).add(item.id));
+    void fetch("/api/subscriptions", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: item.id, resubscribing: true }),
+    }).catch(() => null);
+  }
 
   async function resume(id: string) {
     setBusy(id);
@@ -81,15 +114,50 @@ export function CancelledList({ items }: { items: CancelledSubscription[] }) {
                 −{formatAmount(item.monthly)}/mois
               </span>
             )}
-            <button
-              type="button"
-              onClick={() => resume(item.id)}
-              disabled={busy === item.id}
-              className="btn-secondary h-8 px-3 text-xs disabled:opacity-60"
-            >
-              <RotateCcw className="size-3.5" />
-              Reprendre le suivi
-            </button>
+            {started.has(item.id) ? (
+              <div className="flex w-full flex-wrap items-center gap-2 rounded-[8px] bg-[rgb(var(--accent-rgb)/.08)] px-3 py-2 text-[13px] sm:w-auto">
+                <span className="text-[var(--text-dim)]">Réabonné sur le site ?</span>
+                <button
+                  type="button"
+                  onClick={() => resume(item.id)}
+                  disabled={busy === item.id}
+                  className="btn-primary h-8 px-3 text-xs disabled:opacity-60"
+                >
+                  <Check className="size-3.5" />
+                  Oui, reprendre le suivi
+                </button>
+                {item.siteUrl && (
+                  <a
+                    href={item.siteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-[var(--text-faint)] underline hover:text-[var(--text)]"
+                  >
+                    Rouvrir {hostLabel(item.siteUrl)}
+                  </a>
+                )}
+              </div>
+            ) : item.siteUrl ? (
+              <button
+                type="button"
+                onClick={() => goResubscribe(item)}
+                aria-label={`Se réabonner sur ${hostLabel(item.siteUrl)} (nouvel onglet)`}
+                className="btn-secondary h-8 px-3 text-xs"
+              >
+                <ExternalLink className="size-3.5" />
+                Se réabonner
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => resume(item.id)}
+                disabled={busy === item.id}
+                className="btn-secondary h-8 px-3 text-xs disabled:opacity-60"
+              >
+                <RotateCcw className="size-3.5" />
+                Je me suis réabonné
+              </button>
+            )}
           </li>
         ))}
       </ul>

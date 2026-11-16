@@ -125,3 +125,30 @@ export async function matchCatalogue(
 
   return found ? { id: found.id, domain: rootDomain(found.domain) } : null;
 }
+
+function hostOfUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Où se réabonner : l'espace client vu dans les e-mails, sinon le site du
+ * fournisseur (e-mails, puis catalogue). Les liens des e-mails n'ont été
+ * enregistrés qu'après contrôle de leur domaine à l'ingestion, et `metadata`
+ * n'est pas modifiable depuis le navigateur : on ne revérifie que le
+ * protocole.
+ */
+export function resubscribeUrl(
+  metadata: Record<string, unknown>,
+  catalogueDomain: string | null,
+): string | null {
+  return (
+    trustedLink(metadata.manage_url as string | undefined, [hostOfUrl(metadata.manage_url)]) ??
+    trustedLink(metadata.site_url as string | undefined, [hostOfUrl(metadata.site_url)]) ??
+    (catalogueDomain ? `https://www.${catalogueDomain.replace(/^www\./, "")}` : null)
+  );
+}

@@ -9,7 +9,8 @@ import { requireUser } from "@/lib/auth/require-user";
 import { checkLimit, incrementUsage } from "@/lib/billing/quotas";
 import { readJson } from "@/lib/http/request";
 import { consume, tooManyRequests } from "@/lib/rate-limit";
-import { normalizeText, parseSearchQuery } from "@/lib/search/parse-query";
+import { matchScore, queryTerms, wordsOf } from "@/lib/search/fuzzy";
+import { parseSearchQuery } from "@/lib/search/parse-query";
 import { createClient } from "@/lib/supabase/server";
 import { SEARCH_QUERY_SYSTEM } from "@/prompts/search-query";
 
@@ -27,8 +28,17 @@ export const runtime = "nodejs";
 
 const BodySchema = z.object({ query: z.string().trim().min(1).max(300) });
 
-/** Documents examinés avant filtrage par date et montant. */
-const CANDIDATES = 300;
+/** Documents examinés, au plus : bien au-delà de ce qu'un foyer accumule. */
+const CANDIDATES = 2000;
+
+/** Tous les textes d'une valeur extraite (fournisseur, références, lignes…). */
+function textsOf(value: unknown, out: string[] = []): string[] {
+  if (typeof value === "string") out.push(value);
+  else if (typeof value === "number") out.push(String(value));
+  else if (Array.isArray(value)) for (const item of value) textsOf(item, out);
+  else if (value && typeof value === "object") for (const item of Object.values(value)) textsOf(item, out);
+  return out;
+}
 
 async function filtersFromModel(query: string): Promise<SearchFilters | null> {
   const content = `Date du jour : ${new Date().toISOString().slice(0, 10)}
@@ -101,21 +111,27 @@ export async function POST(request: Request) {
 
   if (filters.category) query = query.eq("category", filters.category);
 
-  // Fournisseur et mots restants par l'index plein texte. L'index est
-  // construit sans accents : la requête doit l'être aussi, sinon
-  // « prélèvement » ne trouverait jamais rien. `plain` traite la saisie comme
-  // du texte, aucun opérateur ne peut y être glissé.
-  const terms = normalizeText([filters.provider, filters.keywords].filter(Boolean).join(" ")).trim();
-  if (terms) {
-    query = query.textSearch("search_vector", terms, { type: "plain", config: "french" });
-  }
-
   const { data, error } = await query;
   if (error) throw error;
 
   // Date et montant se lisent dans les données extraites : « ma facture de
   // mars » parle de la date du document, pas du jour où il a été déposé.
-  const documents = (data ?? []).filter((doc) => {
+  // Fournisseur et mots restants : comparés ici, mot à mot, en tolérant les
+  // fautes de frappe et les mots commencés (voir fuzzy.ts). Les meilleures
+  // correspondances d'abord, puis les plus récentes.
+  const terms = queryTerms([filters.provider, filters.keywords].filter(Boolean).join(" "));
+  const scored = (data ?? [])
+    .map((doc) => {
+      const words = wordsOf(
+        [doc.filename_ai ?? "", doc.filename_original, doc.category, ...textsOf(doc.extracted_data)].join(" "),
+      );
+      return { doc, score: matchScore(terms, words) };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.doc);
+
+  const documents = scored.filter((doc) => {
     const extracted = doc.extracted_data as Extracted;
     const date = extracted?.document_date ?? doc.created_at.slice(0, 10);
     if (filters.date_from && date < filters.date_from) return false;
