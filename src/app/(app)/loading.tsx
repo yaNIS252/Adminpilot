@@ -9,19 +9,19 @@
 export default function Loading() {
   return (
     <div className="flex flex-col gap-4" aria-busy="true" aria-label="Chargement">
-      <div className="mb-1 h-9 w-48 animate-pulse rounded-lg bg-[rgba(255,255,255,.06)]" />
+      <div className="mb-1 h-9 w-48 animate-pulse rounded-lg bg-[rgb(var(--fg-rgb)/.06)]" />
       <div className="grid gap-4 sm:grid-cols-3">
         {[0, 1, 2].map((key) => (
           <div
             key={key}
-            className="h-24 animate-pulse rounded-[var(--radius-xl)] border border-[var(--border)] bg-[rgba(255,255,255,.02)]"
+            className="h-24 animate-pulse rounded-[var(--radius-xl)] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.02)]"
           />
         ))}
       </div>
       {[0, 1, 2].map((key) => (
         <div
           key={key}
-          className="h-20 animate-pulse rounded-[var(--radius-xl)] border border-[var(--border)] bg-[rgba(255,255,255,.02)]"
+          className="h-20 animate-pulse rounded-[var(--radius-xl)] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.02)]"
         />
       ))}
     </div>

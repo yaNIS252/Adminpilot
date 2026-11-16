@@ -31,7 +31,7 @@ export function CategoryTip({ category }: { category: string | null | undefined 
   const tip = category ? CATEGORY_TIPS[category] : undefined;
   if (!tip) return null;
   return (
-    <div className="flex gap-3 rounded-[10px] border border-[var(--border)] bg-[rgba(255,255,255,.02)] px-4 py-3.5">
+    <div className="flex gap-3 rounded-[10px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.02)] px-4 py-3.5">
       <Lightbulb className="mt-0.5 size-4 shrink-0 text-[var(--warning-light)]" />
       <div>
         <div className="text-sm font-semibold">{tip.title}</div>

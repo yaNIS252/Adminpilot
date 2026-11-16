@@ -43,7 +43,7 @@ export function RecapToggle({
           aria-label={label}
           onClick={toggle}
           className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-            enabled ? "bg-[var(--accent)]" : "bg-[rgba(255,255,255,.12)]"
+            enabled ? "bg-[var(--accent)]" : "bg-[rgb(var(--fg-rgb)/.12)]"
           }`}
         >
           <span

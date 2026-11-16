@@ -194,7 +194,7 @@ function TourDialog({
                 aria-current={index === step ? "step" : undefined}
                 title={label}
                 className={`h-1.5 flex-1 rounded-full transition-colors ${
-                  index <= step ? "bg-[var(--accent)]" : "bg-[rgba(255,255,255,.08)]"
+                  index <= step ? "bg-[var(--accent)]" : "bg-[rgb(var(--fg-rgb)/.08)]"
                 }`}
               />
             ))}
@@ -207,7 +207,7 @@ function TourDialog({
             onClick={onClose}
             aria-label="Fermer, je verrai plus tard"
             title="Plus tard"
-            className="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--text-faint)] transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-[var(--text)]"
+            className="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--text-faint)] transition-colors hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text)]"
           >
             <X className="size-4" />
           </button>

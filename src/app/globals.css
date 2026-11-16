@@ -12,6 +12,9 @@
   /* Interface sombre : les listes déroulantes natives et les barres de
      défilement suivent, au lieu d'afficher un texte clair sur fond blanc. */
   color-scheme: dark;
+  /* Couleur des voiles, bordures et surfaces translucides : du blanc sur
+     fond sombre, de l'encre sur le thème clair (voir plus bas). */
+  --fg-rgb: 255 255 255;
   --bg: #0a0a0f;
   --bg-elevated: #0e0e15;
   --bg-overlay: rgba(20, 20, 29, 0.92);
@@ -19,20 +22,20 @@
   --nav-bg: rgba(14, 14, 20, 0.92);
 
   /* Fonds de carte : dégradé subtil du haut vers le bas. */
-  --surface: rgba(255, 255, 255, 0.025);
-  --surface-raised: rgba(255, 255, 255, 0.045);
-  --surface-hover: rgba(255, 255, 255, 0.07);
+  --surface: rgb(var(--fg-rgb) / 0.025);
+  --surface-raised: rgb(var(--fg-rgb) / 0.045);
+  --surface-hover: rgb(var(--fg-rgb) / 0.07);
 
   /* Utilisées par les guides de résiliation et l'onboarding, mais jamais
      définies : des restes des jetons d'avant la maquette. Une variable
      inconnue est ignorée sans erreur, si bien que ces encadrés et ces blocs de
      code s'affichaient sans leur fond depuis le début. */
-  --surface-alt: rgba(255, 255, 255, 0.045);
+  --surface-alt: rgb(var(--fg-rgb) / 0.045);
   --accent-soft: rgb(var(--accent-rgb) / 0.07);
 
-  --border: rgba(255, 255, 255, 0.08);
-  --border-soft: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.12);
+  --border: rgb(var(--fg-rgb) / 0.08);
+  --border-soft: rgb(var(--fg-rgb) / 0.06);
+  --border-strong: rgb(var(--fg-rgb) / 0.12);
 
   --text: #e8e8ef;
   --text-bright: #f3f3f8;
@@ -149,6 +152,65 @@
 }
 
 /*
+ * Thème clair. Mêmes jetons, valeurs inversées : les voiles et bordures
+ * passent du blanc à l'encre (`--fg-rgb`), les textes s'assombrissent, et les
+ * teintes « claires » de l'accent et des états (vert, ambre, rouge), pensées
+ * pour un fond noir, prennent leur version foncée pour rester lisibles.
+ * Sélecteur doublé quand l'accent est aussi posé : il doit l'emporter sur
+ * les règles d'accent ci-dessus, de même spécificité.
+ */
+:root:has([data-bg="clair"]) {
+  color-scheme: light;
+  --fg-rgb: 22 20 31;
+  --bg: #f6f5f1;
+  --bg-elevated: #ffffff;
+  --bg-overlay: rgba(255, 255, 255, 0.94);
+  --nav-bg: rgba(255, 255, 255, 0.92);
+
+  --surface: #ffffff;
+  --surface-raised: rgb(var(--fg-rgb) / 0.04);
+  --surface-hover: rgb(var(--fg-rgb) / 0.06);
+  --surface-alt: rgb(var(--fg-rgb) / 0.04);
+
+  --border: rgb(var(--fg-rgb) / 0.1);
+  --border-soft: rgb(var(--fg-rgb) / 0.07);
+  --border-strong: rgb(var(--fg-rgb) / 0.16);
+
+  --text: #1d1b26;
+  --text-bright: #0e0d14;
+  --text-soft: #2a2834;
+  --text-muted: #3b3946;
+  --text-dim: #55535f;
+  --text-faint: #6c6a76;
+  --text-ghost: #8a8894;
+
+  --accent-blue-light: #4351c9;
+
+  --positive: #138a5c;
+  --positive-light: #0f7a50;
+  --positive-pale: #0f7a50;
+  --warning: #b06d06;
+  --warning-light: #965c00;
+  --warning-bright: #a86a00;
+  --danger: #c93b31;
+  --danger-light: #b3322a;
+
+  /* Bouton principal : encre sur fond clair. */
+  --paper: #1d1b26;
+  --paper-hover: #000000;
+  --ink: #f6f5f1;
+}
+:root:has([data-bg="clair"]),
+:root:has([data-bg="clair"][data-accent]) {
+  --accent-light: var(--accent-deep);
+  --accent-lighter: var(--accent-deep);
+}
+:root:has([data-bg="clair"]) .card-sheen {
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgb(22 20 31 / 0.04);
+}
+
+/*
  * Styles de base, rangés dans `@layer base`.
  *
  * Ils étaient hors de toute couche, et c'est un piège de Tailwind v4 : les
@@ -241,8 +303,8 @@
     transition: border-color 0.15s ease, background-color 0.15s ease;
   }
   .btn-secondary:hover {
-    border-color: rgba(255, 255, 255, 0.28);
-    background: rgba(255, 255, 255, 0.04);
+    border-color: rgb(var(--fg-rgb) / 0.28);
+    background: rgb(var(--fg-rgb) / 0.04);
     color: var(--text-bright);
   }
 
@@ -255,7 +317,7 @@
     color: var(--text-soft);
     font-weight: 500;
     text-decoration: underline;
-    text-decoration-color: rgba(255, 255, 255, 0.25);
+    text-decoration-color: rgb(var(--fg-rgb) / 0.25);
     text-underline-offset: 5px;
     text-decoration-thickness: 1px;
     transition: text-decoration-color 0.15s ease, color 0.15s ease;
@@ -337,8 +399,8 @@
 
 .grid-backdrop {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(rgb(var(--fg-rgb) / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--fg-rgb) / 0.035) 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: radial-gradient(ellipse 70% 50% at 50% 0%, #000 30%, transparent 80%);
   -webkit-mask-image: radial-gradient(ellipse 70% 50% at 50% 0%, #000 30%, transparent 80%);
@@ -348,7 +410,7 @@
    vers le bas, autre tic des interfaces générées. Le nom est conservé pour ne
    pas toucher les dizaines d'usages. */
 .card-sheen {
-  background: rgba(255, 255, 255, 0.022);
+  background: rgb(var(--fg-rgb) / 0.022);
 }
 
 @keyframes ap-pulse {

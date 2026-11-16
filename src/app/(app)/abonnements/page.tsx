@@ -140,7 +140,7 @@ export default async function SubscriptionsPage({
 
         <Link
           href={reviewMode ? "/abonnements" : "/abonnements?revue=1"}
-          className="rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3.5 py-2 text-sm text-[var(--text-muted)] no-underline transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-white"
+          className="rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3.5 py-2 text-sm text-[var(--text-muted)] no-underline transition-colors hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text-bright)]"
         >
           {reviewMode ? "Voir tous les abonnements" : "Voir ceux à vérifier"}
         </Link>

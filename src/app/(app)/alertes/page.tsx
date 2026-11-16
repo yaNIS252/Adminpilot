@@ -88,7 +88,7 @@ export default async function AlertsPage() {
                 {Math.min(sentThisMonth, monthlyCap)} / {monthlyCap}
               </span>
             </div>
-            <div className="mt-2 h-[5px] overflow-hidden rounded-[5px] bg-[rgba(255,255,255,.06)]">
+            <div className="mt-2 h-[5px] overflow-hidden rounded-[5px] bg-[rgb(var(--fg-rgb)/.06)]">
               <div
                 className={`h-full ${sentThisMonth >= monthlyCap ? "bg-[var(--warning)]" : "bg-[var(--accent)]"}`}
                 style={{ width: `${Math.max(3, Math.min(1, sentThisMonth / monthlyCap) * 100)}%` }}

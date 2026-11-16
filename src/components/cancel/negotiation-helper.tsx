@@ -54,7 +54,7 @@ export function NegotiationHelper({
         onChange={(event) => setText(event.target.value)}
         rows={11}
         aria-label="Message de négociation"
-        className="w-full resize-y rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] p-3.5 text-[13px] leading-[1.6] text-[var(--text)] outline-none focus:border-[var(--accent)]"
+        className="w-full resize-y rounded-[8px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] p-3.5 text-[13px] leading-[1.6] text-[var(--text)] outline-none focus:border-[var(--accent)]"
       />
       <div className="flex flex-wrap gap-2">
         <button

@@ -96,9 +96,9 @@ export function UpcomingAlerts({ alerts }: { alerts: UpcomingAlert[] }) {
           return (
             <li
               key={key}
-              className="flex items-center gap-3 rounded-[var(--radius-sm)] px-2 py-2.5 transition-colors hover:bg-[rgba(255,255,255,.04)]"
+              className="flex items-center gap-3 rounded-[var(--radius-sm)] px-2 py-2.5 transition-colors hover:bg-[rgb(var(--fg-rgb)/.04)]"
             >
-              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[rgba(255,255,255,.05)] text-[var(--accent-light)]">
+              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[rgb(var(--fg-rgb)/.05)] text-[var(--accent-light)]">
                 {first.kind === "price_change" ? (
                   <TrendingUp className="size-3.5 text-[var(--warning-light)]" />
                 ) : (
@@ -115,7 +115,7 @@ export function UpcomingAlerts({ alerts }: { alerts: UpcomingAlert[] }) {
                   {items.length > 1 ? "Rappels" : "Rappel"} le {reminders}
                 </div>
               </div>
-              <span className="hidden shrink-0 rounded-full bg-[rgba(255,255,255,.05)] px-2.5 py-1 text-[11px] text-[var(--text-dim)] sm:inline">
+              <span className="hidden shrink-0 rounded-full bg-[rgb(var(--fg-rgb)/.05)] px-2.5 py-1 text-[11px] text-[var(--text-dim)] sm:inline">
                 {formatRelativeDeadline(target)}
               </span>
               <button
@@ -184,7 +184,7 @@ export function NewReminder({ targets, today }: { targets: Target[]; today: stri
   }
 
   const field =
-    "h-10 rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 text-sm outline-none focus:border-[var(--accent)]";
+    "h-10 rounded-[8px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-3 text-sm outline-none focus:border-[var(--accent)]";
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3 rounded-[10px] border border-[var(--border)] p-4">
@@ -211,7 +211,7 @@ export function NewReminder({ targets, today }: { targets: Target[]; today: stri
       </div>
       <label className="flex flex-col gap-1.5">
         <span className="text-xs text-[var(--text-dim)]">Note (facultatif)</span>
-        <textarea name="message" rows={2} maxLength={500} className="rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)]" />
+        <textarea name="message" rows={2} maxLength={500} className="rounded-[8px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)]" />
       </label>
       <div className="flex gap-2">
         <button type="submit" disabled={busy} className="btn-primary h-10 px-4 text-sm disabled:opacity-60">
@@ -277,7 +277,7 @@ export function ReminderSwitches({ settings }: { settings: ReminderSetting[] }) 
                 aria-label={`Rappels d’échéance pour ${setting.provider}`}
                 onClick={() => toggle(setting.id)}
                 className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                  enabled ? "bg-[var(--accent)]" : "bg-[rgba(255,255,255,.12)]"
+                  enabled ? "bg-[var(--accent)]" : "bg-[rgb(var(--fg-rgb)/.12)]"
                 }`}
               >
                 <span

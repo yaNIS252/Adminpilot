@@ -380,7 +380,7 @@ export function AuthPanel({
             required
             minLength={6}
             placeholder="123456"
-            className="h-12 rounded-[8px] border border-[rgba(255,255,255,.1)] bg-[rgba(255,255,255,.02)] px-3.5 text-center font-mono text-[22px] tracking-[.4em] text-[var(--text)] outline-none focus:border-[var(--text-faint)]"
+            className="h-12 rounded-[8px] border border-[rgb(var(--fg-rgb)/.1)] bg-[rgb(var(--fg-rgb)/.02)] px-3.5 text-center font-mono text-[22px] tracking-[.4em] text-[var(--text)] outline-none focus:border-[var(--text-faint)]"
           />
           {resetting && (
             <PasswordField
@@ -477,9 +477,9 @@ export function AuthPanel({
             Continuer avec Google
           </button>
           <div className="flex items-center gap-3 text-xs text-[var(--text-ghost)]">
-            <span className="h-px flex-1 bg-[rgba(255,255,255,.08)]" />
+            <span className="h-px flex-1 bg-[rgb(var(--fg-rgb)/.08)]" />
             ou par e-mail
-            <span className="h-px flex-1 bg-[rgba(255,255,255,.08)]" />
+            <span className="h-px flex-1 bg-[rgb(var(--fg-rgb)/.08)]" />
           </div>
         </>
       )}
@@ -615,7 +615,7 @@ function Segmented<T extends string>({
           className={`${small ? "h-8 text-[13px]" : "h-9 text-sm"} rounded-[7px] font-medium transition-colors ${
             value === option
               ? small
-                ? "bg-[rgba(255,255,255,.08)] text-[var(--text)]"
+                ? "bg-[rgb(var(--fg-rgb)/.08)] text-[var(--text)]"
                 : "bg-[var(--paper)] text-[var(--ink)]"
               : "text-[var(--text-faint)] hover:text-[var(--text-muted)]"
           }`}
@@ -644,8 +644,8 @@ function EmailField({
         Adresse e-mail
       </label>
       <div
-        className={`flex h-12 items-center gap-2.5 rounded-[8px] border bg-[rgba(255,255,255,.02)] px-3.5 transition-colors focus-within:border-[var(--text-faint)] ${
-          error ? "border-[rgba(240,113,104,.5)]" : "border-[rgba(255,255,255,.1)]"
+        className={`flex h-12 items-center gap-2.5 rounded-[8px] border bg-[rgb(var(--fg-rgb)/.02)] px-3.5 transition-colors focus-within:border-[var(--text-faint)] ${
+          error ? "border-[rgba(240,113,104,.5)]" : "border-[rgb(var(--fg-rgb)/.1)]"
         }`}
       >
         <Mail className="size-[17px] shrink-0 text-[var(--text-faint)]" />
@@ -693,7 +693,7 @@ function PasswordField({
       <label htmlFor={id} className="text-[13px] text-[var(--text-muted)]">
         {label}
       </label>
-      <div className="flex h-12 items-center gap-2.5 rounded-[8px] border border-[rgba(255,255,255,.1)] bg-[rgba(255,255,255,.02)] pr-1.5 pl-3.5 focus-within:border-[var(--text-faint)]">
+      <div className="flex h-12 items-center gap-2.5 rounded-[8px] border border-[rgb(var(--fg-rgb)/.1)] bg-[rgb(var(--fg-rgb)/.02)] pr-1.5 pl-3.5 focus-within:border-[var(--text-faint)]">
         <KeyRound className="size-[17px] shrink-0 text-[var(--text-faint)]" />
         <input
           id={id}
@@ -729,7 +729,7 @@ function PasswordField({
                       : score === 2
                         ? "bg-[var(--warning)]"
                         : "bg-[var(--positive)]"
-                    : "bg-[rgba(255,255,255,.08)]"
+                    : "bg-[rgb(var(--fg-rgb)/.08)]"
                 }`}
               />
             ))}

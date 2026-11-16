@@ -35,7 +35,7 @@ export function OfferList({
                 <div className="text-sm font-medium">
                   {offer.provider_name} · {offer.name}
                   {offer.sponsored && (
-                    <span className="ml-2 rounded-full bg-[rgba(255,255,255,.06)] px-1.5 py-px text-[10px] font-medium text-[var(--text-faint)]">
+                    <span className="ml-2 rounded-full bg-[rgb(var(--fg-rgb)/.06)] px-1.5 py-px text-[10px] font-medium text-[var(--text-faint)]">
                       lien partenaire
                     </span>
                   )}

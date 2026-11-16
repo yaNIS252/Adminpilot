@@ -49,7 +49,7 @@ export function UpsellBanner() {
         onClick={dismiss}
         aria-label="Masquer cette bannière"
         title="Masquer"
-        className="absolute top-2.5 right-2.5 grid size-8 place-items-center rounded-lg text-[var(--text-faint)] transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-[var(--text)]"
+        className="absolute top-2.5 right-2.5 grid size-8 place-items-center rounded-lg text-[var(--text-faint)] transition-colors hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text)]"
       >
         <X className="size-4" />
       </button>

@@ -113,7 +113,7 @@ export function PushToggle() {
           disabled={state === "loading" || state === "busy" || state === "unsupported" || state === "denied"}
           onClick={on ? disable : enable}
           className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-40 ${
-            on ? "bg-[var(--accent)]" : "bg-[rgba(255,255,255,.12)]"
+            on ? "bg-[var(--accent)]" : "bg-[rgb(var(--fg-rgb)/.12)]"
           }`}
         >
           <span

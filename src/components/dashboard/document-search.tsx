@@ -65,7 +65,7 @@ export function DocumentSearch({ locked }: { locked: boolean }) {
 
   if (locked) {
     return (
-      <div className="flex flex-wrap items-center gap-3 rounded-[10px] border border-[var(--border)] bg-[rgba(255,255,255,.02)] px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-[10px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.02)] px-4 py-3">
         <Search className="size-4 shrink-0 text-[var(--text-faint)]" />
         <span className="min-w-[200px] flex-1 text-sm text-[var(--text-faint)]">
           Rechercher « facture EDF de mars »…
@@ -121,7 +121,7 @@ export function DocumentSearch({ locked }: { locked: boolean }) {
           event.preventDefault();
           void run(query);
         }}
-        className="flex items-center gap-2 rounded-[10px] border border-[var(--border)] bg-[rgba(255,255,255,.02)] px-3 focus-within:border-[var(--accent)]"
+        className="flex items-center gap-2 rounded-[10px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.02)] px-3 focus-within:border-[var(--accent)]"
       >
         <Search className="size-4 shrink-0 text-[var(--text-faint)]" />
         <input

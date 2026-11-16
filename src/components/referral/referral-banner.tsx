@@ -36,7 +36,7 @@ export function ReferralBanner() {
         onClick={dismiss}
         aria-label="Masquer la bande de parrainage"
         title="Masquer"
-        className="grid size-7 shrink-0 place-items-center rounded-md text-[var(--text-faint)] transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-[var(--text)]"
+        className="grid size-7 shrink-0 place-items-center rounded-md text-[var(--text-faint)] transition-colors hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text)]"
       >
         <X className="size-3.5" />
       </button>

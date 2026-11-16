@@ -121,7 +121,7 @@ export function ThemePicker({ initial, paid }: { initial: Theme; paid: boolean }
             type="button"
             onClick={cancel}
             aria-label="Fermer sans enregistrer"
-            className="grid size-8 place-items-center rounded-lg text-[var(--text-faint)] hover:bg-[rgba(255,255,255,.06)] hover:text-[var(--text)]"
+            className="grid size-8 place-items-center rounded-lg text-[var(--text-faint)] hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text)]"
           >
             <X className="size-4" />
           </button>
@@ -229,7 +229,7 @@ function Swatches<T extends string>({
                 style={{ background: item.hex }}
               >
                 {selected && (
-                  <Check className={`size-4 ${ring ? "text-white" : "text-[#16141f]"}`} />
+                  <Check className={`size-4 ${ring && item.id !== "clair" ? "text-white" : "text-[#16141f]"}`} />
                 )}
                 {locked && (
                   <span className="absolute -right-1 -bottom-1 grid size-[18px] place-items-center rounded-full border border-[var(--border-strong)] bg-[var(--bg-elevated)]">
@@ -260,7 +260,7 @@ function ThemeSample({ theme }: { theme: Theme }) {
       className="flex h-12 w-20 flex-col justify-end gap-1.5 rounded-[8px] border border-[var(--border-strong)] p-2"
       style={{ background: background.hex }}
     >
-      <span className="h-1.5 w-10 rounded-full bg-[rgba(255,255,255,.14)]" />
+      <span className="h-1.5 w-10 rounded-full bg-[rgb(var(--fg-rgb)/.14)]" />
       <span className="h-1.5 rounded-full" style={{ background: accent.hex }} />
     </span>
   );

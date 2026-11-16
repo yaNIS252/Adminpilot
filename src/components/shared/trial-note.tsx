@@ -1,7 +1,7 @@
 import { formatAmount, formatCycle } from "@/lib/format";
 
 /**
- * Essai gratuit en cours : pastille à côté du nom, et sous-texte en deux
+ * Essai gratuit en cours : sous-texte en deux
  * morceaux qui se replient proprement sur un écran de 375 px (« Gratuit
  * jusqu’au 20 nov. » puis « puis 12,99 € par mois »), au lieu d’une
  * seule phrase coupée n'importe où.
@@ -11,17 +11,6 @@ const SHORT_DATE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "sh
 
 function shortDate(iso: string): string {
   return SHORT_DATE.format(new Date(`${iso}T00:00:00Z`));
-}
-
-export function TrialBadge() {
-  return (
-    <span
-      title="Le premier prélèvement aura lieu à la fin de l'essai"
-      className="inline-flex shrink-0 items-center rounded-full bg-[rgba(63,207,149,.15)] px-1.5 py-px text-[10px] leading-4 font-semibold whitespace-nowrap text-[var(--positive-light)]"
-    >
-      Essai gratuit
-    </span>
-  );
 }
 
 export function TrialNote({

@@ -54,7 +54,7 @@ export function AccountActions({ email }: { email: string }) {
       <div className="flex flex-wrap gap-2">
         <a
           href="/api/account/export"
-          className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3.5 py-2.5 text-sm text-[var(--text-muted)] no-underline transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-white"
+          className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3.5 py-2.5 text-sm text-[var(--text-muted)] no-underline transition-colors hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text-bright)]"
         >
           <Download className="size-4" />
           Exporter mes données
@@ -62,7 +62,7 @@ export function AccountActions({ email }: { email: string }) {
         <button
           type="button"
           onClick={signOut}
-          className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3.5 py-2.5 text-sm text-[var(--text-muted)] transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-white"
+          className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3.5 py-2.5 text-sm text-[var(--text-muted)] transition-colors hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text-bright)]"
         >
           <LogOut className="size-4" />
           Se déconnecter
@@ -97,7 +97,7 @@ export function AccountActions({ email }: { email: string }) {
             value={confirmEmail}
             onChange={(event) => setConfirmEmail(event.target.value)}
             autoComplete="off"
-            className="mb-3 w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 py-2.5 text-sm outline-none focus:border-[var(--danger)]"
+            className="mb-3 w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-3 py-2.5 text-sm outline-none focus:border-[var(--danger)]"
           />
 
           {error && (

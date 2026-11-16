@@ -30,7 +30,7 @@ const CATEGORIES = [
 ] as const;
 
 const field =
-  "h-10 w-full rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 text-sm outline-none focus:border-[var(--accent)]";
+  "h-10 w-full rounded-[8px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-3 text-sm outline-none focus:border-[var(--accent)]";
 
 /**
  * Ajout d'un abonnement que l'analyse n'a pas trouvé. Deux chemins, présentés
@@ -117,13 +117,13 @@ export function AddSubscription({ inboxAddress }: { inboxAddress: string }) {
         type="button"
         onClick={() => setOpen(false)}
         aria-label="Fermer"
-        className="absolute top-3 right-3 grid size-8 place-items-center rounded-lg text-[var(--text-faint)] hover:bg-[rgba(255,255,255,.06)] hover:text-[var(--text)]"
+        className="absolute top-3 right-3 grid size-8 place-items-center rounded-lg text-[var(--text-faint)] hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text)]"
       >
         <X className="size-4" />
       </button>
       <h2 className="m-0 text-[15px] font-semibold">Ajouter un abonnement</h2>
 
-      <div className="mt-3 flex items-start gap-3 rounded-[10px] border border-[var(--border-soft)] bg-[rgba(255,255,255,.02)] p-3.5 text-[13px] leading-[1.55] text-[var(--text-dim)]">
+      <div className="mt-3 flex items-start gap-3 rounded-[10px] border border-[var(--border-soft)] bg-[rgb(var(--fg-rgb)/.02)] p-3.5 text-[13px] leading-[1.55] text-[var(--text-dim)]">
         <Forward className="mt-0.5 size-4 shrink-0 text-[var(--accent-light)]" />
         <p className="m-0">
           <strong className="text-[var(--text)]">Le plus simple : transfère l’e-mail de facture</strong>{" "}

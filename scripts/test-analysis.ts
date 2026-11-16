@@ -17,6 +17,7 @@ const offer = (o: Partial<ReferenceOffer>): ReferenceOffer => ({
   url: "https://exemple.fr",
   affiliate_url: null,
   checked_at: "2026-11-01",
+  details: o.details ?? {},
 });
 
 const box = { id: "s1", provider: "Orange", amount: 45, cycle: "monthly", category: "telecom" };
@@ -46,4 +47,30 @@ const ins = recommend(
 );
 assert.equal(Math.round(ins[0].yearlySaving), 96);
 
-console.log("recommend : 6 cas OK");
+// Énergie : remise de 10 % sur le kWh, appliquée à 80 % d'une facture de
+// 100 €/mois → 92 €/mois, -96 €/an, signalé comme estimation.
+const energy = recommend(
+  [{ id: "e", provider: "EDF", amount: 100, cycle: "monthly", category: "energie" }],
+  [offer({ category: "energie", provider_name: "TotalEnergies", details: { remise_kwh_pct: 10 } })],
+);
+assert.equal(Math.round(energy[0].yearlySaving), 96);
+assert.equal(energy[0].estimated, true);
+// Une offre d'énergie sans remise renseignée n'est jamais proposée.
+assert.equal(recommend([{ id: "e", provider: "EDF", amount: 100, cycle: "monthly", category: "energie" }], [offer({ category: "energie", monthly_price: 50 })]).length, 0);
+
+// Alternatives : la moins chère d'abord, puis deux autres fournisseurs au plus,
+// jamais la propre marque de l'utilisateur.
+const many = recommend(
+  [{ id: "f", provider: "Free Mobile", amount: 19.99, cycle: "monthly", category: "telecom" }],
+  [
+    offer({ id: "1", kind: "mobile", monthly_price: 9.9, provider_name: "Réglo Mobile" }),
+    offer({ id: "2", kind: "mobile", monthly_price: 8.99, provider_name: "Lyca Mobile" }),
+    offer({ id: "3", kind: "mobile", monthly_price: 9.99, provider_name: "NRJ Mobile" }),
+    offer({ id: "4", kind: "mobile", monthly_price: 9.99, provider_name: "Syma" }),
+    offer({ id: "5", kind: "mobile", monthly_price: 5, provider_name: "Free" }),
+  ],
+);
+assert.equal(many[0].offer.id, "2");
+assert.deepEqual(many[0].alternatives.map((a) => a.offer.id), ["1", "3"]);
+
+console.log("recommend : 10 cas OK");

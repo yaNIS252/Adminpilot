@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { ArrowUpDown, Check, LogOut, Pencil, Trash2, X } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 
-import { TrialBadge, TrialNote } from "@/components/shared/trial-note";
+import { Countdown } from "@/components/shared/countdown";
+import { TrialNote } from "@/components/shared/trial-note";
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
 import { SelectMenu } from "@/components/shared/select-menu";
 import { BILLING_CYCLES } from "@/lib/ai/schemas";
@@ -219,7 +220,11 @@ export function SubscriptionList({
                           currency={sub.currency}
                         />
                       )}
-                      {trialUntil && <TrialBadge />}
+                      {trialUntil ? (
+                        <Countdown iso={trialUntil} trial />
+                      ) : (
+                        sub.next_renewal && <Countdown iso={sub.next_renewal} />
+                      )}
                       {uncertain && (
                         <span
                           title="Détecté automatiquement, non vérifié"
@@ -263,7 +268,7 @@ export function SubscriptionList({
                   {isOwnSubscription(sub) ? (
                     <Link
                       href="/reglages#abonnement"
-                      className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3 py-2 text-sm text-[var(--text-muted)] no-underline transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-white"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3 py-2 text-sm text-[var(--text-muted)] no-underline transition-colors hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text-bright)]"
                     >
                       Géré dans Réglages
                     </Link>
@@ -290,7 +295,7 @@ export function SubscriptionList({
                       {!reviewMode && (
                         <Link
                           href={`/abonnements/${sub.id}/resilier`}
-                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3 py-2 text-sm text-[var(--text-muted)] no-underline transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-white sm:flex-none"
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3 py-2 text-sm text-[var(--text-muted)] no-underline transition-colors hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text-bright)] sm:flex-none"
                         >
                           <LogOut className="size-4" />
                           Résilier
@@ -368,7 +373,7 @@ function Action({
 }) {
   const tones = {
     neutral:
-      "border-[var(--border-strong)] text-[var(--text-muted)] hover:bg-[rgba(255,255,255,.06)] hover:text-white",
+      "border-[var(--border-strong)] text-[var(--text-muted)] hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text-bright)]",
     positive:
       "border-[rgba(63,207,149,.35)] text-[var(--positive-light)] hover:bg-[rgba(63,207,149,.12)]",
     danger:
@@ -427,7 +432,7 @@ function EditForm({
           value={provider}
           onChange={(event) => setProvider(event.target.value)}
           required
-          className="w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
+          className="w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
         />
       </Field>
 
@@ -438,7 +443,7 @@ function EditForm({
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
             placeholder="13,49"
-            className="mono w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
+            className="mono w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
           />
         </Field>
         <Field label="Périodicité">
@@ -447,7 +452,7 @@ function EditForm({
             onChange={(event) =>
               setCycle(event.target.value as Subscription["cycle"])
             }
-            className="w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
           >
             {BILLING_CYCLES.map((value) => (
               <option
@@ -467,7 +472,7 @@ function EditForm({
           type="date"
           value={renewal}
           onChange={(event) => setRenewal(event.target.value)}
-          className="mono w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
+          className="mono w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
         />
       </Field>
 
@@ -483,7 +488,7 @@ function EditForm({
         <button
           type="button"
           onClick={onCancel}
-          className="flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-4 py-2.5 text-sm text-[var(--text-muted)] hover:bg-[rgba(255,255,255,.06)]"
+          className="flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-4 py-2.5 text-sm text-[var(--text-muted)] hover:bg-[rgb(var(--fg-rgb)/.06)]"
         >
           <X className="size-4" />
           Annuler

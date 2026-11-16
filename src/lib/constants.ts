@@ -97,6 +97,7 @@ export function isAccentId(value: string): value is AccentId {
 export const BACKGROUNDS = [
   { id: "nuit", label: "Nuit", hex: "#0a0a0f", free: true },
   { id: "charbon", label: "Charbon", hex: "#141414", free: true },
+  { id: "clair", label: "Clair", hex: "#f6f5f1", free: true },
   { id: "ardoise", label: "Ardoise", hex: "#0c121a", free: false },
   { id: "foret", label: "Forêt", hex: "#0a120e", free: false },
   { id: "prune", label: "Prune", hex: "#130c16", free: false },

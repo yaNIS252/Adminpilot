@@ -39,7 +39,7 @@ export default async function AnalysePage() {
       .eq("over_quota", false),
     supabase
       .from("offers")
-      .select("id, category, kind, provider_name, name, monthly_price, conditions, url, affiliate_url, checked_at")
+      .select("id, category, kind, provider_name, name, monthly_price, conditions, url, affiliate_url, checked_at, details")
       .eq("active", true)
       .in("category", [...ANALYSED_CATEGORIES])
       .or(`valid_until.is.null,valid_until.gte.${new Date().toISOString().slice(0, 10)}`),
@@ -59,6 +59,7 @@ export default async function AnalysePage() {
         currentMonthly: 0,
         yearlySaving: 0,
         monthlySaving: 0,
+        alternatives: [],
         offer: {
           ...reco.offer,
           id: "masque",
@@ -120,9 +121,33 @@ export default async function AnalysePage() {
                 <p className="m-0 text-[15px] leading-[1.55]">
                   Tu paies <strong>{formatAmount(reco.currentMonthly)}/mois</strong> chez{" "}
                   {reco.subscription.provider}. Offre <strong>{reco.offer.name}</strong> de{" "}
-                  {reco.offer.provider_name} à <strong>{formatAmount(reco.offer.monthly_price)}</strong>{" "}
-                  → <strong className="text-[var(--positive-light)]">-{formatAmount(reco.yearlySaving)}/an</strong>
+                  {reco.offer.provider_name}
+                  {reco.estimated ? (
+                    <> : environ <strong>{formatAmount(reco.currentMonthly - reco.monthlySaving)}/mois</strong> pour ta consommation</>
+                  ) : (
+                    <> à <strong>{formatAmount(reco.offer.monthly_price)}</strong></>
+                  )}{" "}
+                  → <strong className="text-[var(--positive-light)]">
+                    {reco.estimated ? "≈ " : ""}-{formatAmount(reco.yearlySaving)}/an
+                  </strong>
                 </p>
+                {reco.alternatives.length > 0 && (
+                  <ul className="m-0 mt-2 list-none space-y-1 p-0 text-[13px] text-[var(--text-dim)]">
+                    {reco.alternatives.map((alt) => (
+                      <li key={alt.offer.id} className="flex flex-wrap items-center gap-x-2">
+                        <span>
+                          Aussi : {alt.offer.name} ({alt.offer.provider_name}),{" "}
+                          {alt.estimated ? "environ " : ""}
+                          {formatAmount(alt.monthly)}/mois,{" "}
+                          <span className="text-[var(--positive-light)]">-{formatAmount(alt.yearlySaving)}/an</span>
+                        </span>
+                        <a href={`/api/go/${alt.offer.id}`} target="_blank" rel="noopener noreferrer" className="text-xs">
+                          Voir
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <p className="m-0 mt-2 text-xs text-[var(--text-faint)]">
                   {reco.offer.conditions ? `${reco.offer.conditions} · ` : ""}
                   Prix vérifié le {formatDate(reco.offer.checked_at)} ·{" "}
@@ -179,7 +204,7 @@ export default async function AnalysePage() {
                   <span className="text-[var(--text-dim)]">{CATEGORY_LABELS[category] ?? category}</span>
                   <span className="mono">{formatAmount(amount)}/mois</span>
                 </div>
-                <div className="mt-1.5 h-[5px] overflow-hidden rounded-[5px] bg-[rgba(255,255,255,.06)]">
+                <div className="mt-1.5 h-[5px] overflow-hidden rounded-[5px] bg-[rgb(var(--fg-rgb)/.06)]">
                   <div
                     className="h-full bg-[var(--accent)]"
                     style={{ width: `${Math.max(3, (amount / monthlyTotal) * 100)}%` }}

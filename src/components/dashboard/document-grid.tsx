@@ -157,7 +157,7 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
         className={`anim-up rounded-[var(--radius-xl)] border border-dashed p-8 text-center transition-colors ${
           dragging
             ? "border-[var(--accent)] bg-[rgb(var(--accent-rgb)/.08)]"
-            : "border-[var(--border-strong)] bg-[rgba(255,255,255,.02)]"
+            : "border-[var(--border-strong)] bg-[rgb(var(--fg-rgb)/.02)]"
         }`}
       >
         <span className="mx-auto mb-3 grid size-11 place-items-center rounded-[var(--radius)] bg-[rgb(var(--accent-rgb)/.14)] text-[var(--accent-light)]">
@@ -196,7 +196,7 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
       {status && (
         <p
           role="status"
-          className="m-0 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-4 py-2.5 text-sm text-[var(--text-dim)]"
+          className="m-0 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-4 py-2.5 text-sm text-[var(--text-dim)]"
         >
           {status}
         </p>
@@ -231,7 +231,7 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
               key={doc.id}
               className="card-sheen flex flex-wrap items-center gap-3 rounded-[var(--radius-xl)] border border-[var(--border)] p-4 transition-colors hover:border-[rgb(var(--accent-rgb)/.28)]"
             >
-              <span className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-[rgba(111,124,245,.14)] text-[#aab3ff]">
+              <span className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-[rgba(111,124,245,.14)] text-[var(--accent-blue-light)]">
                 <FileText className="size-[18px]" />
               </span>
 
@@ -259,7 +259,7 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
                 <button
                   type="button"
                   onClick={() => open(doc.id)}
-                  className="flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3 py-2 text-xs font-medium text-[var(--text-muted)] transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-white"
+                  className="flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-strong)] px-3 py-2 text-xs font-medium text-[var(--text-muted)] transition-colors hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text-bright)]"
                 >
                   <ExternalLink className="size-4" />
                   Ouvrir
@@ -299,7 +299,7 @@ function Pill({
       className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
         active
           ? "border-[rgb(var(--accent-rgb)/.45)] bg-[rgb(var(--accent-rgb)/.16)] text-[var(--accent-lighter)]"
-          : "border-[var(--border)] text-[var(--text-dim)] hover:bg-[rgba(255,255,255,.05)]"
+          : "border-[var(--border)] text-[var(--text-dim)] hover:bg-[rgb(var(--fg-rgb)/.05)]"
       }`}
     >
       {children}

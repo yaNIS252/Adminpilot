@@ -13,7 +13,7 @@ type Row = {
 const STATUS: Record<Row["status"], { label: string; className: string }> = {
   signed_up: {
     label: "inscrit",
-    className: "bg-[rgba(255,255,255,.06)] text-[var(--text-dim)]",
+    className: "bg-[rgb(var(--fg-rgb)/.06)] text-[var(--text-dim)]",
   },
   pending: {
     label: "en attente de validation",
@@ -25,7 +25,7 @@ const STATUS: Record<Row["status"], { label: string; className: string }> = {
   },
   capped: {
     label: "plafond atteint",
-    className: "bg-[rgba(255,255,255,.06)] text-[var(--text-faint)]",
+    className: "bg-[rgb(var(--fg-rgb)/.06)] text-[var(--text-faint)]",
   },
 };
 

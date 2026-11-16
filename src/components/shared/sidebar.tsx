@@ -88,7 +88,7 @@ export function Sidebar({
         md:justify-start md:border-t-0 md:bg-transparent md:p-3.5
       "
     >
-      <div className="hidden h-full flex-col gap-1 rounded-[var(--radius-xl)] border border-[var(--border)] bg-[rgba(255,255,255,.02)] px-3 py-3.5 backdrop-blur-xl md:flex">
+      <div className="hidden h-full flex-col gap-1 rounded-[var(--radius-xl)] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.02)] px-3 py-3.5 backdrop-blur-xl md:flex">
         <div className="flex items-center gap-2.5 px-1.5 pt-1 pb-[18px]">
           <Link
             href="/dashboard"
@@ -103,7 +103,7 @@ export function Sidebar({
           <span
             className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
               plan === "free"
-                ? "bg-[rgba(255,255,255,.06)] text-[var(--text-faint)]"
+                ? "bg-[rgb(var(--fg-rgb)/.06)] text-[var(--text-faint)]"
                 : "bg-[rgb(var(--accent-rgb)/.18)] text-[var(--accent-lighter)]"
             }`}
           >
@@ -123,7 +123,7 @@ export function Sidebar({
               className={`relative flex items-center gap-2.5 rounded-[var(--radius-xs)] px-2.5 py-[9px] text-sm no-underline transition-colors ${
                 active
                   ? "bg-[rgb(var(--accent-rgb)/.14)] text-[var(--accent-lighter)] shadow-[inset_2px_0_0_var(--accent)]"
-                  : "text-[#7a7a8c] hover:bg-[rgba(255,255,255,.04)] hover:text-[var(--text)]"
+                  : "text-[var(--text-ghost)] hover:bg-[rgb(var(--fg-rgb)/.04)] hover:text-[var(--text)]"
               }`}
             >
               <Icon className="size-[17px] shrink-0" />
@@ -153,7 +153,7 @@ export function Sidebar({
         {documentsLimit !== null && (
           <Link
             href="/reglages?formule=pro#formules"
-            className="group mb-2.5 block rounded-[var(--radius-md)] border border-[var(--border)] bg-[rgba(255,255,255,.02)] p-3.5 text-[var(--text)] no-underline transition-colors hover:border-[rgb(var(--accent-rgb)/.4)] hover:text-[var(--text)]"
+            className="group mb-2.5 block rounded-[var(--radius-md)] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.02)] p-3.5 text-[var(--text)] no-underline transition-colors hover:border-[rgb(var(--accent-rgb)/.4)] hover:text-[var(--text)]"
           >
             <div className="flex justify-between text-xs text-[var(--text-faint)]">
               <span>Documents</span>
@@ -161,7 +161,7 @@ export function Sidebar({
                 {documentsUsed} / {documentsLimit}
               </span>
             </div>
-            <div className="mt-2 h-[5px] overflow-hidden rounded-[5px] bg-[rgba(255,255,255,.06)]">
+            <div className="mt-2 h-[5px] overflow-hidden rounded-[5px] bg-[rgb(var(--fg-rgb)/.06)]">
               <div
                 className="h-full bg-[var(--accent)]"
                 style={{ width: `${Math.max(3, quotaRatio * 100)}%` }}
@@ -174,7 +174,7 @@ export function Sidebar({
           </Link>
         )}
 
-        <div className="flex items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[rgba(255,255,255,.03)] p-2">
+        <div className="flex items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] p-2">
           <Avatar name={name ?? email} url={avatarUrl} size={34} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-semibold">
@@ -187,7 +187,7 @@ export function Sidebar({
           <Link
             href="/reglages"
             title="Réglages"
-            className="grid size-[30px] shrink-0 place-items-center rounded-lg text-[var(--text-faint)] transition-colors hover:bg-[rgba(255,255,255,.06)] hover:text-white"
+            className="grid size-[30px] shrink-0 place-items-center rounded-lg text-[var(--text-faint)] transition-colors hover:bg-[rgb(var(--fg-rgb)/.06)] hover:text-[var(--text-bright)]"
           >
             <Settings className="size-4" />
           </Link>

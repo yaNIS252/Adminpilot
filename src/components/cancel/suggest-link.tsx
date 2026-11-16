@@ -73,7 +73,7 @@ export function SuggestLink({ subscriptionId, provider }: { subscriptionId: stri
           inputMode="url"
           autoCapitalize="none"
           spellCheck={false}
-          className="h-10 min-w-0 flex-1 rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 text-sm outline-none focus:border-[var(--accent)]"
+          className="h-10 min-w-0 flex-1 rounded-[8px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-3 text-sm outline-none focus:border-[var(--accent)]"
         />
         <button type="submit" disabled={state === "busy"} className="btn-secondary h-10 px-4 text-[13px] disabled:opacity-60">
           {state === "busy" ? "Vérification…" : "Proposer"}

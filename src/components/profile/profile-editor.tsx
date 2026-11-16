@@ -152,7 +152,7 @@ export function ProfileEditor({
             }}
             maxLength={60}
             placeholder="Ton prénom"
-            className="h-10 min-w-[200px] flex-1 rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 text-sm outline-none focus:border-[var(--accent)]"
+            className="h-10 min-w-[200px] flex-1 rounded-[8px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-3 text-sm outline-none focus:border-[var(--accent)]"
           />
           <button
             type="submit"

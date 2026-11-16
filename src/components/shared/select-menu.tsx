@@ -84,7 +84,7 @@ export function SelectMenu<T extends string>({
         className={`${block ? "flex h-10 w-full text-sm" : "inline-flex h-9 text-[13px]"} items-center gap-2 rounded-[9px] border px-3 transition-colors ${
           open
             ? "border-[rgb(var(--accent-rgb)/.55)] bg-[var(--accent-soft)] text-[var(--text)]"
-            : "border-[var(--border)] bg-[rgba(255,255,255,.03)] text-[var(--text-dim)] hover:border-[var(--border-strong)] hover:text-[var(--text)]"
+            : "border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] text-[var(--text-dim)] hover:border-[var(--border-strong)] hover:text-[var(--text)]"
         }`}
       >
         {icon && <span className="text-[var(--accent-light)]">{icon}</span>}
@@ -110,7 +110,7 @@ export function SelectMenu<T extends string>({
                 onPointerEnter={() => setActive(index)}
                 onClick={() => choose(index)}
                 className={`flex cursor-pointer items-center justify-between gap-4 rounded-[7px] px-3 py-2 text-[13px] whitespace-nowrap ${
-                  index === active ? "bg-[rgba(255,255,255,.06)] text-[var(--text)]" : "text-[var(--text-dim)]"
+                  index === active ? "bg-[rgb(var(--fg-rgb)/.06)] text-[var(--text)]" : "text-[var(--text-dim)]"
                 }`}
               >
                 {option.label}

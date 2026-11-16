@@ -51,7 +51,7 @@ export function PasswordSetter() {
         Google ou du code par e-mail.
       </p>
       <div className="flex flex-wrap gap-2">
-        <div className="flex h-10 min-w-[220px] flex-1 items-center rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] pr-1 pl-3 focus-within:border-[var(--accent)]">
+        <div className="flex h-10 min-w-[220px] flex-1 items-center rounded-[8px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] pr-1 pl-3 focus-within:border-[var(--accent)]">
           <input
             type={show ? "text" : "password"}
             value={password}

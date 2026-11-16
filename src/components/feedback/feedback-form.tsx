@@ -82,7 +82,7 @@ export function FeedbackForm({
                 ? "Qu’est-ce qui te plaît le plus ? (facultatif)"
                 : "Qu’est-ce qui manque ou ne marche pas ? (facultatif)"
             }
-            className="rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+            className="rounded-[8px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
           />
           <div className="flex items-center gap-3">
             <button

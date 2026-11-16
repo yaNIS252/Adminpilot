@@ -4,8 +4,10 @@ import {
   ArrowRight,
   CalendarRange,
   ChartPie,
+  ChevronRight,
   Mail,
   FileText,
+  Gift,
   Layers,
   ScanEye,
   TrendingDown,
@@ -20,6 +22,7 @@ import {
 import { UpsellBanner } from "@/components/billing/upsell-banner";
 import { OpenTourButton } from "@/components/onboarding/open-tour-button";
 import { PaymentConfirmation } from "@/components/billing/payment-confirmation";
+import { Countdown } from "@/components/shared/countdown";
 import { ShareCard } from "@/components/referral/share-card";
 
 import { ProviderAvatar } from "@/components/shared/provider-avatar";
@@ -30,7 +33,6 @@ import { SHARE_COOKIE, TOUR_MAILBOX_STEP, UPSELL_COOKIE } from "@/lib/constants"
 import { periodsPerYear } from "@/lib/ingest/price-tracker";
 import {
   activeTrialUntil,
-  daysUntil,
   formatAmount,
   formatCycle,
   formatDate,
@@ -186,6 +188,13 @@ export default async function DashboardPage({
     .filter(([, amount]) => amount > 0)
     .sort((a, b) => b[1] - a[1]);
 
+  // Essais gratuits en cours, du plus proche de sa fin au plus lointain :
+  // c'est l'argent qu'on peut encore ne jamais dépenser.
+  const trials = subs
+    .map((sub) => ({ sub, until: activeTrialUntil(sub.metadata) }))
+    .filter((item): item is { sub: (typeof subs)[number]; until: string } => Boolean(item.until))
+    .sort((a, b) => a.until.localeCompare(b.until));
+
   const upcoming = subs
     .filter((sub) => sub.next_renewal)
     .sort((a, b) => a.next_renewal!.localeCompare(b.next_renewal!))
@@ -312,6 +321,47 @@ export default async function DashboardPage({
         </section>
       ) : null}
 
+      {trials.length > 0 && (
+        <section className="anim-up rounded-[var(--radius-xl)] border border-[rgba(224,161,56,.4)] bg-[rgba(224,161,56,.07)] p-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Gift className="size-4 text-[var(--warning-light)]" />
+            <h2 className="m-0 text-[15px] font-semibold">
+              {trials.length === 1 ? "Essai gratuit en cours" : `${trials.length} essais gratuits en cours`}
+            </h2>
+          </div>
+          <p className="m-0 mt-1 text-[13px] text-[var(--text-dim)]">
+            Résilie avant la fin si tu ne veux pas le garder : rien ne sera prélevé.
+          </p>
+          <ul className="m-0 mt-3 list-none space-y-2 p-0">
+            {trials.map(({ sub, until }) => (
+              <li
+                key={sub.id}
+                className="flex flex-wrap items-center gap-3 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg-elevated)] p-3"
+              >
+                <ProviderAvatar name={sub.provider} size={36} />
+                <div className="min-w-[9rem] flex-1">
+                  <div className="text-sm font-medium">{sub.provider}</div>
+                  <div className="text-xs text-[var(--text-faint)]">
+                    Gratuit jusqu’au {formatDate(until)}, puis{" "}
+                    <span className="mono text-[var(--text)]">
+                      {formatAmount(sub.amount, sub.currency) ?? "montant inconnu"}
+                    </span>{" "}
+                    {formatCycle(sub.cycle)}
+                  </div>
+                </div>
+                <Countdown iso={until} trial size="lg" />
+                <Link
+                  href={`/abonnements/${sub.id}/resilier`}
+                  className="btn-secondary h-9 px-3 text-[13px]"
+                >
+                  Résilier à temps
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))]">
         <Stat
           icon={<Wallet className="size-4 text-[var(--accent-light)]" />}
@@ -327,7 +377,7 @@ export default async function DashboardPage({
           }
         />
         <Stat
-          icon={<CalendarRange className="size-4 text-[#aab3ff]" />}
+          icon={<CalendarRange className="size-4 text-[var(--accent-blue-light)]" />}
           tint="rgba(111,124,245,"
           label="Projection annuelle"
           value={formatAmount(monthlyTotal * 12) ?? "—"}
@@ -452,7 +502,7 @@ export default async function DashboardPage({
                       {formatAmount(amount)}
                     </span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,.06)]">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-[rgb(var(--fg-rgb)/.06)]">
                     <div
                       className="h-full rounded-full bg-[var(--accent)]"
                       style={{
@@ -477,14 +527,13 @@ export default async function DashboardPage({
           ) : (
             <ul className="m-0 mt-3 list-none space-y-0.5 p-0">
               {upcoming.map((sub) => {
-                const days = daysUntil(sub.next_renewal!);
                 const uncertain =
                   !sub.confirmed_by_user && sub.confidence < 0.7;
 
                 return (
                   <li
                     key={sub.id}
-                    className="flex items-center gap-3 rounded-[var(--radius-sm)] px-2 py-2 transition-colors hover:bg-[rgba(255,255,255,.04)]"
+                    className="flex items-center gap-3 rounded-[var(--radius-sm)] px-2 py-2 transition-colors hover:bg-[rgb(var(--fg-rgb)/.04)]"
                   >
                     <ProviderAvatar name={sub.provider} size={34} />
                     <div className="min-w-0 flex-1">
@@ -509,17 +558,12 @@ export default async function DashboardPage({
                       <div className="mono text-[13px] font-semibold">
                         {formatAmount(sub.amount, sub.currency) ?? "—"}
                       </div>
-                      <span
-                        className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                          days <= 3
-                            ? "bg-[rgba(240,113,104,.14)] text-[var(--danger-light)]"
-                            : days <= 10
-                              ? "bg-[rgba(224,161,56,.14)] text-[var(--warning-light)]"
-                              : "bg-[rgba(255,255,255,.05)] text-[var(--text-faint)]"
-                        }`}
-                      >
-                        {formatRelativeDeadline(sub.next_renewal!)}
-                      </span>
+                      <div className="mt-0.5">
+                        <Countdown
+                          iso={sub.next_renewal!}
+                          trial={Boolean(activeTrialUntil(sub.metadata))}
+                        />
+                      </div>
                     </div>
                   </li>
                 );
@@ -537,9 +581,9 @@ export default async function DashboardPage({
             {(documents ?? []).map((doc) => (
               <li
                 key={doc.id}
-                className="flex items-center gap-3 rounded-[var(--radius-sm)] px-2 py-2 transition-colors hover:bg-[rgba(255,255,255,.04)]"
+                className="flex items-center gap-3 rounded-[var(--radius-sm)] px-2 py-2 transition-colors hover:bg-[rgb(var(--fg-rgb)/.04)]"
               >
-                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[rgba(111,124,245,.14)] text-[#aab3ff]">
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[rgba(111,124,245,.14)] text-[var(--accent-blue-light)]">
                   <FileText className="size-4" />
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[13px]">
@@ -627,11 +671,15 @@ function Card({
           )}
         </div>
         {href && (
+          // Un vrai bouton, pas un lien gris : écrit en petit, « Analyse et
+          // économies » passait inaperçu et personne ne savait que la page
+          // existait.
           <Link
             href={href}
-            className="shrink-0 text-xs text-[var(--text-dim)] hover:text-[var(--accent-light)]"
+            className="btn-secondary h-8 shrink-0 gap-1 px-3 text-xs hover:border-[var(--accent)] hover:text-[var(--accent-light)]"
           >
             {hrefLabel}
+            <ChevronRight className="size-3.5" />
           </Link>
         )}
       </div>

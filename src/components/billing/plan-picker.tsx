@@ -191,7 +191,7 @@ export function PlanPicker({
                   )}
                   {PLAN_LABELS[value]}
                   {isCurrent && (
-                    <span className="rounded-full bg-[rgba(255,255,255,.07)] px-2 py-px text-[10px] font-semibold tracking-wide text-[var(--text-faint)] uppercase">
+                    <span className="rounded-full bg-[rgb(var(--fg-rgb)/.07)] px-2 py-px text-[10px] font-semibold tracking-wide text-[var(--text-faint)] uppercase">
                       Actuelle
                     </span>
                   )}

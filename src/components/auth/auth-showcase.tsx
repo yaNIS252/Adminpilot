@@ -34,7 +34,7 @@ export function AuthShowcase() {
               <span
                 key={index}
                 style={{ height: `${height}%` }}
-                className="flex-1 rounded-[3px] bg-[rgba(255,255,255,.08)]"
+                className="flex-1 rounded-[3px] bg-[rgb(var(--fg-rgb)/.08)]"
               />
             ))}
             <span className="h-[64%] flex-1 rounded-[3px] bg-[var(--accent)]" />

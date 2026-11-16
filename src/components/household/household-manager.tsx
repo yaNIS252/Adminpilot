@@ -139,7 +139,7 @@ export function HouseholdManager({
               onChange={(event) => setEmail(event.target.value)}
               placeholder="adresse@exemple.fr"
               aria-label="Adresse e-mail de la personne à inviter"
-              className="h-10 min-w-[200px] flex-[2] rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 text-sm outline-none focus:border-[var(--accent)]"
+              className="h-10 min-w-[200px] flex-[2] rounded-[8px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-3 text-sm outline-none focus:border-[var(--accent)]"
             />
             <input
               type="text"
@@ -148,7 +148,7 @@ export function HouseholdManager({
               placeholder="Prénom (facultatif)"
               aria-label="Prénom"
               maxLength={60}
-              className="h-10 min-w-[140px] flex-1 rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,.03)] px-3 text-sm outline-none focus:border-[var(--accent)]"
+              className="h-10 min-w-[140px] flex-1 rounded-[8px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.03)] px-3 text-sm outline-none focus:border-[var(--accent)]"
             />
             <button
               type="submit"
@@ -167,7 +167,7 @@ export function HouseholdManager({
       )}
 
       {invite && (
-        <div role="status" className="rounded-[10px] border border-[var(--border)] bg-[rgba(255,255,255,.02)] p-4">
+        <div role="status" className="rounded-[10px] border border-[var(--border)] bg-[rgb(var(--fg-rgb)/.02)] p-4">
           <div className="flex items-center gap-2 text-[13px] font-medium">
             <Mail className="size-4 text-[var(--accent-light)]" />
             {invite.emailed
