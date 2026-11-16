@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/supabase/types";
@@ -11,7 +13,16 @@ import type { Profile } from "@/lib/supabase/types";
  * déjà les pages, mais une route API doit vérifier elle-même : un appel direct
  * ne passe pas forcément par le chemin qu'on imagine.
  */
-export async function requireUser(): Promise<
+export const requireUser = cache(loadUser);
+
+/**
+ * `cache` : la mise en page et la page appellent toutes deux `requireUser`
+ * pour le même affichage. Sans lui, chaque clic dans le menu vérifiait deux
+ * fois la session auprès de Supabase et relisait deux fois le profil, en
+ * série, avant d'afficher quoi que ce soit. La mémoire ne dure que le temps
+ * d'une requête : rien n'est partagé entre deux utilisateurs.
+ */
+async function loadUser(): Promise<
   { userId: string; profile: Profile } | null
 > {
   const supabase = await createClient();
