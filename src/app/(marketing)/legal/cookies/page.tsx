@@ -146,7 +146,7 @@ export default function CookiesPage() {
           <li>Aucun cookie publicitaire</li>
           <li>Aucun traceur de réseau social</li>
           <li>Aucune mesure d’audience tierce</li>
-          <li>Aucun pixel de suivi dans les emails d’alerte</li>
+          <li>Aucun pixel de suivi dans les e-mails d’alerte</li>
         </ul>
       </Block>
 

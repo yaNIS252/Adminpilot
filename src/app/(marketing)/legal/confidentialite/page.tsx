@@ -61,7 +61,7 @@ export default function PrivacyPage() {
 
       <Block title="3. Combien de temps nous les conservons">
         <p>
-          Les emails bruts sont supprimés de notre stockage{" "}
+          Les e-mails bruts sont supprimés de notre stockage{" "}
           <strong>{RAW_RETENTION_DAYS} jours</strong> après leur analyse. Cette
           fenêtre existe pour pouvoir rejouer une extraction ratée ; passé ce
           délai, le message d’origine n’existe plus.
@@ -133,8 +133,8 @@ export default function PrivacyPage() {
         </p>
         <p>
           Dans un foyer Premium, si tu l’acceptes dans tes réglages, les
-          autres membres volontaires voient les services que vous payez en
-          double, avec le nombre de payeurs, sans savoir qui paie. Tu peux
+          autres membres volontaires voient les services payés en
+          double dans le foyer, avec le nombre de payeurs, sans savoir qui paie. Tu peux
           retirer cet accord à tout moment.
         </p>
         <p>
@@ -156,7 +156,7 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong className="text-[var(--text)]">Resend</strong> — réception
-            des emails transférés et envoi des alertes. Hébergement dans
+            des e-mails transférés et envoi des alertes. Hébergement dans
             l’Union européenne.
           </li>
           <li>

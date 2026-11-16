@@ -8,7 +8,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "Guides de résiliation — AdminPilot",
   description:
-    "Comment résilier vos abonnements énergie, télécom, streaming, assurance ou banque : base légale, procédure et délais, fournisseur par fournisseur.",
+    "Comment résilier tes abonnements énergie, télécom, streaming, assurance ou banque : base légale, procédure et délais, fournisseur par fournisseur.",
 };
 
 /**
@@ -79,7 +79,7 @@ export default async function CancelIndexPage() {
           Et si tu n’avais rien à chercher ?
         </h2>
         <p className="m-0 mb-3 text-sm">
-          AdminPilot repère tes abonnements dans tes emails, t’alerte avant
+          AdminPilot repère tes abonnements dans tes e-mails, t’alerte avant
           chaque reconduction et prépare un message pour négocier une remise avant de partir.
         </p>
         <Link

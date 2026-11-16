@@ -488,6 +488,10 @@ export async function processDocumentJob(job: {
   });
   const { data } = result;
   const needsReview = data.confidence < REVIEW_THRESHOLD;
+  // Une facture n'a pas d'échéance à elle : la date qu'elle porte est celle
+  // d'un paiement déjà fait ou suivi par l'abonnement. Pas de compte à
+  // rebours ni de rappel pour elle (la date sert encore à l'abonnement).
+  const docDeadline = data.category === "facture" ? null : data.deadline;
 
   const { data: inserted, error } = await db
     .from("documents")
@@ -498,7 +502,7 @@ export async function processDocumentJob(job: {
       filename_original: job.payload.filename,
       filename_ai: data.suggested_name,
       category: data.category,
-      deadline: data.deadline,
+      deadline: docDeadline,
       confidence: data.confidence,
       source_job_id: job.id,
       extracted_data: {
@@ -521,9 +525,8 @@ export async function processDocumentJob(job: {
   // L'IA classe parfois un contrat en « autre » tout en le nommant
   // « Contrat_… » : le nom qu'elle a choisi fait foi.
   const isContract = data.category === "contrat" || /^contrat_/i.test(data.suggested_name);
-  let linkedSubscription = false;
   if (data.provider && !needsReview) {
-    linkedSubscription = await completeSubscriptionFromDocument(db, job.user_id, {
+    await completeSubscriptionFromDocument(db, job.user_id, {
       provider: data.provider,
       category: isContract ? "contrat" : data.category,
       amount: data.amount,
@@ -534,25 +537,21 @@ export async function processDocumentJob(job: {
     });
   }
 
-  // La facture d'un abonnement suivi n'a pas besoin de son propre rappel :
-  // celui de l'abonnement (prochain prélèvement) le couvre déjà, et deux
-  // alertes pour un même paiement font du bruit. Un avis d'impôt, une fin
-  // de contrat ou une facture isolée gardent le leur.
-  const coveredBySubscription = data.category === "facture" && linkedSubscription;
-  if (data.deadline && !needsReview && !coveredBySubscription) {
+  // Fin de contrat, avis d'impôt, garantie : un rappel avant l'échéance.
+  if (docDeadline && !needsReview) {
     await scheduleDeadlineAlerts({
       userId: job.user_id,
       refType: "document",
       refId: inserted.id,
-      deadline: data.deadline,
+      deadline: docDeadline,
       // Un nom de fichier ne dit pas ce qu'il faut faire : on nomme l'action.
       title:
         isContract && data.provider
           ? `Fin d'engagement ${data.provider}`
           : data.suggested_name,
       message: isContract
-        ? `Ton engagement se termine le ${data.deadline} : tu pourras résilier sans frais à partir de cette date.`
-        : `Échéance le ${data.deadline}.`,
+        ? `Ton engagement se termine le ${docDeadline} : tu pourras résilier sans frais à partir de cette date.`
+        : `Échéance le ${docDeadline}.`,
     });
   }
 

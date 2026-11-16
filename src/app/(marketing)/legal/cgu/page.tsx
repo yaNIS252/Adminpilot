@@ -35,7 +35,7 @@ export default function TermsPage() {
     >
       <Block title="1. Objet">
         <p>
-          AdminPilot est un service en ligne qui analyse les emails et documents
+          AdminPilot est un service en ligne qui analyse les e-mails et documents
           que l’utilisateur lui transfère, afin d’en extraire ses abonnements,
           de l’alerter avant leurs échéances, de classer ses documents et de
           l’aider à résilier ou à négocier ses abonnements.
@@ -48,8 +48,8 @@ export default function TermsPage() {
 
       <Block title="2. Inscription">
         <p>
-          L’inscription se fait par un lien de connexion envoyé par e-mail,
-          sans mot de passe.
+          L’inscription se fait avec une adresse e-mail, confirmée par un code
+          envoyé à cette adresse, et éventuellement un mot de passe.
           L’utilisateur garantit l’exactitude de l’adresse fournie et
           l’utilisation personnelle de son compte.
         </p>

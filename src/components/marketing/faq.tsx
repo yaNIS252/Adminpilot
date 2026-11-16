@@ -22,11 +22,11 @@ import { useState } from "react";
 const QUESTIONS = [
   {
     q: "AdminPilot lit-il toute ma boîte mail ?",
-    a: "Non. AdminPilot ne se connecte jamais à ta boîte : il ne voit que les emails que tu lui transfères, manuellement ou via une règle de transfert Gmail que tu contrôles.",
+    a: "Non. AdminPilot ne se connecte jamais à ta boîte : il ne voit que les e-mails que tu lui transfères, manuellement ou via une règle de transfert Gmail que tu contrôles.",
   },
   {
     q: "Comment les abonnements sont-ils détectés ?",
-    a: "Chaque email transféré est analysé : fournisseur, montant, périodicité et prochaine échéance sont extraits. Quand la confiance est faible, la détection est marquée « à vérifier » plutôt que présentée comme un fait.",
+    a: "Chaque e-mail transféré est analysé : fournisseur, montant, périodicité et prochaine échéance sont extraits. Quand la confiance est faible, la détection est marquée « à vérifier » plutôt que présentée comme un fait.",
   },
   {
     q: "Comment AdminPilot m'aide-t-il à payer moins cher ?",
@@ -37,8 +37,8 @@ const QUESTIONS = [
     a: "Les messages bruts sont supprimés trente jours après analyse. Seules les données extraites sont conservées, et rien ne sert à entraîner un modèle. Tu peux exporter ou supprimer ton compte à tout moment.",
   },
   {
-    q: "Puis-je changer de plan ?",
-    a: "Oui, à tout moment depuis les réglages. Le plan Gratuit reste disponible sans limite de durée.",
+    q: "Puis-je changer de formule ?",
+    a: "Oui, à tout moment depuis les réglages. La formule Gratuite reste disponible sans limite de durée.",
   },
 ] as const;
 

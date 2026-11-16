@@ -382,8 +382,12 @@ export default async function DashboardPage({
           label="Projection annuelle"
           value={formatAmount(monthlyTotal * 12) ?? "—"}
           footer={
-            <span className="text-xs text-[var(--text-faint)]">
-              au rythme actuel
+            <span className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs text-[var(--text-faint)]">au rythme actuel</span>
+              <Link href="/analyse" className="btn-secondary h-8 gap-1 px-3 text-xs">
+                Analyse et économies
+                <ChevronRight className="size-3.5" />
+              </Link>
             </span>
           }
         />
@@ -589,7 +593,7 @@ export default async function DashboardPage({
                 <span className="min-w-0 flex-1 truncate text-[13px]">
                   {doc.filename_ai ?? doc.filename_original}
                 </span>
-                {doc.deadline && (
+                {doc.deadline && doc.category !== "facture" && (
                   <span className="shrink-0 rounded-full bg-[rgba(224,161,56,.14)] px-2 py-0.5 text-[10px] text-[var(--warning-light)]">
                     {formatRelativeDeadline(doc.deadline)}
                   </span>

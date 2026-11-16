@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, BellOff, Lock } from "lucide-react";
+import { Bell, Lock } from "lucide-react";
 
 import {
   NewReminder,
@@ -10,7 +10,7 @@ import {
 import { requireUser } from "@/lib/auth/require-user";
 import { currentPeriod } from "@/lib/billing/quotas";
 import { PLAN_LIMITS } from "@/lib/constants";
-import { formatDate, todayIso } from "@/lib/format";
+import { todayIso } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Alertes — AdminPilot" };
@@ -22,7 +22,6 @@ export default async function AlertsPage() {
 
   const [
     { data: upcoming },
-    { data: sent },
     { data: usage },
     { data: subscriptions },
     { data: documents },
@@ -33,12 +32,6 @@ export default async function AlertsPage() {
       .is("sent_at", null)
       .order("alert_date", { ascending: true })
       .limit(50),
-    supabase
-      .from("alerts")
-      .select("*")
-      .not("sent_at", "is", null)
-      .order("alert_date", { ascending: false })
-      .limit(20),
     supabase
       .from("usage_counters")
       .select("alerts_count")
@@ -155,27 +148,6 @@ export default async function AlertsPage() {
         </section>
       )}
 
-      {(sent ?? []).length > 0 && (
-        <section className="card-sheen anim-up rounded-[var(--radius-xl)] border border-[var(--border)] p-5">
-          <h2 className="mt-0 mb-3 flex items-center gap-2 text-[15px] font-semibold text-[var(--text-dim)]">
-            <BellOff className="size-4" />
-            Déjà envoyées
-          </h2>
-          <ul className="m-0 list-none space-y-0.5 p-0">
-            {(sent ?? []).map((alert) => (
-              <li
-                key={alert.id}
-                className="flex items-center justify-between gap-3 px-2 py-2 text-sm opacity-60"
-              >
-                <span className="truncate">{alert.title}</span>
-                <span className="shrink-0 text-xs text-[var(--text-faint)]">
-                  {formatDate(alert.alert_date)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </div>
   );
 }

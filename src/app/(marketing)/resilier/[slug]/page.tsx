@@ -115,7 +115,7 @@ export default async function CancelGuidePage({
               ) : (
                 <li>
                   Conserve une preuve horodatée : capture d’écran, accusé de
-                  réception ou copie de l’email envoyé.
+                  réception ou copie de l’e-mail envoyé.
                 </li>
               )}
               <li>
@@ -144,7 +144,7 @@ export default async function CancelGuidePage({
             Fais-le en une minute
           </h2>
           <p className="m-0 mb-3 text-sm">
-            AdminPilot repère tes abonnements dans tes emails, t’alerte avant
+            AdminPilot repère tes abonnements dans tes e-mails, t’alerte avant
             chaque reconduction et prépare un message pour négocier une remise avant de partir.
           </p>
           <Link href="/login" className="btn-primary h-10 px-4 text-sm">

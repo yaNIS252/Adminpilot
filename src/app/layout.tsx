@@ -41,7 +41,7 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   title: "AdminPilot — le pilote automatique de ta vie admin",
   description:
-    "AdminPilot repère tes abonnements dans les emails que tu lui transfères, classe tes documents et t'alerte avant chaque reconduction tacite.",
+    "AdminPilot repère tes abonnements dans les e-mails que tu lui transfères, classe tes documents et t'alerte avant chaque reconduction tacite.",
 };
 
 export default function RootLayout({

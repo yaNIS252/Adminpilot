@@ -73,7 +73,7 @@ export function AuthShowcase() {
         </p>
         <div className="flex items-center gap-2.5 text-[13px] text-[var(--text-dim)]">
           <ShieldCheck className="size-4 text-[var(--positive)]" />
-          Aucun accès à ta boîte mail. Emails bruts supprimés sous 30 jours.
+          Aucun accès à ta boîte mail. E-mails bruts supprimés sous 30 jours.
         </div>
       </div>
     </aside>

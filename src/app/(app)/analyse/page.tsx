@@ -132,48 +132,64 @@ export default async function AnalysePage() {
               >
                 <p className="m-0 text-[15px] leading-[1.55]">
                   Tu paies <strong>{formatAmount(reco.currentMonthly)}/mois</strong> chez{" "}
-                  {reco.subscription.provider}. Offre <strong>{reco.offer.name}</strong> de{" "}
-                  {reco.offer.provider_name}
-                  {reco.estimated ? (
-                    <> : environ <strong>{formatAmount(reco.currentMonthly - reco.monthlySaving)}/mois</strong> pour ta consommation</>
-                  ) : (
-                    <> à <strong>{formatAmount(reco.offer.monthly_price)}</strong></>
-                  )}{" "}
-                  → <strong className="text-[var(--positive-light)]">
-                    {reco.estimated ? "≈ " : ""}-{formatAmount(reco.yearlySaving)}/an
-                  </strong>
+                  {reco.subscription.provider}.{" "}
+                  Moins cher ailleurs :
                 </p>
-                {reco.alternatives.length > 0 && (
-                  <ul className="m-0 mt-2 list-none space-y-1 p-0 text-[13px] text-[var(--text-dim)]">
-                    {reco.alternatives.map((alt) => (
-                      <li key={alt.offer.id} className="flex flex-wrap items-center gap-x-2">
-                        <span>
-                          Aussi : {alt.offer.name} ({alt.offer.provider_name}),{" "}
-                          {alt.estimated ? "environ " : ""}
-                          {formatAmount(alt.monthly)}/mois,{" "}
-                          <span className="text-[var(--positive-light)]">-{formatAmount(alt.yearlySaving)}/an</span>
-                        </span>
-                        <a href={`/api/go/${alt.offer.id}`} target="_blank" rel="noopener noreferrer" className="text-xs">
-                          Voir
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <p className="m-0 mt-2 text-xs text-[var(--text-faint)]">
-                  {reco.offer.conditions ? `${reco.offer.conditions} · ` : ""}
-                  Prix vérifié le {formatDate(reco.offer.checked_at)} ·{" "}
-                  {reco.offer.affiliate_url ? "lien partenaire" : "source officielle"}
-                </p>
-                <a
-                  href={`/api/go/${reco.offer.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-secondary mt-3 inline-flex h-10 items-center gap-1.5 px-4 text-[13px]"
-                >
-                  Voir l’offre
-                  <ArrowRight className="size-4" />
-                </a>
+                <ul className="m-0 mt-3 list-none space-y-2 p-0">
+                  {[
+                    {
+                      offer: reco.offer,
+                      monthly: reco.currentMonthly - reco.monthlySaving,
+                      yearlySaving: reco.yearlySaving,
+                      estimated: reco.estimated,
+                    },
+                    ...reco.alternatives,
+                  ].map((option, index) => (
+                    <li
+                      key={option.offer.id}
+                      className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[var(--radius-lg)] border p-3 ${
+                        index === 0
+                          ? "border-[rgb(var(--accent-rgb)/.35)] bg-[rgb(var(--accent-rgb)/.06)]"
+                          : "border-[var(--border)]"
+                      }`}
+                    >
+                      <div className="min-w-[12rem] flex-1">
+                        <div className="text-sm">
+                          <strong>{option.offer.provider_name}</strong>
+                          <span className="text-[var(--text-dim)]"> · {option.offer.name}</span>
+                          {index === 0 && (
+                            <span className="ml-2 rounded-full bg-[rgb(var(--accent-rgb)/.14)] px-1.5 py-px text-[10px] font-medium text-[var(--accent-lighter)]">
+                              la moins chère
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-0.5 text-xs text-[var(--text-faint)]">
+                          {option.offer.conditions ? `${option.offer.conditions} · ` : ""}
+                          prix vérifié le {formatDate(option.offer.checked_at)} sur le site{" "}
+                          {option.offer.affiliate_url ? "(lien partenaire)" : "officiel"}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="mono text-sm">
+                          {option.estimated ? "≈ " : ""}
+                          {formatAmount(option.monthly)}/mois
+                        </div>
+                        <div className="mono text-xs text-[var(--positive-light)]">
+                          {option.estimated ? "≈ " : ""}−{formatAmount(option.yearlySaving)}/an
+                        </div>
+                      </div>
+                      <a
+                        href={`/api/go/${option.offer.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-secondary inline-flex h-9 items-center gap-1.5 px-3 text-xs"
+                      >
+                        Voir l’offre
+                        <ArrowRight className="size-3.5" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
           </ul>

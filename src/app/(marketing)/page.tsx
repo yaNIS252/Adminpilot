@@ -53,7 +53,7 @@ export default function LandingPage() {
           <Sep />
           Puis gratuit jusqu&apos;à 5 abonnements
           <Sep />
-          Emails bruts supprimés sous 30 jours
+          E-mails bruts supprimés sous 30 jours
         </p>
 
         <HeroMockup />
@@ -156,7 +156,7 @@ export default function LandingPage() {
           </div>
           <p className="m-0 max-w-[680px] text-sm leading-[1.7] text-pretty text-[var(--text-dim)]">
             AdminPilot ne se connecte jamais à ta boîte mail : il ne voit que les
-            emails que tu lui transfères. Les messages bruts sont supprimés
+            e-mails que tu lui transfères. Les messages bruts sont supprimés
             trente jours après analyse, seules les données extraites sont
             conservées, et rien ne sert à entraîner un modèle.{" "}
             <Link href="/legal/confidentialite" className="btn-link text-sm">

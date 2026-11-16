@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, CalendarDays, ChevronDown, Forward, KeyRound, Gift, History, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
+import { Bell, CalendarDays, ChevronDown, ChevronRight, Forward, KeyRound, Gift, History, Inbox, Lock, Mail, Palette, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 
 import { PaymentConfirmation } from "@/components/billing/payment-confirmation";
 import { ManageSubscription, PlanPicker } from "@/components/billing/plan-picker";
@@ -370,6 +370,22 @@ export default async function SettingsPage({
         </Card>
       </section>
 
+      {/* Sur téléphone, les alertes n'ont plus d'onglet dans la barre du bas
+          (l'Analyse a pris sa place) : on y accède d'ici. */}
+      <Link
+        href="/alertes"
+        className="anim-up flex items-center gap-3 rounded-[var(--radius-xl)] border border-[var(--border)] px-5 py-4 text-sm no-underline hover:border-[var(--border-strong)]"
+      >
+        <Bell className="size-4 shrink-0 text-[var(--accent-light)]" />
+        <span className="min-w-0 flex-1">
+          <strong className="font-semibold text-[var(--text)]">Alertes et rappels</strong>
+          <span className="block text-xs text-[var(--text-faint)]">
+            Rappels à venir, rappels automatiques à activer ou couper, rappel personnalisé
+          </span>
+        </span>
+        <ChevronRight className="size-4 shrink-0 text-[var(--text-dim)]" />
+      </Link>
+
       <section id="notifications" className="scroll-mt-6">
         <Card collapsible icon={<Bell className="size-4" />} title="Notifications">
           <RecapToggle
@@ -431,7 +447,7 @@ export default async function SettingsPage({
         title="Confidentialité"
       >
         <p className="m-0 text-sm text-[var(--text-dim)]">
-          Les emails bruts que tu transfères sont supprimés{" "}
+          Les e-mails bruts que tu transfères sont supprimés{" "}
           {RAW_RETENTION_DAYS} jours après leur analyse. Seules les données
           extraites — fournisseur, montant, échéance — sont conservées. Rien
           n’est utilisé pour entraîner un modèle.{" "}

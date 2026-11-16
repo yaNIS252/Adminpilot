@@ -35,10 +35,11 @@ const LINKS = [
   { href: "/dashboard", label: "Vue d'ensemble", short: "Accueil", Icon: LayoutDashboard },
   { href: "/abonnements", label: "Abonnements", short: "Abos", Icon: Repeat },
   { href: "/documents", label: "Documents", short: "Docs", Icon: FolderClosed },
-  { href: "/alertes", label: "Alertes", short: "Alertes", Icon: Bell },
-  // Pas dans la barre du bas : cinq entrées au pouce, c'est le maximum.
-  // Sur mobile, l'analyse s'ouvre depuis le tableau de bord.
-  { href: "/analyse", label: "Analyse", short: "Analyse", Icon: PiggyBank, desktopOnly: true },
+  // Cinq entrées au pouce, c'est le maximum de la barre du bas : sur
+  // téléphone, les alertes s'ouvrent depuis les réglages, l'analyse a
+  // leur place.
+  { href: "/alertes", label: "Alertes", short: "Alertes", Icon: Bell, desktopOnly: true },
+  { href: "/analyse", label: "Analyse", short: "Analyse", Icon: PiggyBank },
   { href: "/bilan", label: "Bilan annuel", short: "Bilan", Icon: FileSpreadsheet, desktopOnly: true },
   { href: "/reglages", label: "Réglages", short: "Réglages", Icon: Settings },
 ] as const satisfies readonly {

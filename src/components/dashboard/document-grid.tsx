@@ -249,7 +249,7 @@ export function DocumentGrid({ initial }: { initial: DocumentRow[] }) {
                 </div>
               </div>
 
-              {doc.deadline && (
+              {doc.deadline && doc.category !== "facture" && (
                 <span className="shrink-0 rounded-full bg-[rgba(224,161,56,.14)] px-2.5 py-1 text-[11px] text-[var(--warning-light)]">
                   échéance {formatRelativeDeadline(doc.deadline)}
                 </span>
