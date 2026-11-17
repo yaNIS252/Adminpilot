@@ -194,6 +194,7 @@ export function SubscriptionList({
         {sorted.map((sub) => {
           const uncertain = !sub.confirmed_by_user && sub.confidence < 0.7;
           const trialUntil = activeTrialUntil(sub.metadata);
+          const mismatch = !sub.confirmed_by_user ? emailMismatch(sub.metadata) : null;
 
           return (
             <li
@@ -251,6 +252,13 @@ export function SubscriptionList({
                           ].join(" · ")
                       )}
                     </div>
+                    {mismatch && (
+                      <p className="m-0 mt-1 text-xs text-[var(--warning-light)]">
+                        L’e-mail du fournisseur indique {formatAmount(mismatch.email, sub.currency)}
+                        {mismatch.manual !== null && <>, tu avais saisi {formatAmount(mismatch.manual, sub.currency)}</>}.
+                        Confirme ou modifie.
+                      </p>
+                    )}
                   </div>
 
                   <div className="mono text-right text-lg font-semibold">
@@ -274,7 +282,7 @@ export function SubscriptionList({
                     </Link>
                   ) : (
                     <div className="flex w-full gap-2 sm:w-auto">
-                      {reviewMode && (
+                      {(reviewMode || mismatch) && (
                         <Action
                           onClick={() =>
                             patch(sub.id, { confirmed_by_user: true })
@@ -513,4 +521,14 @@ function Field({
       {children}
     </label>
   );
+}
+
+/** Écart entre la saisie manuelle et le premier e-mail du fournisseur. */
+function emailMismatch(metadata: unknown): { manual: number | null; email: number } | null {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
+  const value = (metadata as Record<string, unknown>).email_mismatch;
+  if (!value || typeof value !== "object") return null;
+  const { manual_amount, email_amount } = value as Record<string, unknown>;
+  if (typeof email_amount !== "number") return null;
+  return { manual: typeof manual_amount === "number" ? manual_amount : null, email: email_amount };
 }

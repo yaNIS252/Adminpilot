@@ -46,7 +46,8 @@ function withoutCancellation(metadata: Json | null): Json {
   delete rest.cancel_effective_date;
   delete rest.cancelled_via;
   delete rest.resubscribe_started_at;
-  return { ...rest, resumed_at: new Date().toISOString() } as Json;
+  // Le premier e-mail du fournisseur vérifiera le montant repris (pipeline).
+  return { ...rest, resumed_at: new Date().toISOString(), awaiting_email_check: true } as Json;
 }
 
 const PatchSchema = z.object({
@@ -174,7 +175,8 @@ export async function POST(request: Request) {
       confidence: 1,
       confirmed_by_user: true,
       provider_id: catalogue?.id ?? null,
-      metadata: { source: "manual" },
+      // Le premier e-mail du fournisseur vérifiera ce montant (pipeline).
+      metadata: { source: "manual", awaiting_email_check: true },
     })
     .select("*")
     .single();
@@ -301,6 +303,24 @@ export async function PATCH(request: Request) {
   if (error) throw error;
   if (!data) {
     return NextResponse.json({ error: "introuvable" }, { status: 404 });
+  }
+
+  // Écart signalé par un e-mail (saisie manuelle ≠ montant facturé) : réglé
+  // dès que l'utilisateur valide la ligne ou la corrige.
+  if (
+    (touchesData || changes.confirmed_by_user) &&
+    data.metadata &&
+    typeof data.metadata === "object" &&
+    !Array.isArray(data.metadata) &&
+    "email_mismatch" in data.metadata
+  ) {
+    const meta = { ...(data.metadata as Record<string, Json | undefined>) };
+    delete meta.email_mismatch;
+    await createAdminClient()
+      .from("subscriptions")
+      .update({ metadata: meta as Json })
+      .eq("id", id)
+      .eq("user_id", auth.userId);
   }
 
   // Résiliation déclarée à la main, ou reprise du suivi d'un abonnement

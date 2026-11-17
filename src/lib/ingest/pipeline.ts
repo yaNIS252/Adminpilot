@@ -323,8 +323,54 @@ ${job.payload.body.slice(0, 6000)}`)
   // qui sert de référence. Seulement sur une extraction assez sûre — alerter
   // d'une hausse lue de travers ferait perdre confiance dans toutes les autres.
   const announcement = data.type === "price_change";
+
+  // Abonnement saisi ou repris à la main : le premier e-mail du fournisseur
+  // sert de vérification. Même montant : la saisie est confirmée. Montant
+  // différent : celui de l'e-mail l'emporte et la ligne passe « à vérifier »
+  // — ce n'est pas une hausse, la saisie était approximative.
+  const manualCheck =
+    existing &&
+    !needsReview &&
+    !announcement &&
+    data.type !== "trial" &&
+    data.amount !== null &&
+    existing.metadata &&
+    typeof existing.metadata === "object" &&
+    !Array.isArray(existing.metadata) &&
+    (existing.metadata as Record<string, unknown>).awaiting_email_check === true;
+  if (manualCheck && existing && data.amount !== null) {
+    const meta = { ...(existing.metadata as Record<string, unknown>) };
+    delete meta.awaiting_email_check;
+    const manualAmount = existing.amount === null ? null : Number(existing.amount);
+    const emailCycle = isPeriodic(cycle) ? cycle : existing.cycle;
+    const differs =
+      manualAmount !== null &&
+      (Math.abs(manualAmount - data.amount) > 0.01 || emailCycle !== existing.cycle);
+    const patch: TablesUpdate<"subscriptions"> = differs
+      ? {
+          amount: data.amount,
+          cycle: emailCycle as TablesUpdate<"subscriptions">["cycle"],
+          confirmed_by_user: false,
+          confidence: 0.6,
+          metadata: {
+            ...meta,
+            email_mismatch: {
+              manual_amount: manualAmount,
+              manual_cycle: existing.cycle,
+              email_amount: data.amount,
+              email_cycle: emailCycle,
+            },
+          } as TablesUpdate<"subscriptions">["metadata"],
+        }
+      : {
+          ...(manualAmount === null ? { amount: data.amount } : {}),
+          metadata: { ...meta, email_verified_at: new Date().toISOString() } as TablesUpdate<"subscriptions">["metadata"],
+        };
+    await db.from("subscriptions").update(patch).eq("id", existing.id).eq("user_id", job.user_id);
+  }
+
   const priceCheck =
-    existing && !needsReview
+    existing && !needsReview && !manualCheck
       ? await trackPriceChange(db, {
           userId: job.user_id,
           subscription: existing,
