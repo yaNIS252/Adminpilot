@@ -35,3 +35,13 @@ export const CONSUMER_MAIL_DOMAINS = new Set([
   "protonmail.com",
 ]);
 
+
+/**
+ * Plateformes de paiement qui envoient les reçus AU NOM de leurs clients :
+ * « Anthropic Ireland, Limited <invoice+statements+acct_…@stripe.com> ».
+ * Leur domaine n'est pas celui du fournisseur : il ne sert ni de site du
+ * fournisseur ni d'adresse d'envoi à apprendre. Le filtre Gmail les
+ * transfère en entier (avec l'objet de facture exigé) : sinon Claude, et
+ * tous les services facturés par Stripe ou Paddle, n'arrivaient jamais.
+ */
+export const BILLING_PLATFORM_DOMAINS = new Set(["stripe.com", "paddle.com"]);

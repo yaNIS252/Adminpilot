@@ -26,6 +26,7 @@ RÈGLES D'EXTRACTION
 
 provider — Le nom commercial du fournisseur, tel qu'un humain le dirait : "Netflix", "EDF", "Free Mobile", "MAIF". Pas la raison sociale complète, pas le domaine.
   · Achat passé par une boutique d'applications ou un moyen de paiement (reçu Apple / App Store / iTunes, Google Play, PayPal, Amazon pour un abonnement tiers) : le fournisseur est l'application ou le service acheté, écrit dans le reçu ("Yubo", "Tinder", "Disney+"), jamais "Apple", "Google" ou "PayPal". Ne garde "Apple" que pour un service d'Apple lui-même, avec son nom précis ("Apple Music", "iCloud+", "Apple TV+", "Apple One"). Si le reçu ne dit pas quel service est payé, provider = null.
+  · Reçu envoyé par une plateforme de paiement au nom d'une entreprise (Stripe, Paddle : « Receipt from Anthropic Ireland, Limited », adresse en @stripe.com) : le fournisseur est le service payé, par son nom commercial, jamais "Stripe" ou "Paddle". Un produit connu sous son propre nom garde ce nom : "Claude" pour Claude Pro ou Max d'Anthropic, "ChatGPT" pour ChatGPT Plus d'OpenAI, "Le Chat" pour Le Chat Pro de Mistral AI.
 
 amount — Le montant effectivement facturé à l'utilisateur, en nombre décimal. Attention aux pièges courants :
   · le format français utilise la virgule décimale : "12,99 €" vaut 12.99
@@ -33,6 +34,7 @@ amount — Le montant effectivement facturé à l'utilisateur, en nombre décima
   · ignorer les totaux cumulés, les soldes de compte et les montants d'exemple
   · en cas de remise, retenir le montant réellement prélevé
   · si aucun montant n'est lisible, retourner null plutôt que deviner
+  · reçu suivi d'un avoir ou d'un ajustement ("Credited total", "Adjusted invoice total 0,00", "avoir") : retenir le montant payé ("Amount paid", "Montant payé"), pas le total ajusté. Un e-mail qui n'est QUE l'avoir ("Credit note from…", "Votre avoir") ou un échec de paiement ("payment failed", "échec de paiement") est un "skip"
 
 billing_cycle — Déduit d'une mention explicite ("par mois", "abonnement annuel") ou d'un libellé de période ("du 18/09 au 18/10" = mensuel). Sans indice, "unknown" — ne pas supposer "monthly" par défaut. "one_time" est réservé à un achat ponctuel explicite (une commande, un billet) : la facture d'un service (hébergement, télécom, énergie, logiciel, assurance) sans période écrite est "unknown", jamais "one_time".
 

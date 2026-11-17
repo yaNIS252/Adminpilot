@@ -9,7 +9,7 @@ import { scheduleDeadlineAlerts } from "@/lib/alerts/schedule";
 import { matchCatalogue, senderDomain, trustedLink } from "@/lib/cancel/links";
 import { cycleFromGap, isPeriodic, resolveRenewal } from "@/lib/ingest/schedule";
 import { isAdminPilotProvider, learnSender, originalSender } from "@/lib/ingest/sender-learning";
-import { CONSUMER_MAIL_DOMAINS } from "@/lib/email/consumer-domains";
+import { BILLING_PLATFORM_DOMAINS, CONSUMER_MAIL_DOMAINS } from "@/lib/email/consumer-domains";
 import { trackPriceChange } from "@/lib/ingest/price-tracker";
 import { PLAN_LIMITS, TRIAL_ALERT_OFFSETS_DAYS } from "@/lib/constants";
 
@@ -309,7 +309,9 @@ ${job.payload.body.slice(0, 6000)}`)
   const realSender = originalSender(job.payload.from, job.payload.body);
   const realDomain = realSender ? senderDomain(realSender) : null;
   const providerDomain =
-    realDomain && !CONSUMER_MAIL_DOMAINS.has(realDomain) ? realDomain : null;
+    realDomain && !CONSUMER_MAIL_DOMAINS.has(realDomain) && !BILLING_PLATFORM_DOMAINS.has(realDomain)
+      ? realDomain
+      : null;
   const manageUrl = trustedLink(data.manage_url, [
     catalogue?.domain,
     senderDomain(job.payload.from),

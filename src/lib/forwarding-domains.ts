@@ -3,7 +3,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 
 import { rootDomain } from "@/lib/cancel/links";
-import { CONSUMER_MAIL_DOMAINS } from "@/lib/email/consumer-domains";
+import { BILLING_PLATFORM_DOMAINS, CONSUMER_MAIL_DOMAINS } from "@/lib/email/consumer-domains";
 import { BILLING_SUBJECT, EXCLUDED_QUERY, KEYWORD_QUERY } from "@/lib/gmail-filter";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -39,7 +39,7 @@ export async function forwardingDomains(): Promise<string[]> {
       }),
     ];
   });
-  return [...new Set(criteria.filter(Boolean))].sort();
+  return [...new Set([...criteria, ...BILLING_PLATFORM_DOMAINS].filter(Boolean))].sort();
 }
 
 /**

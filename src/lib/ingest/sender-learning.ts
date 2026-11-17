@@ -1,7 +1,7 @@
 import "server-only";
 
 import { matchCatalogue, rootDomain } from "@/lib/cancel/links";
-import { CONSUMER_MAIL_DOMAINS } from "@/lib/email/consumer-domains";
+import { BILLING_PLATFORM_DOMAINS, CONSUMER_MAIL_DOMAINS } from "@/lib/email/consumer-domains";
 import { fingerprint } from "@/lib/referral/normalize";
 import type { createAdminClient } from "@/lib/supabase/admin";
 
@@ -87,7 +87,14 @@ export async function learnSender(
     const domain = rootDomain(sender.split("@")[1] ?? "");
     // Messagerie grand public : l'adresse d'un particulier, pas d'une
     // entreprise. Elle ne sort jamais du compte de l'utilisateur.
-    if (!domain || CONSUMER_MAIL_DOMAINS.has(domain) || domain === rootDomain(inboundDomain())) {
+    // Plateforme de paiement : l'adresse est partagée par des milliers de
+    // marchands, elle ne désigne aucun fournisseur.
+    if (
+      !domain ||
+      CONSUMER_MAIL_DOMAINS.has(domain) ||
+      BILLING_PLATFORM_DOMAINS.has(domain) ||
+      domain === rootDomain(inboundDomain())
+    ) {
       return;
     }
 
