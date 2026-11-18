@@ -90,6 +90,7 @@ export default async function DashboardPage({
     { count: reviewCount },
     { count: hiddenCount },
     { data: priceChanges },
+    { data: pendingDocs },
   ] =
     await Promise.all([
       supabase
@@ -101,6 +102,7 @@ export default async function DashboardPage({
       supabase
         .from("documents")
         .select("id, filename_ai, filename_original, category, deadline")
+        .is("pending_until", null)
         .order("created_at", { ascending: false })
         .limit(4),
       supabase
@@ -124,6 +126,13 @@ export default async function DashboardPage({
         .eq("subscriptions.over_quota", false)
         .gte("created_at", isoDaysAgo(365))
         .order("created_at", { ascending: false }),
+      // Factures d'expéditeurs inconnus qui attendent « Garder ».
+      supabase
+        .from("documents")
+        .select("id, filename_ai, filename_original, extracted_data")
+        .not("pending_until", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(20),
     ]);
 
   // Impact annuel de chaque changement, puis bilan des hausses et des baisses.
@@ -242,6 +251,8 @@ export default async function DashboardPage({
           </OpenTourButton>
         </section>
       )}
+
+      {pendingDocs && pendingDocs.length > 0 && <PendingNotice docs={pendingDocs} />}
 
       {/* Retour de paiement. Le webhook Stripe, seul juge du plan, arrive en
           général avant l'utilisateur — mais pas toujours : si le profil est
@@ -699,3 +710,50 @@ function Empty({ children }: { children: React.ReactNode }) {
     </p>
   );
 }
+
+/**
+ * « On a détecté une facture » : une facture jointe à un e-mail d'un
+ * expéditeur inconnu attend que l'utilisateur la garde. Le bouton mène à la
+ * section « Documents en attente », où il garde ou ignore chacune.
+ */
+function PendingNotice({
+  docs,
+}: {
+  docs: { id: string; filename_ai: string | null; filename_original: string; extracted_data: unknown }[];
+}) {
+  const first = docs[0];
+  const extracted = (first.extracted_data ?? {}) as Record<string, unknown>;
+  const provider = typeof extracted.provider === "string" ? extracted.provider : null;
+  const amount = typeof extracted.amount === "number" ? extracted.amount : null;
+  const date = typeof extracted.document_date === "string" ? extracted.document_date : null;
+  const detail = [amount !== null ? formatAmount(amount) : null, date ? formatDate(date) : null]
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    <section
+      role="status"
+      className="anim-up flex flex-wrap items-center gap-4 rounded-[var(--radius-xl)] border border-[rgb(var(--accent-rgb)/.35)] bg-[var(--accent-soft)] px-5 py-4"
+    >
+      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[rgb(var(--accent-rgb)/.16)] text-[var(--accent-lighter)]">
+        <FileText className="size-[18px]" />
+      </span>
+      <div className="min-w-[220px] flex-1">
+        <div className="text-[15px] font-semibold">
+          {docs.length === 1
+            ? `On a détecté une facture${provider ? ` de ${provider}` : ""}`
+            : `On a détecté ${docs.length} factures`}
+        </div>
+        <p className="m-0 mt-0.5 text-[13px] text-[var(--text-dim)]">
+          {docs.length === 1 && detail ? `${detail}. ` : ""}
+          {docs.length === 1 ? "La garder dans AdminPilot ?" : "Les garder dans AdminPilot ?"}
+        </p>
+      </div>
+      <Link href="/documents#en-attente" className="btn-primary h-10 px-4 text-[13px] no-underline">
+        Garder
+        <ArrowRight className="size-4" />
+      </Link>
+    </section>
+  );
+}
+

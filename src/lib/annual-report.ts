@@ -47,7 +47,7 @@ export async function buildAnnualReport(db: Db, year: number): Promise<AnnualRep
       .gte("created_at", start)
       .lt("created_at", end)
       .order("created_at", { ascending: true }),
-    db.from("documents").select("category").gte("created_at", start).lt("created_at", end),
+    db.from("documents").select("category").is("pending_until", null).gte("created_at", start).lt("created_at", end),
   ]);
 
   const yearlyOf = (amount: number | null, cycle: string) => monthlyEquivalent(amount, cycle) * 12;

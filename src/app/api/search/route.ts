@@ -106,6 +106,7 @@ export async function POST(request: Request) {
   let query = supabase
     .from("documents")
     .select("id, filename_ai, filename_original, category, deadline, mime_type, extracted_data, created_at")
+    .is("pending_until", null)
     .order("created_at", { ascending: false })
     .limit(CANDIDATES);
 

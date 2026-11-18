@@ -12,7 +12,8 @@ import {
 } from "@/lib/ingest/gmail-confirmation";
 import { enqueue } from "@/lib/ingest/pipeline";
 import { wakeDrain } from "@/lib/ingest/wake";
-import { ingestAttachments } from "@/lib/ingest/attachments";
+import { hasDocumentAttachment, ingestAttachments } from "@/lib/ingest/attachments";
+import { isUnknownSender } from "@/lib/ingest/unknown-sender";
 import { ingestForwardedMessages, isForwardedMessage } from "@/lib/ingest/forwarded-batch";
 import { isOwnMessage } from "@/lib/ingest/sender-learning";
 import { isSecurityEmail } from "@/lib/ingest/sensitive";
@@ -108,7 +109,7 @@ export async function POST(request: Request) {
   const db = createAdminClient();
   const { data: profile } = await db
     .from("profiles")
-    .select("id, plan")
+    .select("id, plan, email")
     .eq("inbox_token", token)
     .is("deleted_at", null)
     .maybeSingle();
@@ -191,6 +192,36 @@ export async function POST(request: Request) {
 
   if (!(await consume("inbound", token)) || !(await consume("inboundDaily", token))) {
     return tooManyRequests("inbound");
+  }
+
+  // Expéditeur inconnu (capté par le filtre « mots-clés ») : rien n'est créé
+  // d'office. Sa facture jointe devient un document en attente, que
+  // l'utilisateur garde ou ignore ; sans pièce jointe, l'e-mail est écarté
+  // sans être stocké. Les expéditeurs connus et les transferts manuels
+  // suivent le chemin habituel, inchangé.
+  if (
+    await isUnknownSender(db, {
+      userId: profile.id,
+      ownEmail: profile.email,
+      from: event.data.from,
+      subject: event.data.subject,
+      body,
+    })
+  ) {
+    const attachments = received.data.attachments ?? [];
+    if (!hasDocumentAttachment(attachments)) {
+      return NextResponse.json({ status: "ignored_unknown_sender" }, { status: 202 });
+    }
+    const queued = await ingestAttachments({
+      resend,
+      emailId: event.data.email_id,
+      userId: profile.id,
+      plan: profile.plan,
+      attachments,
+      pending: true,
+    });
+    if (queued > 0) wakeDrain(request.url);
+    return NextResponse.json({ status: "pending_documents", documents: queued }, { status: 202 });
   }
 
   // Import de l'historique : des e-mails joints (« Transférer en tant que

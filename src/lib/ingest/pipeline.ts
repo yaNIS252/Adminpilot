@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { deleteRaw } from "@/lib/storage";
 import type { TablesUpdate } from "@/lib/supabase/types";
 import { REVIEW_THRESHOLD } from "@/lib/ai/schemas";
 import { extractFromDocument, extractFromEmail } from "@/lib/ai/extract";
@@ -38,6 +39,8 @@ export type EnqueueInput = {
   originalFilename?: string;
   /** Import groupé de l'historique : pas de notification « nouvel abonnement ». */
   bulk?: boolean;
+  /** Pièce jointe d'un expéditeur inconnu : document en attente de validation. */
+  pendingDocument?: boolean;
 };
 
 export type EnqueueResult =
@@ -63,6 +66,7 @@ export async function enqueue(input: EnqueueInput): Promise<EnqueueResult> {
       mime_type: input.mimeType,
       original_filename: input.originalFilename ?? null,
       bulk: input.bulk ?? false,
+      pending_document: input.pendingDocument ?? false,
     })
     .select("id")
     .single();
@@ -510,6 +514,9 @@ ${job.payload.body.slice(0, 6000)}`)
   return { created: true as const, subscriptionId: inserted.id, needsReview };
 }
 
+/** Durée d'attente d'un document d'expéditeur inconnu avant suppression. */
+export const PENDING_DOCUMENT_DAYS = 30;
+
 /** Même logique pour un document : extraction, puis écriture avec confiance. */
 export async function processDocumentJob(job: {
   id: string;
@@ -517,14 +524,17 @@ export async function processDocumentJob(job: {
   mime_type: string;
   raw_url: string;
   payload: { base64: string; filename: string };
+  /** Pièce jointe d'un expéditeur inconnu : en attente de « Garder ». */
+  pending_document?: boolean;
 }) {
   const db = createAdminClient();
+  const pending = job.pending_document === true;
 
   // Seconde vérification du quota, au moment de l'analyse : des envois
   // simultanés peuvent tous passer le contrôle de la route d'upload avant
   // qu'aucun ne soit compté. Refuser ici évite aussi de payer l'appel au
   // modèle pour un document qui ne serait pas conservé.
-  if (await exceedsDocumentQuota(db, job.user_id)) {
+  if (!pending && (await exceedsDocumentQuota(db, job.user_id))) {
     await db
       .from("ingestion_jobs")
       .update({
@@ -550,6 +560,25 @@ export async function processDocumentJob(job: {
   // rebours ni de rappel pour elle (la date sert encore à l'abonnement).
   const docDeadline = data.category === "facture" ? null : data.deadline;
 
+  // Expéditeur inconnu : seule une facture (reçu, avoir) est proposée.
+  // Le reste — publicité, document personnel capté par le filtre — est
+  // effacé aussitôt, sans trace (minimisation).
+  if (pending && data.category !== "facture") {
+    await deleteRaw(job.raw_url).catch(() => {});
+    await db
+      .from("ingestion_jobs")
+      .update({
+        status: "done",
+        raw_url: null,
+        model_used: result.model,
+        tokens_in: result.tokensIn,
+        tokens_out: result.tokensOut,
+        processed_at: new Date().toISOString(),
+      })
+      .eq("id", job.id);
+    return { documentId: null, needsReview: false };
+  }
+
   const { data: inserted, error } = await db
     .from("documents")
     .insert({
@@ -562,6 +591,7 @@ export async function processDocumentJob(job: {
       deadline: docDeadline,
       confidence: data.confidence,
       source_job_id: job.id,
+      pending_until: pending ? new Date(Date.now() + PENDING_DOCUMENT_DAYS * 86_400_000).toISOString() : null,
       extracted_data: {
         provider: data.provider,
         amount: data.amount,
@@ -582,7 +612,8 @@ export async function processDocumentJob(job: {
   // L'IA classe parfois un contrat en « autre » tout en le nommant
   // « Contrat_… » : le nom qu'elle a choisi fait foi.
   const isContract = data.category === "contrat" || /^contrat_/i.test(data.suggested_name);
-  if (data.provider && !needsReview) {
+  // Document en attente : rien n'agit sur le compte avant « Garder ».
+  if (data.provider && !needsReview && !pending) {
     await completeSubscriptionFromDocument(db, job.user_id, {
       provider: data.provider,
       category: isContract ? "contrat" : data.category,
@@ -595,7 +626,7 @@ export async function processDocumentJob(job: {
   }
 
   // Fin de contrat, avis d'impôt, garantie : un rappel avant l'échéance.
-  if (docDeadline && !needsReview) {
+  if (docDeadline && !needsReview && !pending) {
     await scheduleDeadlineAlerts({
       userId: job.user_id,
       refType: "document",
@@ -798,7 +829,8 @@ async function exceedsDocumentQuota(db: Db, userId: string): Promise<boolean> {
   const { count } = await db
     .from("documents")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .is("pending_until", null);
 
   return (count ?? 0) >= limit;
 }
@@ -1155,6 +1187,7 @@ async function completeFromRecentDocument(db: Db, userId: string, provider: stri
     .from("documents")
     .select("category, confidence, deadline, extracted_data")
     .eq("user_id", userId)
+    .is("pending_until", null)
     .gte("created_at", new Date(Date.now() - 2 * 86_400_000).toISOString())
     .order("created_at", { ascending: false })
     .limit(20);

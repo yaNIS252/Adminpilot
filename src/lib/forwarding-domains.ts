@@ -49,7 +49,9 @@ export async function forwardingDomains(): Promise<string[]> {
  */
 export function filterFingerprint(criteria: string[]): string {
   return createHash("sha256")
-    .update(JSON.stringify([criteria, BILLING_SUBJECT, EXCLUDED_QUERY, KEYWORD_QUERY]))
+    // « keywords-attachment » : filtre mots-clés par défaut, pièce jointe
+    // exigée (documents en attente).
+    .update(JSON.stringify([criteria, BILLING_SUBJECT, EXCLUDED_QUERY, KEYWORD_QUERY, "keywords-attachment"]))
     .digest("hex")
     .slice(0, 16);
 }

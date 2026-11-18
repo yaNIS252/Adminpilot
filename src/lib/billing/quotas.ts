@@ -51,10 +51,10 @@ export async function checkLimit(
   if (isStockFeature(feature)) {
     // Stock réel : ce qui existe aujourd'hui, pas ce qui a été créé un jour.
     const table = feature === "subscriptions" ? "subscriptions" : "documents";
-    const { count, error } = await db
-      .from(table)
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId);
+    let stock = db.from(table).select("id", { count: "exact", head: true }).eq("user_id", userId);
+    // Un document en attente n'est pas encore rangé : il ne compte pas.
+    if (table === "documents") stock = stock.is("pending_until", null);
+    const { count, error } = await stock;
 
     if (error) throw error;
     current = count ?? 0;
@@ -68,6 +68,7 @@ export async function checkLimit(
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("source", "upload")
+        .eq("pending_document", false)
         .in("status", ["pending", "processing"]);
       if (waitingError) throw waitingError;
       current += waiting ?? 0;

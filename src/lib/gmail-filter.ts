@@ -104,6 +104,9 @@ export function buildGmailFilterXml(input: {
       entry({
         hasTheWord: KEYWORD_QUERY,
         doesNotHaveTheWord: EXCLUDED_QUERY,
+        // Seules les factures jointes d'un expéditeur inconnu sont proposées
+        // (documents en attente) : sans pièce jointe, inutile de transférer.
+        hasAttachment: "true",
         forwardTo: input.forwardTo,
       }),
     );

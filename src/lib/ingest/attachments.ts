@@ -59,10 +59,17 @@ export async function ingestDocumentBuffer(input: {
   plan: Enums<"plan">;
   buffer: Buffer;
   filename: string;
+  /**
+   * Expéditeur inconnu : le document attendra « Garder ». Le quota ne
+   * s'applique qu'à ce moment-là, un document en attente n'est pas rangé.
+   */
+  pending?: boolean;
 }): Promise<boolean> {
   if (input.buffer.length > MAX_UPLOAD_BYTES) return false;
-  const quota = await checkLimit(input.userId, input.plan, "documents");
-  if (!quota.allowed) return false;
+  if (!input.pending) {
+    const quota = await checkLimit(input.userId, input.plan, "documents");
+    if (!quota.allowed) return false;
+  }
 
   // Le type annoncé vient de l'expéditeur : seul le contenu réel compte.
   const actualType = sniffMimeType(input.buffer);
@@ -84,6 +91,7 @@ export async function ingestDocumentBuffer(input: {
     rawUrl: key,
     mimeType: actualType,
     originalFilename: input.filename,
+    pendingDocument: input.pending ?? false,
   });
   return result.status !== "duplicate";
 }
@@ -98,6 +106,11 @@ export function isDocumentPart(part: {
   return isDocumentAttachment(part);
 }
 
+/** Vrai si l'e-mail porte au moins un document à ranger (PDF, photo jointe). */
+export function hasDocumentAttachment(attachments: Omit<Attachment, "id">[]): boolean {
+  return attachments.some(isDocumentAttachment);
+}
+
 /** Nombre de documents mis en file. Ne lève pas : l'e-mail reste traité. */
 export async function ingestAttachments(input: {
   resend: Resend;
@@ -105,6 +118,7 @@ export async function ingestAttachments(input: {
   userId: string;
   plan: Enums<"plan">;
   attachments: Attachment[];
+  pending?: boolean;
 }): Promise<number> {
   const candidates = input.attachments.filter(isDocumentAttachment).slice(0, MAX_ATTACHMENTS);
   let queued = 0;
@@ -124,6 +138,7 @@ export async function ingestAttachments(input: {
         plan: input.plan,
         buffer: Buffer.from(await response.arrayBuffer()),
         filename: attachment.filename ?? data.filename ?? "piece-jointe",
+        pending: input.pending,
       });
       if (added) queued += 1;
     } catch (error) {

@@ -85,6 +85,7 @@ async function drain() {
             // reconnaîtrait pas son document et le modèle perdrait un indice.
             filename: job.original_filename ?? "document",
           },
+          pending_document: job.pending_document,
         });
       }
       processed += 1;

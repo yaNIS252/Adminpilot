@@ -46,6 +46,7 @@ export default async function AlertsPage() {
     supabase
       .from("documents")
       .select("id, filename_ai, filename_original")
+      .is("pending_until", null)
       .order("created_at", { ascending: false })
       .limit(100),
   ]);

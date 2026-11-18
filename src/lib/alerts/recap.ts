@@ -28,6 +28,8 @@ export type RecapData = {
   cancelled: { provider: string; monthly: number }[];
   upcoming: { provider: string; date: string; amount: number | null }[];
   documentsAdded: number;
+  /** Factures d'expéditeurs inconnus qui attendent « Garder » (30 jours). */
+  pendingDocuments: { label: string; amount: number | null }[];
 };
 
 /** Mois couvert par le récapitulatif envoyé à `now` : le mois précédent. */
@@ -49,7 +51,7 @@ export async function buildRecap(db: Db, userId: string, now = new Date()): Prom
   const today = now.toISOString().slice(0, 10);
   const in30 = new Date(now.getTime() + 30 * 86_400_000).toISOString().slice(0, 10);
 
-  const [active, changes, created, cancelled, documents] = await Promise.all([
+  const [active, changes, created, cancelled, documents, pending] = await Promise.all([
     db
       .from("subscriptions")
       .select("provider, amount, cycle, next_renewal")
@@ -80,8 +82,16 @@ export async function buildRecap(db: Db, userId: string, now = new Date()): Prom
       .from("documents")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
+      .is("pending_until", null)
       .gte("created_at", start)
       .lt("created_at", end),
+    db
+      .from("documents")
+      .select("filename_ai, filename_original, extracted_data")
+      .eq("user_id", userId)
+      .not("pending_until", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(10),
   ]);
 
   const subs = active.data ?? [];
@@ -117,12 +127,27 @@ export async function buildRecap(db: Db, userId: string, now = new Date()): Prom
       .slice(0, 6)
       .map((sub) => ({ provider: sub.provider, date: sub.next_renewal!, amount: sub.amount })),
     documentsAdded: documents.count ?? 0,
+    pendingDocuments: (pending.data ?? []).map((doc) => {
+      const extracted = (doc.extracted_data ?? {}) as Record<string, unknown>;
+      return {
+        label:
+          typeof extracted.provider === "string"
+            ? extracted.provider
+            : (doc.filename_ai ?? doc.filename_original),
+        amount: typeof extracted.amount === "number" ? extracted.amount : null,
+      };
+    }),
   };
 }
 
 /** Rien à raconter : pas d'abonnement suivi, pas de document. */
 export function isEmptyRecap(data: RecapData): boolean {
-  return data.activeCount === 0 && data.documentsAdded === 0 && data.cancelled.length === 0;
+  return (
+    data.activeCount === 0 &&
+    data.documentsAdded === 0 &&
+    data.cancelled.length === 0 &&
+    data.pendingDocuments.length === 0
+  );
 }
 
 function section(title: string, rows: string[]): string {
@@ -166,6 +191,15 @@ export function renderRecapEmail(
       data.cancelled.map((sub) => row(sub.provider, sub.monthly ? `−${euros(sub.monthly)}/mois` : "résilié", "#047857")),
     )}
     ${section(
+      "Factures détectées, à garder ou ignorer",
+      data.pendingDocuments.map((doc) => row(doc.label, doc.amount !== null ? euros(doc.amount) : "")),
+    )}
+    ${
+      data.pendingDocuments.length
+        ? `<p style="margin:8px 0 0;font-size:13px;color:#6b6b80">Reçues d’expéditeurs que tu ne suis pas encore. Sans réponse, elles sont supprimées au bout de 30 jours. <a href="${input.siteUrl}/documents#en-attente" style="color:#6c5ce7">Les voir</a></p>`
+        : ""
+    }
+    ${section(
       "À venir dans les 30 jours",
       data.upcoming.map((sub) => row(`${sub.provider} · ${date(sub.date)}`, sub.amount !== null ? euros(sub.amount) : "")),
     )}
@@ -183,6 +217,7 @@ export function renderRecapEmail(
     ...data.decreases.map((m) => `Baisse : ${m.provider} ${euros(m.oldAmount)} → ${euros(m.newAmount)}`),
     ...data.newSubscriptions.map((s) => `Nouveau : ${s.provider}`),
     ...data.cancelled.map((s) => `Résilié : ${s.provider}`),
+    ...data.pendingDocuments.map((d) => `Facture détectée, à garder ou ignorer : ${d.label}`),
     ...data.upcoming.map((s) => `À venir : ${s.provider} le ${date(s.date)}`),
     "",
     `${input.siteUrl}/dashboard`,

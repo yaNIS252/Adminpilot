@@ -173,6 +173,7 @@ export type Database = {
           filename_original: string;
           id: string;
           mime_type: string | null;
+          pending_until: string | null
           search_vector: unknown;
           source_job_id: string | null;
           user_id: string;
@@ -189,6 +190,7 @@ export type Database = {
           filename_original: string;
           id?: string;
           mime_type?: string | null;
+          pending_until?: string | null
           search_vector?: unknown;
           source_job_id?: string | null;
           user_id: string;
@@ -205,6 +207,7 @@ export type Database = {
           filename_original?: string;
           id?: string;
           mime_type?: string | null;
+          pending_until?: string | null
           search_vector?: unknown;
           source_job_id?: string | null;
           user_id?: string;
@@ -289,6 +292,7 @@ export type Database = {
           mime_type: string | null;
           model_used: string | null;
           original_filename: string | null;
+          pending_document: boolean
           processed_at: string | null;
           raw_url: string | null;
           result: Json | null;
@@ -309,6 +313,7 @@ export type Database = {
           mime_type?: string | null;
           model_used?: string | null;
           original_filename?: string | null;
+          pending_document?: boolean
           processed_at?: string | null;
           raw_url?: string | null;
           result?: Json | null;
@@ -329,6 +334,7 @@ export type Database = {
           mime_type?: string | null;
           model_used?: string | null;
           original_filename?: string | null;
+          pending_document?: boolean
           processed_at?: string | null;
           raw_url?: string | null;
           result?: Json | null;

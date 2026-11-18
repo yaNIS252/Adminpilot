@@ -56,6 +56,7 @@ export function Sidebar({
   name,
   avatarUrl,
   reviewCount,
+  pendingDocuments = 0,
   documentsUsed,
   documentsLimit,
 }: {
@@ -64,6 +65,8 @@ export function Sidebar({
   name: string | null;
   avatarUrl: string | null;
   reviewCount: number;
+  /** Factures d'expéditeurs inconnus qui attendent « Garder » ou « Ignorer ». */
+  pendingDocuments?: number;
   documentsUsed: number;
   documentsLimit: number | null;
 }) {
@@ -114,7 +117,8 @@ export function Sidebar({
 
         {LINKS.map(({ href, label, Icon }) => {
           const active = pathname.startsWith(href);
-          const badge = href === "/abonnements" ? reviewCount : 0;
+          const badge =
+            href === "/abonnements" ? reviewCount : href === "/documents" ? pendingDocuments : 0;
 
           return (
             <Link
@@ -131,7 +135,7 @@ export function Sidebar({
               <span className="flex-1 text-left">{label}</span>
               {badge > 0 && (
                 <span
-                  title={`${badge} à vérifier`}
+                  title={href === "/documents" ? `${badge} en attente` : `${badge} à vérifier`}
                   className="min-w-5 rounded-full bg-[var(--warning)] px-1.5 py-px text-center text-[11px] font-bold text-black"
                 >
                   {badge}
@@ -211,7 +215,8 @@ export function Sidebar({
           porté par `aria-label` pour les lecteurs d'écran. */}
       {LINKS.filter((link) => !("desktopOnly" in link)).map(({ href, label, short, Icon }) => {
         const active = pathname.startsWith(href);
-        const badge = href === "/abonnements" ? reviewCount : 0;
+        const badge =
+            href === "/abonnements" ? reviewCount : href === "/documents" ? pendingDocuments : 0;
 
         return (
           <Link

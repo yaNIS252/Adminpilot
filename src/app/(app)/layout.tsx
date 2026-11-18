@@ -43,14 +43,21 @@ export default async function AppLayout({
   const feedbackDue = !tourPending && isFeedbackDue(auth.profile);
 
   const supabase = await createClient();
-  const [{ count: reviewCount }, { count: documentsUsed }, photo, domains, { count: newCount }] = await Promise.all([
+  const [
+    { count: reviewCount },
+    { count: documentsUsed },
+    photo,
+    domains,
+    { count: newCount },
+    { count: pendingDocuments },
+  ] = await Promise.all([
     supabase
       .from("subscriptions")
       .select("id", { count: "exact", head: true })
       .eq("over_quota", false)
       .eq("confirmed_by_user", false)
       .lt("confidence", 0.7),
-    supabase.from("documents").select("id", { count: "exact", head: true }),
+    supabase.from("documents").select("id", { count: "exact", head: true }).is("pending_until", null),
     avatarUrl(auth.profile.avatar_path),
     // Expéditeurs à transférer : seulement tant que la mise en place n'est
     // pas finie (présentation, ou boîte mail encore à brancher).
@@ -63,6 +70,11 @@ export default async function AppLayout({
       .select("id", { count: "exact", head: true })
       .eq("kind", "new_subscription")
       .is("read_at", null),
+    // Factures d'expéditeurs inconnus en attente : pastille sur « Documents ».
+    supabase
+      .from("documents")
+      .select("id", { count: "exact", head: true })
+      .not("pending_until", "is", null),
   ]);
 
   const { accent, background } = effectiveTheme(auth.profile);
@@ -79,6 +91,7 @@ export default async function AppLayout({
         name={auth.profile.name}
         avatarUrl={photo}
         reviewCount={(reviewCount ?? 0) + (newCount ?? 0)}
+        pendingDocuments={pendingDocuments ?? 0}
         documentsUsed={documentsUsed ?? 0}
         documentsLimit={PLAN_LIMITS[auth.profile.plan].documents}
       />

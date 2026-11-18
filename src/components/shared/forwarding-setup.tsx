@@ -43,7 +43,7 @@ export function ForwardingSetup({
   // Décoché par défaut (protection des données dès la conception, art. 25
   // du RGPD) : ce filtre capte des expéditeurs inconnus, donc parfois des
   // e-mails personnels. L'utilisateur l'active en connaissance de cause.
-  const [keywords, setKeywords] = useState(false);
+  const [keywords, setKeywords] = useState(true);
 
   return (
     <div className="flex flex-col gap-4">
@@ -94,13 +94,12 @@ export function ForwardingSetup({
               className="mt-1 accent-[var(--accent)]"
             />
             <span>
-              Inclure aussi les e-mails dont l’objet parle de facture, de
-              prélèvement ou de renouvellement{" "}
+              Inclure aussi les factures jointes d’expéditeurs que nous ne
+              connaissons pas encore{" "}
               <span className="text-[var(--text-faint)]">
-                — capte les fournisseurs que nous ne connaissons pas encore,
-                mais aussi parfois un e-mail personnel ou une facture médicale.
-                Ce qui n’est pas une facture d’abonnement est effacé dès
-                l’analyse.
+                — elles t’attendent dans Documents et tu choisis de les garder
+                ou non. Rien n’est rangé sans ton accord, et ce qui n’est pas
+                une facture est effacé dès l’analyse.
               </span>
             </span>
           </label>

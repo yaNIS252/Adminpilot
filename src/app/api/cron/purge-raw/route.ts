@@ -82,5 +82,21 @@ export async function GET(request: Request) {
       new Date(Date.now() - REFERRAL.ipRetentionDays * 86_400_000).toISOString(),
     );
 
-  return NextResponse.json({ candidates: jobs?.length ?? 0, purged });
+  // Documents en attente jamais gardés : supprimés au bout de 30 jours,
+  // fichier compris, comme annoncé à l'utilisateur.
+  const { data: expired } = await db
+    .from("documents")
+    .select("id, file_url")
+    .not("pending_until", "is", null)
+    .lt("pending_until", new Date().toISOString())
+    .limit(BATCH_SIZE);
+  let expiredDocuments = 0;
+  for (const doc of expired ?? []) {
+    const { error: deleteError } = await db.from("documents").delete().eq("id", doc.id);
+    if (deleteError) continue;
+    await deleteRaw(doc.file_url).catch(() => {});
+    expiredDocuments += 1;
+  }
+
+  return NextResponse.json({ candidates: jobs?.length ?? 0, purged, expiredDocuments });
 }
