@@ -371,8 +371,17 @@ ${job.payload.body.slice(0, 6000)}`)
     await db.from("subscriptions").update(patch).eq("id", existing.id).eq("user_id", job.user_id);
   }
 
+  // Un e-mail plus ancien que la dernière facture connue, ou sans date de
+  // facture, ne fait pas le prix actuel : relu après coup (transfert en vrac,
+  // e-mail de suspension…), il déclenchait une fausse « hausse ».
+  const lastKnownInvoice = metadataString(existing?.metadata, "last_invoice_date");
+  const notNewer =
+    !announcement &&
+    Boolean(existing && lastKnownInvoice) &&
+    (!data.invoice_date || (lastKnownInvoice !== null && data.invoice_date <= lastKnownInvoice));
+
   const priceCheck =
-    existing && !needsReview && !manualCheck
+    existing && !needsReview && !manualCheck && !notNewer
       ? await trackPriceChange(db, {
           userId: job.user_id,
           subscription: existing,
@@ -394,7 +403,7 @@ ${job.payload.body.slice(0, 6000)}`)
     ? await refreshSubscription(db, existing, {
         // Un tarif annoncé ne s'applique qu'à sa date d'effet : le montant
         // connu ne change pas avant la première facture au nouveau prix.
-        amount: announcement || implausible ? null : data.amount,
+        amount: announcement || implausible || notNewer ? null : data.amount,
         currency: data.currency,
         cycle,
         category: data.category,

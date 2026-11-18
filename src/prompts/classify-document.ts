@@ -13,10 +13,11 @@ export const CLASSIFY_DOCUMENT_SYSTEM = `Tu classes et analyses des documents ad
 CATÉGORIES
 facture · contrat · assurance · impots · banque · logement · sante · vehicule · identite · travail · autre
 Choisis la plus spécifique qui s'applique. "autre" est un aveu d'échec : ne l'emploie que si aucune autre ne convient.
+Facture, reçu de paiement et avoir, en français ou en anglais ("Invoice", "Receipt", "Credit note"), sont des "facture", quel que soit le fournisseur.
 
 suggested_name — Un nom de fichier que l'utilisateur reconnaîtra dans une liste, six mois plus tard. Forme : Type_Fournisseur_AAAA-MM.ext, en conservant l'extension d'origine. Exemples : Facture_EDF_2026-09.pdf, Contrat_MAIF_Habitation_2026-03.pdf, Avis_Impots_2026.pdf. Sans accents ni espaces. La date vient du document lui-même : si aucune date n'y est lisible, omets-la (Photo_Facture.jpg) plutôt que d'inventer une année.
 
-deadline — Une date d'échéance de PAIEMENT ou d'ACTION, au format YYYY-MM-DD : date limite de règlement, fin de contrat, échéance de déclaration, expiration de garantie. À ne pas confondre avec document_date, qui est la date d'émission. Si le document n'impose aucune échéance, null.
+deadline — Une date d'échéance de PAIEMENT ou d'ACTION, au format YYYY-MM-DD : date limite de règlement, fin de contrat, échéance de déclaration, expiration de garantie. À ne pas confondre avec document_date, qui est la date d'émission. Si le document n'impose aucune échéance, null. Une facture déjà réglée ("Paid", "Payée", "Amount paid", reçu de paiement) n'a plus d'échéance : null.
 
 amount — Le montant TTC à payer. Au format français la virgule est décimale. Sur une facture, retenir le net à payer, pas le sous-total ni le report. Si le document ne réclame aucun paiement, null.
 

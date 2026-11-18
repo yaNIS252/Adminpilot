@@ -30,11 +30,11 @@ provider — Le nom commercial du fournisseur, tel qu'un humain le dirait : "Net
 
 amount — Le montant effectivement facturé à l'utilisateur, en nombre décimal. Attention aux pièges courants :
   · le format français utilise la virgule décimale : "12,99 €" vaut 12.99
-  · privilégier le TTC au HT quand les deux figurent
+  · privilégier le TTC au HT quand les deux figurent : "Subtotal 18,00 · VAT 3,60 · Total 21,60" vaut 21.60, jamais 18.00
   · ignorer les totaux cumulés, les soldes de compte et les montants d'exemple
   · en cas de remise, retenir le montant réellement prélevé
   · si aucun montant n'est lisible, retourner null plutôt que deviner
-  · reçu suivi d'un avoir ou d'un ajustement ("Credited total", "Adjusted invoice total 0,00", "avoir") : retenir le montant payé ("Amount paid", "Montant payé"), pas le total ajusté. Un e-mail qui n'est QUE l'avoir ("Credit note from…", "Votre avoir") ou un échec de paiement ("payment failed", "échec de paiement") est un "skip"
+  · reçu suivi d'un avoir ou d'un ajustement ("Credited total", "Adjusted invoice total 0,00", "avoir") : retenir le montant payé ("Amount paid", "Montant payé"), pas le total ajusté. Un e-mail qui n'est QUE l'avoir ("Credit note from…", "Votre avoir") ou un échec de paiement ("payment failed", "échec de paiement"), un accès suspendu ou rétabli ("access paused", "access restored", "abonnement suspendu", "accès rétabli") est un "skip" : ce ne sont pas des factures, et un prix qui y figure n'a pas forcément été payé
 
 billing_cycle — Déduit d'une mention explicite ("par mois", "abonnement annuel") ou d'un libellé de période ("du 18/09 au 18/10" = mensuel). Sans indice, "unknown" — ne pas supposer "monthly" par défaut. "one_time" est réservé à un achat ponctuel explicite (une commande, un billet) : la facture d'un service (hébergement, télécom, énergie, logiciel, assurance) sans période écrite est "unknown", jamais "one_time".
 
